@@ -1,5 +1,11 @@
 # Plan: plugin "Estados, Municipios y Sucursales de Venezuela para WooCommerce"
 
+> **Actualización (ver `ANALISIS-FASE1.md`):** al incorporar el plugin *Multi Locations Inventory
+> Management* (MLI), el CPT "Sucursal" y el select de sucursal en el checkout descritos abajo quedan
+> **descartados**: MLI ya modela las sedes, las lleva en el carrito y las expone a Advanced Shipping.
+> Se conserva de este plan la técnica de la sección 6 (condiciones personalizadas para WAS y
+> transporte de datos al paquete de envío), que ahora lee la sede desde el paquete de MLI.
+
 Fork del plugin *States and Municipalities of Venezuela for WooCommerce* (v1.1, Yordan Soares, GPL v2)
 que añade un tercer select en cascada, **Sucursal**, y lo expone como condición dentro de
 *Advanced Shipping for WooCommerce* (v1.1.5, Jeroen Sormani) para que el administrador cree
