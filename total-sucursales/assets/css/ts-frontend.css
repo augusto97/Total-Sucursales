@@ -1,0 +1,25 @@
+/* Selector de estado (shortcode) */
+.ts-state-selector { display: inline-flex; align-items: center; gap: .5em; }
+.ts-state-selector label { margin: 0; font-weight: 600; }
+.ts-state-selector .ts-use-gps { border: 1px solid currentColor; background: transparent; border-radius: 50%; width: 2em; height: 2em; line-height: 1; cursor: pointer; padding: 0; }
+
+/* Modal de primera visita */
+.ts-modal { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.ts-modal[hidden] { display: none; }
+.ts-modal__box { background: #fff; color: #222; max-width: 420px; width: 100%; border-radius: 8px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+.ts-modal__box h3 { margin: 0 0 .5em; }
+.ts-modal__select { width: 100%; margin: .75em 0; padding: .5em; }
+.ts-modal__actions { display: flex; gap: .5em; justify-content: flex-end; flex-wrap: wrap; }
+.ts-modal__status { min-height: 1.2em; font-size: .9em; color: #666; }
+
+/* Checkout */
+.ts-checkout-geo td { padding-top: .5em; }
+.ts-checkout-geo__hint { display: block; color: #666; margin-top: .25em; }
+.ts-checkout-geo__status { display: block; font-size: .9em; margin-top: .25em; }
+.ts-distance-list { list-style: none; margin: 0; padding: 0; }
+.ts-distance-list li { display: flex; flex-wrap: wrap; gap: .5em; align-items: center; padding: .25em 0; }
+.ts-distance--unknown { color: #999; font-style: italic; }
+.ts-badge { font-size: .75em; padding: .15em .5em; border-radius: 999px; text-transform: uppercase; letter-spacing: .02em; }
+.ts-badge--pickup { background: #e6f6ea; color: #1b7a34; }
+.ts-badge--national { background: #eef2f7; color: #3a4a5c; }
+.ts-distance-note { display: block; color: #666; margin-top: .5em; }
