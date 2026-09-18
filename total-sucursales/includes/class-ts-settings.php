@@ -32,9 +32,12 @@ class TS_Settings {
 			'checkout_geo_button'  => 'yes',
 			'show_distance_info'   => 'yes',
 			'single_location_view' => 'no',
-			'pickup_label'         => __( 'Retiro en tienda', 'total-sucursales' ),
-			'modal_title'          => __( '¿Desde qué estado nos visitas?', 'total-sucursales' ),
-			'modal_text'           => __( 'Elige tu estado para mostrarte las sucursales y el catálogo disponible en tu zona.', 'total-sucursales' ),
+			'catalog_filter'       => 'yes',
+			'blocks_municipio'     => 'yes',
+			// Sin __() aquí: defaults() puede ejecutarse antes de init (WP 6.7+ avisa si se cargan traducciones antes).
+			'pickup_label'         => 'Retiro en tienda',
+			'modal_title'          => '¿Desde qué estado nos visitas?',
+			'modal_text'           => 'Elige tu estado para mostrarte las sucursales y el catálogo disponible en tu zona.',
 		);
 	}
 
@@ -117,6 +120,20 @@ class TS_Settings {
 				'default' => self::defaults()['modal_text'],
 			),
 			array(
+				'title'   => __( 'Filtrar el catálogo por stock de la sucursal seleccionada', 'total-sucursales' ),
+				'id'      => "{$p}[catalog_filter]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'Oculta productos sin stock en la sucursal activa en el loop clásico, shortcodes, bloques Product Collection y Store API. Sustituye a "Display Only In-Stock Items" de Multi Locations (que sólo cubre el loop clásico y es lento).', 'total-sucursales' ),
+				'default' => 'yes',
+			),
+			array(
+				'title'   => __( 'Checkout por bloques: municipio como select', 'total-sucursales' ),
+				'id'      => "{$p}[blocks_municipio]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'Registra un select de municipios por estado (datos de States and Municipalities of Venezuela) en el checkout por bloques y oculta el campo de ciudad libre. Sin efecto en el checkout clásico.', 'total-sucursales' ),
+				'default' => 'yes',
+			),
+			array(
 				'title'   => __( 'Producto: mostrar sólo la sucursal seleccionada', 'total-sucursales' ),
 				'id'      => "{$p}[single_location_view]",
 				'type'    => 'checkbox',
@@ -190,6 +207,9 @@ class TS_Settings {
 		woocommerce_update_options( self::fields() );
 		self::$cache = null;
 		TS_Locations::flush_cache();
+		if ( class_exists( 'TS_Catalog' ) ) {
+			TS_Catalog::flush();
+		}
 	}
 
 	private static function render_status() {

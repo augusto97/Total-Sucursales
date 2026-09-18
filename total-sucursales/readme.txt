@@ -26,6 +26,12 @@ Filtra las sucursales de Multi Locations por el estado del cliente y decide reti
    * "Retiro en tienda": condición *Sucursal elegible para pickup* = Sí, costo 0.
    * "Envío nacional": condición *Sucursal elegible para pickup* = No (+ las condiciones de tarifa que necesites).
 
+== Temas y checkout por bloques ==
+
+Compatible con temas de bloques y con el carrito/checkout por bloques: el catálogo por sede cubre el bloque
+Product Collection y la Store API; en el checkout por bloques se añaden el botón "Usar mi ubicación", las
+distancias por sucursal y un select de municipio por estado (la ciudad libre de Venezuela se oculta).
+
 == Shortcodes ==
 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.

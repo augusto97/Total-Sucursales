@@ -19,6 +19,8 @@ total-sucursales/
 │   ├── class-ts-customer.php                 # estado y coordenadas del cliente; sincroniza cookies de MLI
 │   ├── class-ts-location-filter.php          # pre_option_wcmlim_exclude_locations_from_frontend
 │   ├── class-ts-packages.php                 # enriquece paquetes: sucursal, distancia, pickup elegible
+│   ├── class-ts-catalog.php                  # catálogo por sede en loop clásico, shortcodes, Product Collection y Store API
+│   ├── class-ts-blocks.php                   # checkout/carrito por bloques: Store API, GPS, municipios por estado
 │   ├── class-ts-frontend.php                 # scripts, modal de estado, [ts_selector_estado], AJAX
 │   ├── class-ts-checkout.php                 # botón GPS, geocodificación de respaldo, info de distancias
 │   ├── class-ts-order.php                    # meta del pedido + panel en el admin del pedido
@@ -31,7 +33,8 @@ total-sucursales/
 │           └── class-wpc-ts-sede-pickup-condition.php     # "Sucursal elegible para pickup" Sí/No
 └── assets/
     ├── js/ts-frontend.js                     # GPS, modal, selector, vista de producto
-    ├── js/ts-checkout.js                     # botón "Usar mi ubicación" → update_checkout
+    ├── js/ts-checkout.js                     # botón "Usar mi ubicación" → update_checkout (checkout clásico)
+    ├── js/ts-blocks-checkout.js              # slot ExperimentalOrderShippingPackages (checkout por bloques, sin build)
     └── css/ts-frontend.css
 ```
 
@@ -100,6 +103,23 @@ los demás caen en la regla de envío nacional. El pedido tiene N líneas de env
 Sin split y con items de varias sucursales: `ts_mixed_locations = true`, sin sucursal ni pickup
 (se documenta como configuración no soportada).
 
+## Temas y checkout por bloques (Greenshift, Twenty Twenty-Five…)
+
+Todo el flujo funciona también con tema de bloques y carrito/checkout por bloques:
+
+| Pieza | Clásico | Bloques |
+|---|---|---|
+| Catálogo por sede | `TS_Catalog` en `woocommerce_product_query` (se suma al de MLI) | `TS_Catalog` en `query_loop_block_query_vars` (Product Collection / Query Loop) y en Store API `/wc/store/v1/products`. MLI no cubre bloques. |
+| Posición del cliente en checkout | botón + `update_checkout` | botón dentro del slot `ExperimentalOrderShippingPackages` → `extensionCartUpdate({namespace:'total-sucursales'})` → callback registrado con `woocommerce_store_api_register_update_callback` |
+| Geocodificación de respaldo | `woocommerce_checkout_update_order_review` | `woocommerce_store_api_cart_update_customer_from_request` |
+| Distancias y etiqueta pickup/nacional | `woocommerce_review_order_after_shipping` | datos en `cart.extensions['total-sucursales']` (`woocommerce_store_api_register_endpoint_data`) renderizados por `ts-blocks-checkout.js` con `wp.element.createElement` (sin JSX ni build) |
+| Municipio como select | plugin SMV | 24 campos adicionales `total-sucursales/municipio-{estado}` (`woocommerce_register_additional_checkout_field`, tipo select, `hidden`/`required` con JSON Schema sobre `customer.address.state`). La ciudad libre de VE se oculta por `woocommerce_get_country_locale` y el municipio elegido se copia a `shipping_city`/`billing_city` del cliente y del pedido. |
+| Meta del pedido | `woocommerce_checkout_create_order` | `woocommerce_store_api_checkout_update_order_from_request` |
+
+El filtro de catálogo usa dos consultas SQL (productos con gestión de stock, productos con stock o
+backorder en la sede) con caché en transient invalidada al cambiar stock/metas; sustituye al de MLI,
+que carga todos los IDs del catálogo en cada petición.
+
 ## Ajustes (WooCommerce > Ajustes > Total Sucursales)
 
 | Ajuste | Default | Efecto |
@@ -111,12 +131,14 @@ Sin split y con items de varias sucursales: `ts_mixed_locations = true`, sin suc
 | Geocodificador | nominatim | none / nominatim / google |
 | Clave de Google | (usa la de MLI) | |
 | Producto: sólo la sucursal seleccionada | no | |
+| Filtrar catálogo por stock de la sucursal | sí | loop, shortcodes, bloques y Store API |
+| Checkout por bloques: municipio como select | sí | sólo actúa si la página de checkout usa el bloque |
 
 ## Estado de pruebas
 
-Probado end-to-end en un WordPress local (ver `tests/e2e/README.md`): 30 comprobaciones automatizadas
-con Chromium pasan, incluidos ambos modos de carrito (una sede y varias sedes con split). Capturas en
-`docs/capturas/`.
+Probado end-to-end en un WordPress local (ver `tests/e2e/README.md`): 30 comprobaciones con tema clásico
+y checkout shortcode, más 11 con tema de bloques y carrito/checkout por bloques, todas en verde,
+incluidos ambos modos de carrito (una sede y varias sedes con split). Capturas en `docs/capturas/`.
 
 Hallazgos de la integración con MLI que el plugin ya contempla:
 
@@ -130,7 +152,5 @@ Hallazgos de la integración con MLI que el plugin ya contempla:
 
 - Caché de carrito por sucursal (requisito 7, segunda opción). No incluido; MLI hoy pregunta y migra.
 - Consulta optimizada del catálogo por sede para catálogos grandes (MLI carga todos los IDs).
-- Soporte de checkout por bloques (el botón GPS y la info de distancia usan hooks del checkout clásico;
-  las condiciones y el filtro por estado funcionarían igual).
 - FASE 2: shortcode de mapa Leaflet/OSM con las coordenadas de las sucursales.
 - Traducciones (.pot) y pruebas en staging con la versión de WooCommerce del cliente.

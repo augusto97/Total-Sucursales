@@ -42,6 +42,7 @@ wp eval-file "$REPO/tests/e2e/seed.php"
 wp option update woocommerce_hold_stock_minutes ""   # la reserva de stock usa SQL que SQLite no soporta
 ID=$(wp post create --post_type=page --post_title="Inicio" --post_status=publish --porcelain --post_content='<h2>Bienvenido</h2>[ts_selector_estado][wcmlim_locations_switch]<p><a href="/shop/">Ir a la tienda</a></p>')
 wp option update show_on_front page; wp option update page_on_front "$ID"
-cp "$REPO/tests/e2e/router.php" "$W/router.php"; cp "$REPO/tests/e2e/e2e.js" "$W/e2e.js"; cp "$W/wp-cli.phar" "$W/wp-cli.phar" 2>/dev/null || true
+cp "$REPO/tests/e2e/router.php" "$W/router.php"; cp "$REPO/tests/e2e/e2e.js" "$W/e2e.js"; cp "$REPO/tests/e2e/e2e-blocks.js" "$W/e2e-blocks.js"; cp "$REPO/tests/e2e/pages.php" "$W/pages.php"
 echo "Listo. Arranca:  cd $W && php -S 127.0.0.1:8080 -t wordpress router.php"
-echo "Pruebas:         cd $W && node e2e.js   (edita la ruta de require('playwright') si hace falta)"
+echo "Pruebas clásico: cd $W && node e2e.js"
+echo "Pruebas bloques: wp theme activate twentytwentyfive && wp eval-file pages.php blocks && node e2e-blocks.js"
