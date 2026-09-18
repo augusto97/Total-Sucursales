@@ -76,8 +76,8 @@
   .callout.info { border-color: var(--info); background: var(--info-soft); }
   .callout p { margin: 4px 0; }
   ul.check { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
-  ul.check li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
-  ul.check li::before { content: ""; width: 16px; height: 16px; margin-top: 5px; border: 2px solid var(--accent); border-radius: 4px; }
+  ul.check li { position: relative; padding-left: 30px; max-width: 78ch; }
+  ul.check li::before { content: ""; position: absolute; left: 0; top: 5px; width: 16px; height: 16px; border: 2px solid var(--accent); border-radius: 4px; }
   ol.plain { padding-left: 22px; } ol.plain li { margin: 6px 0; }
   code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 6px; border-radius: 4px; }
   pre { font-family: var(--mono); font-size: 14px; background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; }
