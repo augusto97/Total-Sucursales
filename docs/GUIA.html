@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía Total Sucursales</title>
+<meta name="description" content="Guía de implementación y configuración del plugin Total Sucursales para WooCommerce.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f7f6f2;
+    --panel: #ffffff;
+    --panel-2: #efece5;
+    --ink: #1b2430;
+    --ink-2: #4b5563;
+    --line: #dcd8cf;
+    --accent: #0f766e;
+    --accent-ink: #ffffff;
+    --accent-soft: #d9f0ec;
+    --warn: #b45309;
+    --warn-soft: #fdf1df;
+    --info: #3a4a5c;
+    --info-soft: #e7ecf3;
+    --code-bg: #eeebe4;
+    --shadow: 0 1px 2px rgba(27,36,48,.06), 0 8px 24px rgba(27,36,48,.06);
+    --display: "Sora", "Segoe UI", system-ui, sans-serif;
+    --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #15181c; --panel: #1e2328; --panel-2: #262c33; --ink: #e8e6e1; --ink-2: #aab2bd; --line: #343b44;
+      --accent: #2dd4bf; --accent-ink: #0b1f1c; --accent-soft: #143d38; --warn: #f5b352; --warn-soft: #3a2a12;
+      --info: #b7c4d4; --info-soft: #232c38; --code-bg: #262c33; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #15181c; --panel: #1e2328; --panel-2: #262c33; --ink: #e8e6e1; --ink-2: #aab2bd; --line: #343b44;
+    --accent: #2dd4bf; --accent-ink: #0b1f1c; --accent-soft: #143d38; --warn: #f5b352; --warn-soft: #3a2a12;
+    --info: #b7c4d4; --info-soft: #232c38; --code-bg: #262c33; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-block: 32px 80px; padding-inline: 16px; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 40px; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; gap: 24px; } }
+  nav.toc { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; font-size: 15px; }
+  @media (max-width: 900px) { nav.toc { position: static; } }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--ink-2); text-decoration: none; }
+  nav.toc a:hover, nav.toc a:focus-visible { background: var(--panel-2); color: var(--ink); outline: none; }
+  nav.toc .n { font-family: var(--mono); font-size: 12px; color: var(--accent); min-width: 2ch; padding-top: 3px; }
+  main { min-width: 0; }
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.2; margin: 0; }
+  h1 { font-size: clamp(30px, 4vw, 42px); font-weight: 700; }
+  h2 { font-size: 26px; font-weight: 600; margin-top: 8px; }
+  h3 { font-size: 19px; font-weight: 600; margin-top: 24px; }
+  p { margin: 12px 0; max-width: 72ch; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 64ch; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  header.hero { display: flex; flex-direction: column; gap: 10px; padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--ink-2); font-family: var(--mono); }
+  section.step { padding: 36px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+  section.step:last-of-type { border-bottom: 0; }
+  .stephead { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: start; }
+  .stepnum { font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1; color: var(--accent); padding-top: 4px; font-variant-numeric: tabular-nums; }
+  figure { margin: 20px 0 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+  figure img { display: block; width: 100%; height: auto; max-width: 100%; }
+  figure.tall img { max-height: 720px; object-fit: cover; object-position: top; }
+  figcaption { padding: 10px 14px; font-size: 14px; color: var(--ink-2); border-top: 1px solid var(--line); background: var(--panel-2); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .grid2 figure { margin: 0; }
+  .callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout.info { border-color: var(--info); background: var(--info-soft); }
+  .callout p { margin: 4px 0; }
+  ul.check { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  ul.check li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+  ul.check li::before { content: ""; width: 16px; height: 16px; margin-top: 5px; border: 2px solid var(--accent); border-radius: 4px; }
+  ol.plain { padding-left: 22px; } ol.plain li { margin: 6px 0; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 6px; border-radius: 4px; }
+  pre { font-family: var(--mono); font-size: 14px; background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0; }
+  .tablewrap { overflow-x: auto; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--display); font-weight: 600; font-size: 14px; background: var(--panel-2); }
+  .pill { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); }
+  .pill.ok { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .path { font-family: var(--mono); font-size: 14px; color: var(--info); }
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 16px 0; }
+  .flow div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: 15px; }
+  .flow b { display: block; font-family: var(--display); font-size: 14px; margin-bottom: 4px; color: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc" aria-label="Contenido">
+    <ol>
+      <li><a href="#que-hace"><span class="n">00</span>Qué hace el plugin</a></li>
+      <li><a href="#instalar"><span class="n">01</span>Requisitos e instalación</a></li>
+      <li><a href="#sedes"><span class="n">02</span>Sucursales en Multi Locations</a></li>
+      <li><a href="#stock"><span class="n">03</span>Stock por sucursal</a></li>
+      <li><a href="#mli"><span class="n">04</span>Ajustes de Multi Locations</a></li>
+      <li><a href="#ajustes"><span class="n">05</span>Ajustes de Total Sucursales</a></li>
+      <li><a href="#envio"><span class="n">06</span>Reglas de envío</a></li>
+      <li><a href="#header"><span class="n">07</span>Selector en el header</a></li>
+      <li><a href="#cliente"><span class="n">08</span>Lo que ve el cliente</a></li>
+      <li><a href="#verificar"><span class="n">09</span>Verificación</a></li>
+      <li><a href="#problemas"><span class="n">10</span>Problemas comunes</a></li>
+      <li><a href="#dev"><span class="n">11</span>Para desarrolladores</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="eyebrow">Guía de implementación</span>
+      <h1>Total Sucursales para WooCommerce</h1>
+      <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda sólo en la sucursal más cercana dentro de un radio. Todo sobre Multi Locations, Advanced Shipping y States and Municipalities of Venezuela.</p>
+      <div class="meta"><span>plugin 0.1.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+    </header>
+
+    <section class="step" id="que-hace">
+      <div class="stephead"><div class="stepnum">00</div><div>
+        <h2>Qué hace el plugin</h2>
+        <p>Es un plugin "pegamento": no reemplaza a los otros tres, los conecta. Multi Locations sigue siendo donde se cargan las sucursales y el stock; Advanced Shipping sigue siendo donde se crean las tarifas; States and Municipalities sigue aportando estados y municipios.</p>
+      </div></div>
+      <div class="flow">
+        <div><b>1 · Estado del cliente</b>Se detecta por GPS del navegador, por la dirección guardada de su cuenta, o se pregunta con un selector.</div>
+        <div><b>2 · Sucursales visibles</b>Sólo las sedes de ese estado. Si el estado no tiene sedes, se muestran todas.</div>
+        <div><b>3 · Catálogo</b>Se ven los productos con stock en la sede activa. Funciona en tienda clásica y en bloques.</div>
+        <div><b>4 · Envío</b>La sede más cercana dentro del radio (10 km) es la única elegible para retiro en tienda. El resto, envío nacional.</div>
+        <div><b>5 · Pedido</b>Cada pedido guarda posición del cliente, distancia por sede y cuál quedó como pickup.</div>
+      </div>
+      <div class="callout info"><p><strong>Una sola idea para no perderse:</strong> las "sucursales" son las <em>Locations</em> de Multi Locations. El plugin no tiene su propia lista de sedes. Si una sede no existe en Multi Locations, no existe para nadie.</p></div>
+    </section>
+
+    <section class="step" id="instalar">
+      <div class="stephead"><div class="stepnum">01</div><div>
+        <h2>Requisitos e instalación</h2>
+        <p>Instala y activa en este orden. El plugin detecta lo que falta y lo avisa en el admin.</p>
+      </div></div>
+      <div class="tablewrap"><table>
+        <tr><th>Plugin</th><th>Obligatorio</th><th>Para qué</th></tr>
+        <tr><td>WooCommerce</td><td><span class="pill ok">sí</span></td><td>Base.</td></tr>
+        <tr><td>MULTILOCA – Multi Locations Inventory Management</td><td><span class="pill ok">sí</span></td><td>Sucursales, stock por sede, selector de sede, carrito por sede.</td></tr>
+        <tr><td>Advanced Shipping for WooCommerce</td><td><span class="pill">recomendado</span></td><td>Reglas de envío con las condiciones "Total Sucursales". Sin él no hay condición de pickup por radio.</td></tr>
+        <tr><td>States and Municipalities of Venezuela for WooCommerce</td><td><span class="pill">recomendado</span></td><td>Estados con código (ZU, DC…) y lista de municipios. Los códigos de estado deben coincidir entre la sede y el cliente.</td></tr>
+        <tr><td>Total Sucursales</td><td><span class="pill ok">sí</span></td><td>Este plugin. Actívalo al final.</td></tr>
+      </table></div>
+      <h3>Subir el zip</h3>
+      <ol class="plain">
+        <li>Descarga <code>total-sucursales.zip</code> desde la rama <code>release</code> del repositorio (carpeta <code>dist/</code>).</li>
+        <li>WordPress → Plugins → Añadir nuevo → Subir plugin → elige el zip → Instalar ahora → Activar.</li>
+        <li>Abre WooCommerce → Ajustes → pestaña <strong>Total Sucursales</strong>. Al pie hay un cuadro "Estado de la integración" con un check por cada plugin detectado.</li>
+      </ol>
+      <div class="callout warn"><p><strong>Tema de bloques (Greenshift, Twenty Twenty-Five…):</strong> soportado. El plugin filtra el bloque Product Collection y añade sus controles al checkout por bloques. Ten en cuenta que Multi Locations por sí solo no filtra la tienda en temas de bloques; el filtro que se usa es el de este plugin (paso 05).</p></div>
+    </section>
+
+    <section class="step" id="sedes">
+      <div class="stephead"><div class="stepnum">02</div><div>
+        <h2>Sucursales en Multi Locations</h2>
+        <p>Ruta: <span class="path">Productos → Locations</span> (también MULTILOCA → Manage Locations). Cada sede necesita dos datos que Multi Locations no obliga pero este plugin sí usa: el <strong>estado</strong> y las <strong>coordenadas</strong>.</p>
+      </div></div>
+      <ul class="check">
+        <li><strong>State</strong>: selecciona el estado. Este código es el que se compara con el estado del cliente.</li>
+        <li><strong>Location Lat / Lng</strong>: latitud y longitud de la tienda. Sin ellas no se calcula distancia y la sede nunca será elegible para retiro. Se obtienen con clic derecho sobre el local en Google Maps u OpenStreetMap.</li>
+        <li><strong>City, Street address, Phone, horario</strong>: opcionales, se muestran en el checkout y el pedido.</li>
+        <li>Elimina o deja sin stock la sede <strong>"Online Store"</strong> que Multi Locations crea al activarse: no tiene estado ni coordenadas y es la sede por defecto cuando el cliente aún no eligió.</li>
+      </ul>
+      <figure class="tall"><img src="guia/02-mli-location-edit.png" alt="Pantalla de edición de una sucursal en Multi Locations con los campos State y Lat/Lng resaltados" loading="lazy"><figcaption>Edición de la sede "Tienda Delicias": State = Zulia y Lat/Lng cargados (recuadros rojos). El resto de campos son los de Multi Locations.</figcaption></figure>
+      <figure><img src="guia/01-mli-locations-list.png" alt="Listado de sucursales en Productos → Locations" loading="lazy"><figcaption>Listado de sedes de la instancia de prueba: dos en Zulia, una en Distrito Capital, una en Carabobo, más la "Online Store" por defecto.</figcaption></figure>
+    </section>
+
+    <section class="step" id="stock">
+      <div class="stephead"><div class="stepnum">03</div><div>
+        <h2>Stock por sucursal en cada producto</h2>
+        <p>Multi Locations sólo asigna sede a los productos que <strong>gestionan stock</strong>. Un producto sin gestión de stock no lleva sede en el carrito, no entra en los paquetes por sede y no se puede evaluar para retiro.</p>
+      </div></div>
+      <ul class="check">
+        <li>Producto → Inventario → marca <strong>"Track stock quantity"</strong>.</li>
+        <li>En la caja lateral <strong>Locations</strong> marca las sedes donde se vende.</li>
+        <li>En Inventario aparece un bloque por sede marcada: carga <strong>Stock quantity</strong> en cada una.</li>
+        <li>Para productos variables, el stock por sede se carga en cada variación.</li>
+      </ul>
+      <div class="grid2">
+        <figure><img src="guia/03-product-inventory.png" alt="Pestaña Inventario del producto con stock por sede" loading="lazy"><figcaption>Inventario del "Producto A": 5 unidades en Tienda Chacao y 6 en Tienda Delicias.</figcaption></figure>
+        <figure><img src="guia/03b-product-locations-box.png" alt="Caja lateral Locations con las sedes marcadas" loading="lazy"><figcaption>Caja lateral "Locations": sólo las sedes marcadas muestran campos de stock.</figcaption></figure>
+      </div>
+      <div class="callout info"><p>El catálogo por sede oculta los productos con gestión de stock que tengan 0 en la sede activa (salvo que admitan reservas). Los productos sin gestión de stock se muestran siempre.</p></div>
+    </section>
+
+    <section class="step" id="mli">
+      <div class="stephead"><div class="stepnum">04</div><div>
+        <h2>Ajustes de Multi Locations que importan</h2>
+        <p>Ruta: <span class="path">MULTILOCA → Settings</span>. Sólo tres decisiones afectan a este plugin. El resto de Multi Locations se configura como el cliente prefiera.</p>
+      </div></div>
+      <h3>a) Modo de carrito: elige uno</h3>
+      <div class="tablewrap"><table>
+        <tr><th>Objetivo</th><th>Ajuste en Multi Locations</th><th>Cómo se comporta el envío</th></tr>
+        <tr><td>Una sola sede por pedido (requisitos 6 y 7 del cliente)</td><td>Pestaña <em>Location</em> → <strong>Restrict to One Location</strong> = activado. <em>Split order Packages by location</em> = desactivado.</td><td>Un paquete. Si la sede del carrito está a ≤ radio del cliente → retiro en tienda; si no → envío nacional.</td></tr>
+        <tr><td>Varias sedes por pedido (sección "Determinar envío")</td><td>Pestaña <em>Shipping and Payment Method</em> → <strong>Split order Packages by location</strong> = activado. <em>Restrict to One Location</em> = desactivado.</td><td>Un paquete por sede. Sólo la sede más cercana dentro del radio recibe retiro; las demás, envío nacional. El pedido tendrá tantas líneas de envío como sedes.</td></tr>
+      </table></div>
+      <div class="grid2">
+        <figure><img src="guia/08-mli-settings-cart.png" alt="Ajuste Restrict to One Location en Multi Locations" loading="lazy"><figcaption>Pestaña Location → "Restrict to One Location" (recuadro rojo). Activado para el modo de una sede por pedido.</figcaption></figure>
+        <figure><img src="guia/09-mli-settings-split.png" alt="Ajuste Split order Packages by location" loading="lazy"><figcaption>Pestaña Shipping and Payment Method → "Split order Packages by location". Activado para el modo de varias sedes por pedido.</figcaption></figure>
+      </div>
+      <h3>b) Catálogo: apaga el filtro de Multi Locations</h3>
+      <p>Pestaña <em>Shop Page</em> → <strong>Display Only In-Stock Items for Selected Location</strong>: déjalo <strong>desactivado</strong>. Este plugin hace lo mismo con una consulta mucho más ligera y además cubre bloques y Store API, cosa que el filtro de Multi Locations no hace. Tener los dos activos no rompe nada, pero ralentiza la tienda.</p>
+      <figure><img src="guia/10-mli-settings-catalog.png" alt="Ajuste Display Only In-Stock Items en Multi Locations" loading="lazy"><figcaption>Pestaña Shop Page → "Display Only In-Stock Items for Selected Location", desactivado.</figcaption></figure>
+      <h3>c) Detección de ubicación de Multi Locations</h3>
+      <p>Deja apagadas las opciones "Autodetect User Location With…" de Multi Locations. La detección la hace este plugin, y activar las dos a la vez produce dobles preguntas de permiso al usuario.</p>
+    </section>
+
+    <section class="step" id="ajustes">
+      <div class="stephead"><div class="stepnum">05</div><div>
+        <h2>Ajustes de Total Sucursales</h2>
+        <p>Ruta: <span class="path">WooCommerce → Ajustes → Total Sucursales</span>. Los valores por defecto sirven para la mayoría de tiendas; revisa sobre todo el radio y el geocodificador.</p>
+      </div></div>
+      <div class="tablewrap"><table>
+        <tr><th>Ajuste</th><th>Por defecto</th><th>Qué hace</th></tr>
+        <tr><td>Detección del estado</td><td>GPS y, si falla, preguntar</td><td><em>GPS</em>: pide la posición al navegador y toma el estado de la sede más cercana. <em>Preguntar siempre</em>: muestra un selector de estados en la primera visita. <em>No detectar</em>: sólo usa la dirección guardada de la cuenta o el shortcode del header.</td></tr>
+        <tr><td>Distancia máxima para inferir el estado</td><td>100 km</td><td>Si la sede más cercana al GPS está más lejos que esto, no se asume el estado y se pregunta. Evita asignar Zulia a alguien que navega desde Mérida.</td></tr>
+        <tr><td>Título y texto del selector</td><td>"¿Desde qué estado nos visitas?"</td><td>Textos del modal de primera visita.</td></tr>
+        <tr><td>Filtrar el catálogo por stock de la sucursal</td><td>activado</td><td>Oculta productos sin stock en la sede activa en loop clásico, shortcodes, Product Collection y Store API.</td></tr>
+        <tr><td>Checkout por bloques: municipio como select</td><td>activado</td><td>Sólo actúa si la página de checkout usa el bloque. Añade un select de municipios por estado y oculta el campo de ciudad libre. En el checkout clásico no hace nada porque ahí ya lo hace States and Municipalities.</td></tr>
+        <tr><td>Producto: mostrar sólo la sucursal seleccionada</td><td>desactivado</td><td>En la página de producto oculta las demás sedes cuando ya hay una elegida.</td></tr>
+        <tr><td>Radio de retiro</td><td>10 km</td><td>Umbral para que una sede sea elegible para retiro en tienda.</td></tr>
+        <tr><td>Botón "Usar mi ubicación" en el checkout</td><td>activado</td><td>Permite al cliente enviar su GPS desde el checkout si no lo hizo al navegar.</td></tr>
+        <tr><td>Mostrar distancia a cada sucursal</td><td>activado</td><td>Lista bajo los métodos de envío con la distancia y la etiqueta Retiro / Envío nacional.</td></tr>
+        <tr><td>Geocodificar la dirección de envío</td><td>Nominatim</td><td>Qué usar cuando el cliente no comparte el GPS. <em>Nominatim</em> (OpenStreetMap) es gratuito, requiere un correo de contacto y los resultados se guardan 30 días. <em>Google</em> necesita clave; si se deja vacía reutiliza la clave de Multi Locations. <em>No geocodificar</em>: sin GPS no hay retiro.</td></tr>
+      </table></div>
+      <figure class="tall"><img src="guia/04-ts-settings.png" alt="Pestaña de ajustes Total Sucursales en WooCommerce" loading="lazy"><figcaption>Pestaña completa. El cuadro "Estado de la integración" del final avisa de sedes sin estado o sin coordenadas: aquí marca 1 porque la "Online Store" por defecto no tiene datos.</figcaption></figure>
+      <div class="callout warn"><p><strong>Sobre las direcciones venezolanas:</strong> la geocodificación por dirección es imprecisa en Venezuela (urbanizaciones, "casa sin número"). La fuente fiable es el GPS del navegador. Deja la geocodificación como respaldo, no como método principal.</p></div>
+    </section>
+
+    <section class="step" id="envio">
+      <div class="stephead"><div class="stepnum">06</div><div>
+        <h2>Reglas de envío en Advanced Shipping</h2>
+        <p>Ruta: <span class="path">WooCommerce → Ajustes → Envío → zona "Venezuela" → Añadir método → Advanced Shipping</span>. Se necesitan dos reglas como mínimo. El plugin añade tres condiciones nuevas al desplegable, bajo el grupo "Total Sucursales".</p>
+      </div></div>
+      <div class="tablewrap"><table>
+        <tr><th>Condición</th><th>Operadores</th><th>Valor</th><th>Cuándo usarla</th></tr>
+        <tr><td><strong>Sucursal elegible para pickup (radio)</strong></td><td>Es / No es</td><td>Sí / No</td><td>La principal. "Sí" sólo se cumple para la sede más cercana dentro del radio.</td></tr>
+        <tr><td>Distancia del cliente a la sucursal (km)</td><td>≤ / ≥</td><td>número</td><td>Para tarifas escalonadas por distancia (por ejemplo delivery local hasta 5 km).</td></tr>
+        <tr><td>Sucursal del paquete</td><td>Es / No es</td><td>lista de sedes</td><td>Para una tarifa específica de una sede concreta.</td></tr>
+      </table></div>
+      <h3>Regla 1: Retiro en tienda</h3>
+      <ol class="plain">
+        <li>Título: <code>Retiro en tienda</code>.</li>
+        <li>Condición: <strong>Sucursal elegible para pickup (radio)</strong> · <strong>Es</strong> · <strong>Sí</strong>.</li>
+        <li>Shipping cost: <code>0</code>. Guardar.</li>
+      </ol>
+      <figure><img src="guia/06-was-rule-pickup.png" alt="Regla Retiro en tienda en Advanced Shipping con la condición Sucursal elegible para pickup = Sí" loading="lazy"><figcaption>La regla "Retiro en tienda" tal como queda guardada.</figcaption></figure>
+      <h3>Regla 2: Envío nacional</h3>
+      <ol class="plain">
+        <li>Título: <code>Envío nacional</code>.</li>
+        <li>Condición: <strong>Sucursal elegible para pickup (radio)</strong> · <strong>Es</strong> · <strong>No</strong>.</li>
+        <li>Shipping cost, cost per weight, etc.: la tarifa que aplique. Se pueden añadir más condiciones normales de Advanced Shipping (peso, subtotal, estado del cliente) en la misma regla.</li>
+      </ol>
+      <div class="grid2">
+        <figure><img src="guia/07-was-rule-national.png" alt="Regla Envío nacional con la condición Sucursal elegible para pickup = No" loading="lazy"><figcaption>La regla "Envío nacional".</figcaption></figure>
+        <figure><img src="guia/05-shipping-zone.png" alt="Zona de envío Venezuela con las dos reglas" loading="lazy"><figcaption>Zona "Venezuela" con los dos métodos activos.</figcaption></figure>
+      </div>
+      <div class="callout"><p>No uses el método "Pickup Location" de Multi Locations ni el "Recogida local" de WooCommerce para esto: ninguno de los dos sabe qué sede está dentro del radio. Las reglas de Advanced Shipping con la condición de arriba sí.</p></div>
+    </section>
+
+    <section class="step" id="header">
+      <div class="stephead"><div class="stepnum">07</div><div>
+        <h2>Selector de estado en el header</h2>
+        <p>Opcional pero recomendado. Coloca el shortcode donde el cliente pueda cambiar de estado en cualquier momento, junto al switcher de sedes de Multi Locations.</p>
+      </div></div>
+<pre><code>[ts_selector_estado label="Estado"]     ← select de estados con sedes + botón GPS
+[wcmlim_locations_switch]              ← switcher de sedes de Multi Locations</code></pre>
+      <p>En Greenshift y otros temas de bloques va dentro de un bloque "Shortcode" en la plantilla del header. El selector sólo lista estados que tienen al menos una sede, más "Todos los estados".</p>
+      <figure><img src="guia/14-front-header.png" alt="Header con el switcher de sedes de Multi Locations y el selector de estado" loading="lazy"><figcaption>Arriba, el switcher de Multi Locations mostrando sólo "Tienda Delicias" (el cliente está en Zulia). Abajo, el selector de estado del plugin con el botón GPS.</figcaption></figure>
+    </section>
+
+    <section class="step" id="cliente">
+      <div class="stephead"><div class="stepnum">08</div><div>
+        <h2>Lo que ve el cliente</h2>
+        <p>Recorrido completo con las capturas de la instancia de prueba. Sirve para explicarle al cliente el comportamiento y para comparar contra la tienda real.</p>
+      </div></div>
+      <h3>Primera visita</h3>
+      <p>Con detección por GPS, el navegador pide permiso. Si el cliente acepta y está a menos de 100 km de una sede, se fija su estado y se recarga la página. Si niega el permiso, está lejos de toda sede o el modo es "preguntar", aparece el modal.</p>
+      <figure><img src="guia/e3-modal.png" alt="Modal de selección de estado en la primera visita" loading="lazy"><figcaption>Modal de primera visita. Lista sólo estados con sedes y ofrece "Otro estado / ver todas las sucursales" y "Usar mi ubicación".</figcaption></figure>
+      <h3>Tienda y producto filtrados</h3>
+      <div class="grid2">
+        <figure><img src="guia/b1-shop-blocks.png" alt="Tienda con tema de bloques mostrando sólo el producto con stock en la sede activa" loading="lazy"><figcaption>Tema de bloques (Product Collection): cliente en Zulia, sede Delicias. Sólo se ve el producto con stock allí.</figcaption></figure>
+        <figure class="tall"><img src="guia/e1-product.png" alt="Página de producto con el select de sede de Multi Locations mostrando sólo sedes de Zulia" loading="lazy"><figcaption>Producto: el select de sede de Multi Locations ya no lista Chacao ni Valencia.</figcaption></figure>
+      </div>
+      <h3>Checkout clásico</h3>
+      <div class="grid2">
+        <figure class="tall"><img src="guia/e1-checkout.png" alt="Checkout clásico con Retiro en tienda y la distancia a Tienda Delicias" loading="lazy"><figcaption>Con GPS: "Retiro en tienda" y la lista con "Tienda Delicias 3,1 km".</figcaption></figure>
+        <figure class="tall"><img src="guia/e4-checkout-no-gps.png" alt="Checkout clásico sin posición conocida: sólo envío nacional y botón Usar mi ubicación" loading="lazy"><figcaption>Sin GPS ni geocodificación: sólo "Envío nacional", botón "Usar mi ubicación" y aviso explicativo.</figcaption></figure>
+      </div>
+      <h3>Checkout por bloques</h3>
+      <div class="grid2">
+        <figure class="tall"><img src="guia/b1-checkout-blocks.png" alt="Checkout por bloques con select de municipio, Retiro en tienda y panel de distancias" loading="lazy"><figcaption>Bloques: select "Municipio (Zulia)" en lugar de ciudad libre, retiro en tienda y el panel de distancias.</figcaption></figure>
+        <figure class="tall"><img src="guia/b2-checkout-blocks-no-gps.png" alt="Checkout por bloques sin posición, con el botón Usar mi ubicación activo" loading="lazy"><figcaption>Bloques sin posición: el botón dentro de las opciones de envío. Al pulsarlo, el checkout recalcula solo.</figcaption></figure>
+      </div>
+      <h3>Pedido con dos sedes (modo split)</h3>
+      <div class="grid2">
+        <figure class="tall"><img src="guia/e5-checkout-split.png" alt="Checkout con dos paquetes: Tienda Delicias retiro en tienda y Tienda Chacao envío nacional" loading="lazy"><figcaption>Dos paquetes: Delicias (3,1 km) retiro en tienda; Chacao (520 km) envío nacional.</figcaption></figure>
+        <figure class="tall"><img src="guia/12-admin-order.png" alt="Pedido en el admin con el panel Total Sucursales" loading="lazy"><figcaption>El pedido en el admin: posición del cliente con enlace al mapa, distancia por sede y cuál quedó como PICKUP.</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="step" id="verificar">
+      <div class="stephead"><div class="stepnum">09</div><div>
+        <h2>Verificación antes de entregar</h2>
+        <p>Haz este recorrido en la tienda real con una ventana de incógnito. Cada punto corresponde a una comprobación de la batería automatizada del repositorio.</p>
+      </div></div>
+      <ul class="check">
+        <li>En WooCommerce → Ajustes → Total Sucursales, "Sucursales cargadas" no marca ninguna sin estado ni sin coordenadas (o sólo la "Online Store" si decidieron dejarla).</li>
+        <li>Primera visita con GPS permitido cerca de una sede: la página se recarga y el selector del header muestra el estado correcto.</li>
+        <li>Primera visita con GPS denegado: aparece el modal; al elegir un estado, el switcher de Multi Locations sólo lista sedes de ese estado.</li>
+        <li>Elegir un estado sin sedes o "Todos": el switcher lista todas.</li>
+        <li>Tienda: sólo aparecen productos con stock en la sede activa. Cambiar de sede cambia el catálogo.</li>
+        <li>Producto: el select de sede no muestra sedes de otros estados.</li>
+        <li>Checkout con GPS a menos del radio: aparece "Retiro en tienda" y la distancia. Con GPS lejos: sólo "Envío nacional".</li>
+        <li>Checkout sin GPS: sólo "Envío nacional"; al pulsar "Usar mi ubicación" y aceptar, aparece "Retiro en tienda" sin recargar.</li>
+        <li>Si usan split: con dos sedes en el carrito, sólo la más cercana ofrece retiro.</li>
+        <li>Pedido creado: en el admin aparece el panel "Total Sucursales" con posición, distancias y sede de pickup.</li>
+      </ul>
+    </section>
+
+    <section class="step" id="problemas">
+      <div class="stephead"><div class="stepnum">10</div><div>
+        <h2>Problemas comunes</h2>
+      </div></div>
+      <div class="tablewrap"><table>
+        <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+        <tr><td>Nunca aparece "Retiro en tienda"</td><td>La sede no tiene Lat/Lng, o el cliente no compartió GPS y la geocodificación está en "No geocodificar".</td><td>Cargar coordenadas en la sede. Revisar el geocodificador. Probar con el botón del checkout.</td></tr>
+        <tr><td>Aparecen las dos opciones a la vez</td><td>Las reglas de Advanced Shipping no tienen la condición, o una está en "Sí" y la otra sin condición.</td><td>Revisar que "Envío nacional" tenga la condición en "No".</td></tr>
+        <tr><td>La tienda sale vacía</td><td>La sede activa es la "Online Store" sin stock, o el filtro de Multi Locations está activo en un tema de bloques.</td><td>Borrar o cargar stock en "Online Store". Apagar el filtro de Multi Locations y dejar el de este plugin.</td></tr>
+        <tr><td>El switcher de sedes de Multi Locations no cambia al elegir</td><td>Multi Locations sólo carga el script que envía ese formulario cuando tiene activado alguno de sus modos de autodetección.</td><td>Activar un modo de detección en Multi Locations (por ejemplo "With Browser") o usar el popup de sedes <code>[wcmlim_locations_popup]</code>.</td></tr>
+        <tr><td>El cliente ve un estado equivocado</td><td>Está lejos de las sedes y su estado se dedujo por la sede más cercana.</td><td>Bajar "Distancia máxima para inferir el estado" o usar el modo "Preguntar siempre".</td></tr>
+        <tr><td>En el checkout por bloques no aparece el municipio</td><td>El ajuste "Checkout por bloques: municipio como select" está apagado, o States and Municipalities no está activo.</td><td>Activar ambos.</td></tr>
+        <tr><td>Errores en la consola del navegador: <code>google is not defined</code>, <code>registerCheckoutFilters</code></td><td>Son de Multi Locations, que carga scripts de Google Maps y de bloques sin comprobar dependencias.</td><td>No afectan a este plugin. Reportar a Techspawn si molestan.</td></tr>
+      </table></div>
+    </section>
+
+    <section class="step" id="dev">
+      <div class="stephead"><div class="stepnum">11</div><div>
+        <h2>Para desarrolladores</h2>
+        <p>Código en la carpeta <code>total-sucursales/</code> del repositorio. La arquitectura y el flujo están en <code>ARQUITECTURA.md</code>; el entorno de pruebas reproducible en <code>tests/e2e/README.md</code>.</p>
+      </div></div>
+      <h3>Hooks</h3>
+      <div class="tablewrap"><table>
+        <tr><th>Hook</th><th>Tipo</th><th>Uso</th></tr>
+        <tr><td><code>ts_excluded_location_ids( $ids, $state, $manual )</code></td><td>filtro</td><td>Cambiar qué sedes se ocultan al cliente.</td></tr>
+        <tr><td><code>ts_pickup_eligible_package_key( $key, $packages, $coords, $radius )</code></td><td>filtro</td><td>Cambiar qué paquete recibe retiro (por defecto el más cercano dentro del radio). Devolver <code>null</code> para ninguno.</td></tr>
+        <tr><td><code>ts_catalog_excluded_product_ids( $ids, $location_id )</code></td><td>filtro</td><td>Ajustar los productos ocultos por sede.</td></tr>
+        <tr><td><code>ts_geocode_result( $result, $address, $provider )</code></td><td>filtro</td><td>Sobrescribir o corregir la geocodificación.</td></tr>
+        <tr><td><code>ts_location_filter_applies( $bool )</code></td><td>filtro</td><td>Desactivar el filtro por estado en contextos concretos.</td></tr>
+        <tr><td><code>ts_customer_state_changed( $new, $old, $source )</code></td><td>acción</td><td>Reaccionar al cambio de estado del cliente.</td></tr>
+      </table></div>
+      <h3>Datos que deja en el pedido</h3>
+      <p><code>_ts_customer_state</code>, <code>_ts_customer_lat</code>, <code>_ts_customer_lng</code>, <code>_ts_coords_source</code> (gps | geocode), <code>_ts_radius_km</code>, <code>_ts_pickup_location_id</code>, <code>_ts_pickup_location_name</code> y <code>_ts_packages</code> (sede, distancia y elegibilidad por paquete). Compatible con HPOS.</p>
+      <h3>Publicar una versión nueva</h3>
+<pre><code>cd total-sucursales &amp;&amp; cd .. &amp;&amp; zip -r total-sucursales.zip total-sucursales -x "*.gitkeep"
+git checkout release &amp;&amp; cp total-sucursales.zip dist/ &amp;&amp; sha256sum dist/*.zip &gt; dist/SHA256SUMS
+git commit -am "Release x.y.z" &amp;&amp; git push</code></pre>
+      <p>Sube también el número de versión en la cabecera de <code>total-sucursales.php</code> y en <code>readme.txt</code>.</p>
+    </section>
+  </main>
+</div>
+
+</body>
+</html>
