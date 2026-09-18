@@ -112,6 +112,20 @@ Sin split y con items de varias sucursales: `ts_mixed_locations = true`, sin suc
 | Clave de Google | (usa la de MLI) | |
 | Producto: sólo la sucursal seleccionada | no | |
 
+## Estado de pruebas
+
+Probado end-to-end en un WordPress local (ver `tests/e2e/README.md`): 30 comprobaciones automatizadas
+con Chromium pasan, incluidos ambos modos de carrito (una sede y varias sedes con split). Capturas en
+`docs/capturas/`.
+
+Hallazgos de la integración con MLI que el plugin ya contempla:
+
+- MLI mezcla `get_terms()` con y sin exclusiones y guarda índices posicionales en cookies; por eso el
+  filtro por estado se aplica también en `get_terms_args` (no sólo en la opción), para que todas sus
+  rutas vean la misma lista.
+- MLI guarda `location_termId = -1` en el carrito cuando no se eligió sede; se ignora.
+- La sede por defecto "Online Store" de MLI (sin estado) queda oculta en cuanto el cliente tiene estado.
+
 ## Pendiente / siguientes iteraciones
 
 - Caché de carrito por sucursal (requisito 7, segunda opción). No incluido; MLI hoy pregunta y migra.

@@ -21,8 +21,33 @@ class TS_Location_Filter {
 	/** @var array|null Caché por request del resultado. */
 	private static $computed = null;
 
+	/** @var bool Permite a TS_Locations leer la lista completa de términos. */
+	public static $bypass_terms = false;
+
 	public static function init() {
 		add_filter( 'pre_option_' . self::OPTION, array( __CLASS__, 'filter_option' ), 10, 1 );
+		// MLI mezcla llamadas a get_terms() con y sin `exclude` y guarda índices posicionales en cookies.
+		// Filtrar también en get_terms() garantiza que todas sus rutas vean la misma lista.
+		add_filter( 'get_terms_args', array( __CLASS__, 'filter_terms_args' ), 10, 2 );
+	}
+
+	/**
+	 * Aplica la exclusión a cualquier consulta de la taxonomía `locations` en el front.
+	 */
+	public static function filter_terms_args( $args, $taxonomies ) {
+		if ( self::$bypass_terms || ! self::applies() ) {
+			return $args;
+		}
+		if ( ! in_array( 'locations', (array) $taxonomies, true ) ) {
+			return $args;
+		}
+		$ids = self::excluded_ids();
+		if ( empty( $ids ) ) {
+			return $args;
+		}
+		$current         = isset( $args['exclude'] ) ? self::normalize_ids( $args['exclude'] ) : array();
+		$args['exclude'] = array_values( array_unique( array_merge( $current, $ids ) ) );
+		return $args;
 	}
 
 	public static function flush_request_cache() {

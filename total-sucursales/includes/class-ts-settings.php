@@ -24,6 +24,7 @@ class TS_Settings {
 		return array(
 			'radius_km'            => 10,
 			'detect_state'         => 'gps',      // gps | ask | off
+			'state_detect_max_km'  => 100,
 			'ask_if_gps_fails'     => 'yes',
 			'geocoder'             => 'nominatim', // none | nominatim | google
 			'google_api_key'       => '',
@@ -94,6 +95,14 @@ class TS_Settings {
 					'off' => __( 'No detectar (sólo usuarios con dirección guardada o shortcode)', 'total-sucursales' ),
 				),
 				'default' => 'gps',
+			),
+			array(
+				'title'             => __( 'Distancia máxima para inferir el estado (km)', 'total-sucursales' ),
+				'id'                => "{$p}[state_detect_max_km]",
+				'type'              => 'number',
+				'desc'              => __( 'El estado se toma de la sucursal más cercana a la posición GPS. Si esa sucursal está más lejos que este valor, se pregunta al cliente en lugar de asumir.', 'total-sucursales' ),
+				'default'           => 100,
+				'custom_attributes' => array( 'min' => 0, 'step' => 1 ),
 			),
 			array(
 				'title'   => __( 'Título del selector de estado', 'total-sucursales' ),

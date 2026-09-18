@@ -44,7 +44,7 @@ class TS_Packages {
 		$ids = array();
 		foreach ( (array) ( $package['contents'] ?? array() ) as $item ) {
 			$id = isset( $item['select_location']['location_termId'] ) ? (int) $item['select_location']['location_termId'] : 0;
-			if ( $id ) {
+			if ( $id > 0 && TS_Locations::get( $id ) ) { // MLI guarda -1 cuando no se eligió sede.
 				$ids[ $id ] = true;
 			}
 		}

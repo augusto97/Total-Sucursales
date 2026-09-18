@@ -166,7 +166,7 @@ class TS_Frontend {
 
 		$context = isset( $_POST['context'] ) ? sanitize_key( wp_unslash( $_POST['context'] ) ) : 'browse';
 
-		if ( $resolved && 'checkout' !== $context ) {
+		if ( $resolved && 'checkout' !== $context && '' !== $resolved['state'] ) {
 			$changed = TS_Customer::set_state( $resolved['state'], 'gps' );
 			$state   = $resolved['state'];
 			if ( ! $changed ) {
@@ -186,7 +186,8 @@ class TS_Frontend {
 				'name'     => TS_Locations::name( $resolved['location_id'] ),
 				'distance' => round( $resolved['distance'], 2 ),
 			) : null,
-			'reload'        => 'checkout' !== $context && ( $changed || 'browse' === $context ),
+			'too_far'       => $resolved ? ! empty( $resolved['too_far'] ) : false,
+			'reload'        => 'checkout' !== $context && '' !== $state && ( $changed || 'browse' === $context ),
 		) );
 	}
 }

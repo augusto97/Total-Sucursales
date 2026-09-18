@@ -42,11 +42,13 @@ class TS_Locations {
 
 		$index = array();
 		if ( taxonomy_exists( 'locations' ) ) {
+			TS_Location_Filter::$bypass_terms = true;
 			$terms = get_terms( array(
 				'taxonomy'   => 'locations',
 				'hide_empty' => false,
 				'parent'     => 0,
 			) );
+			TS_Location_Filter::$bypass_terms = false;
 			if ( ! is_wp_error( $terms ) ) {
 				foreach ( $terms as $term ) {
 					$index[ (int) $term->term_id ] = self::build_row( $term );

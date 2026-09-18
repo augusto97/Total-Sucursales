@@ -178,11 +178,18 @@ class TS_Customer {
 		if ( ! $nearest ) {
 			return null;
 		}
-		$loc = TS_Locations::get( $nearest['id'] );
+		$loc   = TS_Locations::get( $nearest['id'] );
+		$max   = (float) TS_Settings::get( 'state_detect_max_km', 100 );
+		$state = $loc['state'];
+		// Si la sucursal más cercana está muy lejos, no podemos inferir el estado del cliente.
+		if ( $max > 0 && $nearest['distance'] > $max ) {
+			$state = '';
+		}
 		return array(
-			'state'       => $loc['state'],
+			'state'       => $state,
 			'location_id' => $nearest['id'],
 			'distance'    => $nearest['distance'],
+			'too_far'     => '' === $state,
 		);
 	}
 
