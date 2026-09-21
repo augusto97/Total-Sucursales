@@ -104,6 +104,16 @@ class TS_Location_Filter {
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST && ! apply_filters( 'ts_filter_on_rest', false ) ) {
 			return false;
 		}
+		// Multi Locations puede forzar una única sucursal (invitados o usuario con sede asignada).
+		// En ese caso filtrar por estado sólo puede dejar el selector vacío.
+		if ( class_exists( 'TS_Debug' ) ) {
+			$conflicts = TS_Debug::mli_conflicts();
+			unset( $conflicts['wcmlim_enable_location_group'] ); // los grupos no fuerzan una sede única
+			if ( ! empty( $conflicts ) ) {
+				return false;
+			}
+		}
+
 		return (bool) apply_filters( 'ts_location_filter_applies', true );
 	}
 

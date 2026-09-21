@@ -57,6 +57,7 @@ final class TS_Plugin {
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-packages.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-catalog.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-blocks.php';
+		require_once TS_PLUGIN_DIR . 'includes/class-ts-debug.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-frontend.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-checkout.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-order.php';
@@ -72,6 +73,7 @@ final class TS_Plugin {
 		TS_Packages::init();
 		TS_Catalog::init();
 		TS_Blocks::init();
+		TS_Debug::init();
 		TS_Frontend::init();
 		TS_Checkout::init();
 		TS_Order::init();
