@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.2.4
+Stable tag: 0.2.5
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por radio, exponiendo condiciones para Advanced Shipping.
@@ -37,6 +37,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.2.5 =
+* Corregido: el parche de las peticiones de stock de Multi Locations devolvía la respuesta sin envolver en "data". Como ya no había error 500, su propio JavaScript llegaba a procesarla por primera vez y fallaba con "Cannot read properties of undefined (reading 'backorder')" en cada cambio de sucursal. Ahora la respuesta usa el mismo formato que el plugin y no cambia nada en la página.
 
 = 0.2.4 =
 * Añadido: parches de compatibilidad para dos fallos de Multi Locations que provocan errores 500 en admin-ajax.php. El primero es su función distance_between_coordinates(), que su controlador llama como función global aunque el plugin sólo la declara dentro de un trait y de una clase, así que falla siempre; ahora se suple con la misma fórmula. El segundo descarta las peticiones de stock con un producto inexistente antes de que falle. Se pueden desactivar en los ajustes.
