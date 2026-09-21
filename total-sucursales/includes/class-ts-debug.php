@@ -42,6 +42,7 @@ class TS_Debug {
 		}
 		$entry = array(
 			'time'    => time(),
+			'version' => defined( 'TS_VERSION' ) ? TS_VERSION : '',
 			'action'  => $action,
 			'uri'     => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
 			'message' => $e['message'],
@@ -177,6 +178,13 @@ class TS_Debug {
 				return is_array( $f ) && isset( $f['time'] ) && ( time() - (int) $f['time'] ) < DAY_IN_SECONDS;
 			}
 		) );
+		// Un fatal registrado con una versión anterior puede estar ya corregido en la instalada.
+		$stale_fatals = 0;
+		foreach ( $fatals as $f ) {
+			if ( empty( $f['version'] ) || $f['version'] !== TS_VERSION ) {
+				$stale_fatals++;
+			}
+		}
 		$all       = TS_Locations::all();
 
 		$rows = array(
@@ -266,11 +274,36 @@ class TS_Debug {
 							/* translators: %s tiempo transcurrido */
 							echo esc_html( sprintf( __( 'hace %s', 'total-sucursales' ), human_time_diff( (int) $f['time'] ) ) . ' · ' );
 							echo esc_html( ( $f['action'] ? 'action=' . $f['action'] . ' · ' : '' ) . $f['message'] . ' · ' . $f['file'] );
+							if ( empty( $f['version'] ) || $f['version'] !== TS_VERSION ) {
+								echo esc_html( ' · ' . (
+									empty( $f['version'] )
+										? __( 'registrado con una versión anterior', 'total-sucursales' )
+										/* translators: %s número de versión */
+										: sprintf( __( 'registrado con la versión %s', 'total-sucursales' ), $f['version'] )
+								) );
+							}
 							?>
 						</li>
 					<?php endforeach; ?>
 				</ul>
-				<div class="muted"><?php esc_html_e( 'Si acabas de cambiar un ajuste, vacía el registro y recarga: los que vuelvan a salir son los que siguen ocurriendo.', 'total-sucursales' ); ?></div>
+				<?php if ( $stale_fatals === count( $fatals ) ) : ?>
+					<div class="muted">
+						<?php
+						/* translators: %s versión instalada */
+						echo esc_html( sprintf(
+							_n(
+								'El error listado se registró antes de instalar la versión %s, así que puede estar ya corregido. Vacía el registro y recarga: si no vuelve a salir, lo está.',
+								'Ninguno de los errores listados se registró con la versión %s instalada, así que pueden estar ya corregidos. Vacía el registro y recarga: los que no vuelvan a salir, lo están.',
+								count( $fatals ),
+								'total-sucursales'
+							),
+							TS_VERSION
+						) );
+						?>
+					</div>
+				<?php else : ?>
+					<div class="muted"><?php esc_html_e( 'Si acabas de cambiar un ajuste, vacía el registro y recarga: los que vuelvan a salir son los que siguen ocurriendo.', 'total-sucursales' ); ?></div>
+				<?php endif; ?>
 			<?php endif; ?>
 
 			<?php $compat = class_exists( 'TS_Compat' ) ? TS_Compat::status() : array(); ?>
