@@ -34,6 +34,7 @@ class TS_Settings {
 			'single_location_view' => 'no',
 			'catalog_filter'       => 'yes',
 			'blocks_municipio'     => 'yes',
+			'debug_front'          => 'no',
 			// Sin __() aquí: defaults() puede ejecutarse antes de init (WP 6.7+ avisa si se cargan traducciones antes).
 			'pickup_label'         => 'Retiro en tienda',
 			'modal_title'          => '¿Desde qué estado nos visitas?',
@@ -195,6 +196,21 @@ class TS_Settings {
 				'default' => '',
 			),
 			array( 'type' => 'sectionend', 'id' => 'ts_section_radius' ),
+
+			array(
+				'title' => __( 'Diagnóstico', 'total-sucursales' ),
+				'type'  => 'title',
+				'desc'  => __( 'Para revisar por qué un cliente ve unas sucursales u otras, activa el modo diagnóstico y abre cualquier página de la tienda añadiendo <code>?ts_debug=1</code> al final de la dirección. Aparece un panel al pie con el estado del visitante. Acuérdate de apagarlo al terminar.', 'total-sucursales' ),
+				'id'    => 'ts_section_debug',
+			),
+			array(
+				'title'   => __( 'Modo diagnóstico en la tienda', 'total-sucursales' ),
+				'id'      => "{$p}[debug_front]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'Permite ver el panel a cualquier visitante que añada ?ts_debug=1 (útil para probar en ventana de incógnito). Los administradores lo ven siempre, esté activado o no.', 'total-sucursales' ),
+				'default' => 'no',
+			),
+			array( 'type' => 'sectionend', 'id' => 'ts_section_debug' ),
 		);
 	}
 
@@ -228,6 +244,15 @@ class TS_Settings {
 		}
 		echo '<tr><td>' . esc_html__( 'MLI: dividir paquetes por sucursal (wcmlim_enable_split_packages)', 'total-sucursales' ) . '</td><td>' . ( $split ? esc_html__( 'Activo: el pickup se evalúa por paquete/sucursal.', 'total-sucursales' ) : esc_html__( 'Inactivo: el carrito debe contener una sola sucursal para ofrecer pickup.', 'total-sucursales' ) ) . '</td></tr>';
 		echo '</table>';
+
+		$conflicts = class_exists( 'TS_Debug' ) ? TS_Debug::mli_conflicts() : array();
+		if ( ! empty( $conflicts ) ) {
+			echo '<div class="notice notice-warning inline" style="max-width:820px;margin:12px 0;padding:8px 12px"><p><strong>' . esc_html__( 'Ajustes de Multi Locations que afectan al selector de sucursales:', 'total-sucursales' ) . '</strong></p><ul style="list-style:disc;margin-left:20px">';
+			foreach ( $conflicts as $opt => $msg ) {
+				echo '<li><code>' . esc_html( $opt ) . '</code> — ' . esc_html( $msg ) . '</li>';
+			}
+			echo '</ul></div>';
+		}
 
 		self::render_locations_diagnostic();
 	}
