@@ -114,7 +114,7 @@ class TS_Debug {
 		if ( ! empty( $on ) ) {
 			$out['wcmlim_autodetect'] = sprintf(
 				/* translators: %s lista de métodos */
-				__( 'La detección de ubicación de Multi Locations está activa (%s). Duplica la de este plugin y además provoca errores 500 en admin-ajax.php: su función wcmlim_closest_location llama a distance_between_coordinates(), que sólo existe con el modo backend activado. Conviene apagarla en MULTILOCA → Settings → Location.', 'total-sucursales' ),
+				__( 'La detección de ubicación de Multi Locations está activa (%s). Duplica la de este plugin: la detección ya la hace Total Sucursales, así que conviene apagarla en MULTILOCA → Settings → Location. Además dispara su función wcmlim_closest_location, que tiene un fallo propio y devuelve error 500 (este plugin lo corrige si los parches de compatibilidad están activos).', 'total-sucursales' ),
 				implode( ', ', $on )
 			);
 		}
@@ -166,7 +166,17 @@ class TS_Debug {
 		$state     = TS_Customer::get_state();
 		$raw_opt   = $manual; // valor real del admin, sin el filtro de este plugin
 		$no_group  = self::branches_without_group();
-		$fatals    = get_option( self::FATALS_OPTION, array() );
+		// Permite vaciar el registro para saber si un error vuelve a ocurrir o es antiguo.
+		if ( isset( $_GET['ts_clear_fatals'] ) ) {
+			delete_option( self::FATALS_OPTION );
+		}
+		$fatals = array_values( array_filter(
+			(array) get_option( self::FATALS_OPTION, array() ),
+			function ( $f ) {
+				// Sólo las últimas 24 horas: un error de ayer ya corregido sólo confunde.
+				return is_array( $f ) && isset( $f['time'] ) && ( time() - (int) $f['time'] ) < DAY_IN_SECONDS;
+			}
+		) );
 		$all       = TS_Locations::all();
 
 		$rows = array(
@@ -240,15 +250,35 @@ class TS_Debug {
 			</table>
 
 			<?php if ( ! empty( $no_group ) ) : ?>
-				<div class="bad" style="margin-top:10px"><?php esc_html_e( 'Sucursales sin grupo de ubicaciones (meta wcmlim_locator vacía). El desplegable que Multi Locations rellena por AJAX omite las sucursales sin grupo, aunque este plugin las deje visibles. Asígnales un grupo en la ficha de la sucursal.', 'total-sucursales' ); ?></div>
-				<div class="bad"><?php echo esc_html( implode( ' · ', array_map( function ( $id, $n ) { return $n . ' #' . $id; }, array_keys( $no_group ), $no_group ) ) ); ?></div>
+				<div class="warn" style="margin-top:10px"><?php esc_html_e( 'Sucursales sin grupo de ubicaciones (meta wcmlim_locator vacía). Sólo importa si el selector de tu cabecera es el que Multi Locations rellena por AJAX: ese desplegable descarta las sucursales sin grupo. Si el selector se ve correctamente, puedes ignorar este aviso; si aparece vacío, asígnales un grupo en la ficha de la sucursal.', 'total-sucursales' ); ?></div>
+				<div class="warn"><?php echo esc_html( implode( ' · ', array_map( function ( $id, $n ) { return $n . ' #' . $id; }, array_keys( $no_group ), $no_group ) ) ); ?></div>
 			<?php endif; ?>
 
 			<?php if ( ! empty( $fatals ) && is_array( $fatals ) ) : ?>
-				<div class="bad" style="margin-top:10px"><?php esc_html_e( 'Errores fatales de PHP capturados (causan los errores 500 en admin-ajax.php):', 'total-sucursales' ); ?></div>
+				<div class="bad" style="margin-top:10px">
+					<?php esc_html_e( 'Errores fatales de PHP de las últimas 24 horas (causan los errores 500 en admin-ajax.php):', 'total-sucursales' ); ?>
+					<a href="<?php echo esc_url( add_query_arg( 'ts_clear_fatals', '1' ) ); ?>" class="muted">[<?php esc_html_e( 'vaciar registro', 'total-sucursales' ); ?>]</a>
+				</div>
 				<ul class="bad">
 					<?php foreach ( $fatals as $f ) : ?>
-						<li><?php echo esc_html( ( $f['action'] ? 'action=' . $f['action'] . ' · ' : '' ) . $f['message'] . ' · ' . $f['file'] ); ?></li>
+						<li>
+							<?php
+							/* translators: %s tiempo transcurrido */
+							echo esc_html( sprintf( __( 'hace %s', 'total-sucursales' ), human_time_diff( (int) $f['time'] ) ) . ' · ' );
+							echo esc_html( ( $f['action'] ? 'action=' . $f['action'] . ' · ' : '' ) . $f['message'] . ' · ' . $f['file'] );
+							?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+				<div class="muted"><?php esc_html_e( 'Si acabas de cambiar un ajuste, vacía el registro y recarga: los que vuelvan a salir son los que siguen ocurriendo.', 'total-sucursales' ); ?></div>
+			<?php endif; ?>
+
+			<?php $compat = class_exists( 'TS_Compat' ) ? TS_Compat::status() : array(); ?>
+			<?php if ( ! empty( $compat ) ) : ?>
+				<div class="muted" style="margin-top:10px"><?php esc_html_e( 'Parches de compatibilidad con Multi Locations:', 'total-sucursales' ); ?></div>
+				<ul class="muted">
+					<?php foreach ( $compat as $k => $v ) : ?>
+						<li><?php echo esc_html( $k . ' — ' . $v ); ?></li>
 					<?php endforeach; ?>
 				</ul>
 			<?php endif; ?>
