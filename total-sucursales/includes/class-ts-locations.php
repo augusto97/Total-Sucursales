@@ -246,4 +246,19 @@ class TS_Locations {
 		}
 		return null;
 	}
+
+	/**
+	 * La inversa de mli_index_of(): la sucursal que ocupa esa posición en la lista de MLI.
+	 *
+	 * @param string|int $index Índice posicional tal y como viaja en las cookies de MLI.
+	 * @return int term_id, o 0 si la posición no existe.
+	 */
+	public static function mli_term_at( $index ) {
+		if ( ! is_numeric( $index ) || (int) $index < 0 ) {
+			return 0;
+		}
+		$list = self::mli_term_list();
+		$key  = (int) $index;
+		return isset( $list[ $key ] ) ? (int) $list[ $key ]->term_id : 0;
+	}
 }

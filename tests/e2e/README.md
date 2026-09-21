@@ -64,6 +64,19 @@ La cuarta comprobación es el control: la respuesta que devolvía la 0.2.4 (sin 
 que seguir rompiendo con `Cannot read properties of undefined (reading 'backorder')`. Si dejara de
 fallar, la prueba no estaría comprobando nada.
 
+## Bucle de recargas del selector de sucursal
+
+`repro-switcher-loop.js` deja un artículo de Delicias en el carrito y dispara el `change` real del
+selector de Multi Locations en las tres transiciones posibles:
+
+```bash
+node repro-switcher-loop.js
+```
+
+Cambiar a la sucursal que ya estaba activa y dejar el selector en "Select" no deben recargar la página
+ni abrir ningún diálogo. La tercera comprobación es el control: un cambio de sucursal de verdad tiene
+que seguir mostrando el aviso de Multi Locations, para que la prueba no pase con el aviso desactivado.
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.

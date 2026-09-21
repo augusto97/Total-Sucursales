@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.2.5
+Stable tag: 0.2.6
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por radio, exponiendo condiciones para Advanced Shipping.
@@ -37,6 +37,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.2.6 =
+* Corregido: el selector de sucursal dejaba la página recargándose en bucle y sacaba el diálogo "¿Cambiar de tienda?" con la misma sucursal a los dos lados. Multi Locations consulta su carrito en cada evento del selector, incluidos los que dispara su propio JavaScript al cargar la página, y no comprueba si la sucursal pedida es la que ya estaba activa: si no hay cambio contesta vacío y su JavaScript recarga la página, y si el selector está en "Select" da por hecho que todo el carrito es de otra sucursal. Ahora se descartan esas dos consultas, que no tienen nada que migrar. Un cambio de sucursal de verdad sigue avisando igual.
 
 = 0.2.5 =
 * Corregido: el parche de las peticiones de stock de Multi Locations devolvía la respuesta sin envolver en "data". Como ya no había error 500, su propio JavaScript llegaba a procesarla por primera vez y fallaba con "Cannot read properties of undefined (reading 'backorder')" en cada cambio de sucursal. Ahora la respuesta usa el mismo formato que el plugin y no cambia nada en la página.
