@@ -64,18 +64,34 @@ class TS_Compat {
 	}
 
 	/**
-	 * Multi Locations llama a $product->is_type() sin comprobar que el producto exista, así que
-	 * cualquier petición con un ID inválido termina en error 500. Se responde antes con un error
-	 * limpio, que es lo que su propio JavaScript espera de una petición sin resultados.
+	 * Multi Locations manda como "currentProductId" el ID de la entrada actual (wcmlim_product_data
+	 * se rellena con $post->ID), así que fuera de la ficha de producto viaja el ID de una página.
+	 * Su handler llama a $product->is_type() sin comprobar que wc_get_product() haya devuelto algo,
+	 * y la petición acaba en error 500.
+	 *
+	 * Se responde antes, con el mismo formato que usa el propio plugin cuando no tiene nada que
+	 * calcular (wp_send_json_success, es decir response.data en su JavaScript). Es importante
+	 * respetar ese formato: si se contesta sin la clave "data", wcmlim-public.js revienta con
+	 * "Cannot read properties of undefined (reading 'backorder')".
+	 *
+	 * Las claves elegidas reproducen la salida de su propia salida temprana (la de "selectedLocation
+	 * = -1"): sin "backorder" ni "stock" no se oculta el botón de compra, con threshold_text a null
+	 * no se reescribe el mensaje y con is_prodict_variable a true no se inyecta ningún texto nuevo.
 	 */
 	public static function guard_quantity_attributes() {
 		$id = isset( $_POST['currentProductId'] ) ? absint( wp_unslash( $_POST['currentProductId'] ) ) : 0;
 		if ( $id && wc_get_product( $id ) ) {
 			return; // El producto existe: que siga Multi Locations.
 		}
-		wp_send_json( array(
-			'status'  => 'Failed!',
-			'message' => 'invalid product id',
+
+		wp_send_json_success( array(
+			'status'              => 'Failed!',
+			'message'             => 'invalid product id',
+			'instock'             => (string) get_option( 'wcmlim_instock_button_text' ),
+			'soldout'             => (string) get_option( 'wcmlim_soldout_button_text' ),
+			'is_prodict_variable' => true,
+			'threshold_text'      => null,
+			'ts_shim'             => true,
 		) );
 	}
 
@@ -92,7 +108,7 @@ class TS_Compat {
 			'distance_between_coordinates' => function_exists( 'distance_between_coordinates' )
 				? __( 'Activo: se suple la función que falta en Multi Locations, así que su "closest location" deja de dar error 500.', 'total-sucursales' )
 				: __( 'No aplicado.', 'total-sucursales' ),
-			'wcmlim_get_quantity_attributes' => __( 'Activo: se descartan las peticiones de stock con un producto inexistente antes de que Multi Locations falle.', 'total-sucursales' ),
+			'wcmlim_get_quantity_attributes' => __( 'Activo: se responde a las peticiones de stock con un producto inexistente antes de que Multi Locations falle, y con el formato que espera su JavaScript.', 'total-sucursales' ),
 		);
 	}
 }

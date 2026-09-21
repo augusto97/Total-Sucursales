@@ -50,6 +50,20 @@ Resultado esperado tras la corrección de 0.2.0: ningún escenario devuelve una 
 estado guardado como nombre ("Carabobo") se reconoce igual que el código ("CA"). Ojo: el script borra
 y recrea las sucursales, así que después hay que volver a ejecutar `seed.php`.
 
+## Regresión del "backorder" del selector de sede
+
+`repro-backorder.js` recorta el manejador `success()` real de `wcmlim-public.js` y lo ejecuta contra
+las respuestas reales de `admin-ajax.php`, para el producto real, para una página (que es lo que Multi
+Locations manda como `currentProductId` fuera de la ficha de producto) y para un ID inexistente:
+
+```bash
+node repro-backorder.js
+```
+
+La cuarta comprobación es el control: la respuesta que devolvía la 0.2.4 (sin envolver en `data`) tiene
+que seguir rompiendo con `Cannot read properties of undefined (reading 'backorder')`. Si dejara de
+fallar, la prueba no estaría comprobando nada.
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.
