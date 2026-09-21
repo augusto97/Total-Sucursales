@@ -245,6 +245,16 @@ class TS_Settings {
 		echo '<tr><td>' . esc_html__( 'MLI: dividir paquetes por sucursal (wcmlim_enable_split_packages)', 'total-sucursales' ) . '</td><td>' . ( $split ? esc_html__( 'Activo: el pickup se evalúa por paquete/sucursal.', 'total-sucursales' ) : esc_html__( 'Inactivo: el carrito debe contener una sola sucursal para ofrecer pickup.', 'total-sucursales' ) ) . '</td></tr>';
 		echo '</table>';
 
+		if ( class_exists( 'TS_Debug' ) ) {
+			$no_group = TS_Debug::branches_without_group();
+			if ( ! empty( $no_group ) ) {
+				echo '<div class="notice notice-error inline" style="max-width:820px;margin:12px 0;padding:8px 12px"><p><strong>'
+					. esc_html__( 'Sucursales sin grupo de ubicaciones', 'total-sucursales' ) . '</strong><br>'
+					. esc_html__( 'Los grupos de ubicaciones están activos y estas sucursales no pertenecen a ninguno. El desplegable de Multi Locations las omite, aunque este plugin las deje visibles: si el cliente elige un estado cuya única sucursal está en esta lista, el selector aparece vacío. Asígnales un grupo en la ficha de la sucursal o desactiva los grupos en MULTILOCA → Settings.', 'total-sucursales' )
+					. '</p><p>' . esc_html( implode( ' · ', array_map( function ( $id, $n ) { return $n . ' #' . $id; }, array_keys( $no_group ), $no_group ) ) ) . '</p></div>';
+			}
+		}
+
 		$conflicts = class_exists( 'TS_Debug' ) ? TS_Debug::mli_conflicts() : array();
 		if ( ! empty( $conflicts ) ) {
 			echo '<div class="notice notice-warning inline" style="max-width:820px;margin:12px 0;padding:8px 12px"><p><strong>' . esc_html__( 'Ajustes de Multi Locations que afectan al selector de sucursales:', 'total-sucursales' ) . '</strong></p><ul style="list-style:disc;margin-left:20px">';

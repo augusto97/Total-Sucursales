@@ -4,6 +4,8 @@ const { execSync } = require('child_process');
 // IDs de las sedes resueltos por nombre: el seed puede recrearlas con IDs distintos.
 const LOC = JSON.parse(execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$o=array(); foreach(get_terms(array("taxonomy"=>"locations","hide_empty"=>false)) as $t){$o[$t->name]=$t->term_id;} echo json_encode($o);' 2>/dev/null`).toString().trim().split('\n').pop());
 const ID = n => String(LOC[n]);
+// Repone el stock por sucursal: cada corrida crea pedidos y lo consume.
+execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval-file ${__dirname}/reset-stock.php 2>/dev/null`);
 
 const SHOTS = __dirname + '/shots/';
 const results = [];

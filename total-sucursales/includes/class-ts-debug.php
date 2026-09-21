@@ -13,8 +13,52 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class TS_Debug {
 
+	const FATALS_OPTION = 'ts_last_fatals';
+
+	/** @var array|null memoria por request */
+	private static $conflicts = null;
+
 	public static function init() {
 		add_action( 'wp_footer', array( __CLASS__, 'render' ), 999 );
+		if ( TS_Settings::is_yes( 'debug_front' ) ) {
+			register_shutdown_function( array( __CLASS__, 'capture_fatal' ) );
+		}
+	}
+
+	/**
+	 * Guarda los errores fatales de PHP mientras el diagnóstico está activo.
+	 *
+	 * Sirve sobre todo para ver por qué fallan las llamadas AJAX (error 500), que de otro modo
+	 * sólo aparecen en el log del servidor.
+	 */
+	public static function capture_fatal() {
+		$e = error_get_last();
+		if ( ! $e || ! in_array( $e['type'], array( E_ERROR, E_PARSE, E_COMPILE_ERROR, E_CORE_ERROR, E_USER_ERROR ), true ) ) {
+			return;
+		}
+		$action = '';
+		if ( isset( $_REQUEST['action'] ) ) {
+			$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+		}
+		$entry = array(
+			'time'    => time(),
+			'action'  => $action,
+			'uri'     => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
+			'message' => $e['message'],
+			'file'    => str_replace( ABSPATH, '', $e['file'] ) . ':' . $e['line'],
+		);
+		$list = get_option( self::FATALS_OPTION, array() );
+		if ( ! is_array( $list ) ) {
+			$list = array();
+		}
+		// Evitar duplicados del mismo error.
+		foreach ( $list as $old_entry ) {
+			if ( isset( $old_entry['message'], $old_entry['file'] ) && $old_entry['message'] === $entry['message'] && $old_entry['file'] === $entry['file'] ) {
+				return;
+			}
+		}
+		array_unshift( $list, $entry );
+		update_option( self::FATALS_OPTION, array_slice( $list, 0, 5 ), false );
 	}
 
 	public static function is_active() {
@@ -33,6 +77,9 @@ class TS_Debug {
 	 * @return array<string,string> etiqueta => explicación
 	 */
 	public static function mli_conflicts() {
+		if ( null !== self::$conflicts ) {
+			return self::$conflicts;
+		}
 		$out = array();
 
 		if ( 'on' === get_option( 'wcmlim_enable_restrict_guestuser_location' ) && ! is_user_logged_in() ) {
@@ -55,6 +102,30 @@ class TS_Debug {
 			$out['wcmlim_enable_location_group'] = __( 'Los grupos de ubicaciones están activos: el selector muestra primero el grupo y luego sus sucursales. Si el grupo no contiene sucursales del estado del cliente, la lista sale vacía. Este plugin no filtra grupos.', 'total-sucursales' );
 		}
 
+		self::$conflicts = $out;
+		return $out;
+	}
+
+	/**
+	 * Sucursales que el desplegable de Multi Locations omite por no pertenecer a un grupo.
+	 *
+	 * El controlador AJAX de MLI que rellena el selector sólo incluye las sucursales que tienen
+	 * la meta wcmlim_locator (grupo de ubicaciones). Con los grupos activos, una sucursal sin
+	 * grupo no aparece nunca, aunque este plugin la deje visible.
+	 *
+	 * @return array<int,string> id => nombre
+	 */
+	public static function branches_without_group() {
+		$out = array();
+		if ( 'on' !== get_option( 'wcmlim_enable_location_group' ) ) {
+			return $out;
+		}
+		foreach ( TS_Locations::all() as $id => $l ) {
+			$locator = get_term_meta( $id, 'wcmlim_locator', true );
+			if ( '' === $locator || null === $locator ) {
+				$out[ $id ] = $l['name'];
+			}
+		}
 		return $out;
 	}
 
@@ -74,7 +145,9 @@ class TS_Debug {
 		$coords    = TS_Customer::get_coords();
 		$conflicts = self::mli_conflicts();
 		$state     = TS_Customer::get_state();
-		$raw_opt   = get_option( 'wcmlim_exclude_locations_from_frontend' );
+		$raw_opt   = $manual; // valor real del admin, sin el filtro de este plugin
+		$no_group  = self::branches_without_group();
+		$fatals    = get_option( self::FATALS_OPTION, array() );
 		$all       = TS_Locations::all();
 
 		$rows = array(
@@ -84,7 +157,7 @@ class TS_Debug {
 			__( 'Posición del cliente', 'total-sucursales' ) => $coords ? $coords['lat'] . ', ' . $coords['lng'] . ' (' . $coords['source'] . ')' : __( '(desconocida)', 'total-sucursales' ),
 			__( 'Filtro por estado', 'total-sucursales' ) => $applies ? __( 'activo', 'total-sucursales' ) : __( 'NO se aplica en esta página', 'total-sucursales' ),
 			__( 'Ocultas en MLI (ajuste del admin)', 'total-sucursales' ) => empty( $manual ) ? __( '(ninguna)', 'total-sucursales' ) : implode( ', ', $manual ),
-			__( 'Valor crudo de la opción de MLI', 'total-sucursales' ) => is_scalar( $raw_opt ) ? (string) $raw_opt : wp_json_encode( $raw_opt ),
+			__( 'Opción de MLI (valor real guardado)', 'total-sucursales' ) => is_scalar( $raw_opt ) ? (string) $raw_opt : wp_json_encode( $raw_opt ),
 			__( 'Excluidas ahora mismo', 'total-sucursales' ) => $applies ? ( empty( $excluded ) ? __( '(ninguna)', 'total-sucursales' ) : implode( ', ', $excluded ) ) : __( '(ninguna: el filtro no se aplica)', 'total-sucursales' ),
 			__( 'Sucursales visibles', 'total-sucursales' ) => empty( $vis_names ) ? __( '¡NINGUNA!', 'total-sucursales' ) : implode( ' · ', $vis_names ),
 			__( 'Usuario', 'total-sucursales' ) => is_user_logged_in() ? 'registrado #' . get_current_user_id() : __( 'invitado', 'total-sucursales' ),
@@ -145,6 +218,20 @@ class TS_Debug {
 					</tr>
 				<?php endforeach; ?>
 			</table>
+
+			<?php if ( ! empty( $no_group ) ) : ?>
+				<div class="bad" style="margin-top:10px"><?php esc_html_e( 'Sucursales sin grupo de ubicaciones: el desplegable de Multi Locations las omite aunque estén visibles. Asígnales un grupo o desactiva los grupos.', 'total-sucursales' ); ?></div>
+				<div class="bad"><?php echo esc_html( implode( ' · ', array_map( function ( $id, $n ) { return $n . ' #' . $id; }, array_keys( $no_group ), $no_group ) ) ); ?></div>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $fatals ) && is_array( $fatals ) ) : ?>
+				<div class="bad" style="margin-top:10px"><?php esc_html_e( 'Errores fatales de PHP capturados (causan los errores 500 en admin-ajax.php):', 'total-sucursales' ); ?></div>
+				<ul class="bad">
+					<?php foreach ( $fatals as $f ) : ?>
+						<li><?php echo esc_html( ( $f['action'] ? 'action=' . $f['action'] . ' · ' : '' ) . $f['message'] . ' · ' . $f['file'] ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
 
 			<?php if ( ! empty( $conflicts ) ) : ?>
 				<div class="warn" style="margin-top:10px"><?php esc_html_e( 'Ajustes de Multi Locations que afectan al selector:', 'total-sucursales' ); ?></div>
