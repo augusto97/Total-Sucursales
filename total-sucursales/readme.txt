@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.2.2
+Stable tag: 0.2.3
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por radio, exponiendo condiciones para Advanced Shipping.
@@ -37,6 +37,12 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.2.3 =
+* Añadido: aviso cuando la detección de ubicación de Multi Locations está activa. Duplica la de este plugin y provoca errores 500 en admin-ajax.php, porque su función wcmlim_closest_location llama a distance_between_coordinates(), que sólo existe con el modo backend activado.
+* Corregido: el aviso de sucursales sin grupo ahora se muestra siempre, no sólo con los grupos activos. El desplegable que Multi Locations rellena por AJAX omite las sucursales sin grupo en cualquier caso.
+* Añadido: columna "Grupo" en el diagnóstico, para ver de un vistazo qué sucursales no tienen grupo asignado.
+* Corregido: los avisos de grupos y de autodetección ya no desactivan el filtro por estado. Sólo lo desactivan los ajustes que fuerzan una sucursal única.
 
 = 0.2.2 =
 * Añadido: detección de sucursales sin grupo de ubicaciones. Con los grupos activos, el desplegable de Multi Locations omite cualquier sucursal que no pertenezca a un grupo, así que el selector puede quedar vacío aunque la sucursal esté visible. Ahora se avisa en los ajustes y en el panel de diagnóstico.
