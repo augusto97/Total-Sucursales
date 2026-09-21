@@ -35,6 +35,7 @@ class TS_Settings {
 			'catalog_filter'       => 'yes',
 			'blocks_municipio'     => 'yes',
 			'debug_front'          => 'no',
+			'mli_shims'            => 'yes',
 			// Sin __() aquí: defaults() puede ejecutarse antes de init (WP 6.7+ avisa si se cargan traducciones antes).
 			'pickup_label'         => 'Retiro en tienda',
 			'modal_title'          => '¿Desde qué estado nos visitas?',
@@ -202,6 +203,13 @@ class TS_Settings {
 				'type'  => 'title',
 				'desc'  => __( 'Para revisar por qué un cliente ve unas sucursales u otras, activa el modo diagnóstico y abre cualquier página de la tienda añadiendo <code>?ts_debug=1</code> al final de la dirección. Aparece un panel al pie con el estado del visitante. Acuérdate de apagarlo al terminar.', 'total-sucursales' ),
 				'id'    => 'ts_section_debug',
+			),
+			array(
+				'title'   => __( 'Corregir fallos conocidos de Multi Locations', 'total-sucursales' ),
+				'id'      => "{$p}[mli_shims]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'Evita dos errores 500 de Multi Locations en admin-ajax.php: suple la función distance_between_coordinates() que su controlador llama pero nunca declara, y descarta las peticiones de stock con un producto inexistente. No modifica el plugin de Multi Locations.', 'total-sucursales' ),
+				'default' => 'yes',
 			),
 			array(
 				'title'   => __( 'Modo diagnóstico en la tienda', 'total-sucursales' ),
