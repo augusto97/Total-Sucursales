@@ -98,6 +98,27 @@ class TS_Debug {
 			}
 		}
 
+		$autodetect = array(
+			'wcmlim_distance_calculator_by_coordinates'      => __( 'navegador', 'total-sucursales' ),
+			'wcmlim_enable_autodetect_location'              => __( 'Google', 'total-sucursales' ),
+			'wcmlim_enable_autodetect_location_by_maxmind'   => __( 'MaxMind', 'total-sucursales' ),
+			'wcmlim_enable_autodetect_location_with_ipinfo'  => __( 'IPinfo', 'total-sucursales' ),
+			'wcmlim_distance_calculator_by_cloudfare'        => __( 'Cloudflare', 'total-sucursales' ),
+		);
+		$on = array();
+		foreach ( $autodetect as $opt => $label ) {
+			if ( 'on' === get_option( $opt ) ) {
+				$on[] = $label;
+			}
+		}
+		if ( ! empty( $on ) ) {
+			$out['wcmlim_autodetect'] = sprintf(
+				/* translators: %s lista de métodos */
+				__( 'La detección de ubicación de Multi Locations está activa (%s). Duplica la de este plugin y además provoca errores 500 en admin-ajax.php: su función wcmlim_closest_location llama a distance_between_coordinates(), que sólo existe con el modo backend activado. Conviene apagarla en MULTILOCA → Settings → Location.', 'total-sucursales' ),
+				implode( ', ', $on )
+			);
+		}
+
 		if ( 'on' === get_option( 'wcmlim_enable_location_group' ) ) {
 			$out['wcmlim_enable_location_group'] = __( 'Los grupos de ubicaciones están activos: el selector muestra primero el grupo y luego sus sucursales. Si el grupo no contiene sucursales del estado del cliente, la lista sale vacía. Este plugin no filtra grupos.', 'total-sucursales' );
 		}
@@ -109,17 +130,15 @@ class TS_Debug {
 	/**
 	 * Sucursales que el desplegable de Multi Locations omite por no pertenecer a un grupo.
 	 *
-	 * El controlador AJAX de MLI que rellena el selector sólo incluye las sucursales que tienen
-	 * la meta wcmlim_locator (grupo de ubicaciones). Con los grupos activos, una sucursal sin
-	 * grupo no aparece nunca, aunque este plugin la deje visible.
+	 * El controlador AJAX de MLI que rellena el selector (wcmlim_getdropdown_location) sólo
+	 * incluye las sucursales que tienen la meta wcmlim_locator (grupo de ubicaciones), esté o no
+	 * activada la función de grupos. Una sucursal sin grupo no aparece en ese desplegable, aunque
+	 * este plugin la deje visible.
 	 *
 	 * @return array<int,string> id => nombre
 	 */
 	public static function branches_without_group() {
 		$out = array();
-		if ( 'on' !== get_option( 'wcmlim_enable_location_group' ) ) {
-			return $out;
-		}
 		foreach ( TS_Locations::all() as $id => $l ) {
 			$locator = get_term_meta( $id, 'wcmlim_locator', true );
 			if ( '' === $locator || null === $locator ) {
@@ -192,7 +211,7 @@ class TS_Debug {
 
 			<div class="muted" style="margin-top:10px"><?php printf( esc_html__( 'Sucursales cargadas (%d):', 'total-sucursales' ), count( $all ) ); ?></div>
 			<table style="margin-top:4px">
-				<tr class="muted"><td>ID</td><td>Nombre</td><td><?php esc_html_e( 'Estado guardado', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Se lee', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Coordenadas', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Situación', 'total-sucursales' ); ?></td></tr>
+				<tr class="muted"><td>ID</td><td>Nombre</td><td><?php esc_html_e( 'Estado guardado', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Se lee', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Coordenadas', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Grupo', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Situación', 'total-sucursales' ); ?></td></tr>
 				<?php
 				foreach ( $all as $id => $l ) :
 					$hidden = in_array( (int) $id, $manual, true );
@@ -214,13 +233,14 @@ class TS_Debug {
 						<td><?php echo esc_html( '' === $l['state_raw'] ? '—' : $l['state_raw'] ); ?></td>
 						<td class="<?php echo ( '' === $l['state'] ? 'bad' : '' ); ?>"><?php echo esc_html( '' === $l['state'] ? '—' : $l['state'] ); ?></td>
 						<td class="<?php echo ( $l['has_coords'] ? '' : 'bad' ); ?>"><?php echo $l['has_coords'] ? esc_html( $l['lat'] . ', ' . $l['lng'] ) : '—'; ?></td>
+						<td class="<?php echo ( isset( $no_group[ $id ] ) ? 'bad' : '' ); ?>"><?php echo isset( $no_group[ $id ] ) ? '—' : esc_html( (string) get_term_meta( $id, 'wcmlim_locator', true ) ); ?></td>
 						<td class="<?php echo esc_attr( $cls ); ?>"><?php echo esc_html( $note ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			</table>
 
 			<?php if ( ! empty( $no_group ) ) : ?>
-				<div class="bad" style="margin-top:10px"><?php esc_html_e( 'Sucursales sin grupo de ubicaciones: el desplegable de Multi Locations las omite aunque estén visibles. Asígnales un grupo o desactiva los grupos.', 'total-sucursales' ); ?></div>
+				<div class="bad" style="margin-top:10px"><?php esc_html_e( 'Sucursales sin grupo de ubicaciones (meta wcmlim_locator vacía). El desplegable que Multi Locations rellena por AJAX omite las sucursales sin grupo, aunque este plugin las deje visibles. Asígnales un grupo en la ficha de la sucursal.', 'total-sucursales' ); ?></div>
 				<div class="bad"><?php echo esc_html( implode( ' · ', array_map( function ( $id, $n ) { return $n . ' #' . $id; }, array_keys( $no_group ), $no_group ) ) ); ?></div>
 			<?php endif; ?>
 

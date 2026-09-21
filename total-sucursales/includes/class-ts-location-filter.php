@@ -105,12 +105,14 @@ class TS_Location_Filter {
 			return false;
 		}
 		// Multi Locations puede forzar una única sucursal (invitados o usuario con sede asignada).
-		// En ese caso filtrar por estado sólo puede dejar el selector vacío.
+		// En ese caso filtrar por estado sólo puede dejar el selector vacío. Los demás avisos
+		// (grupos, autodetección) no fuerzan una sede única y no deben desactivar el filtro.
 		if ( class_exists( 'TS_Debug' ) ) {
 			$conflicts = TS_Debug::mli_conflicts();
-			unset( $conflicts['wcmlim_enable_location_group'] ); // los grupos no fuerzan una sede única
-			if ( ! empty( $conflicts ) ) {
-				return false;
+			foreach ( array( 'wcmlim_enable_restrict_guestuser_location', 'wcmlim_enable_userspecific_location' ) as $key ) {
+				if ( isset( $conflicts[ $key ] ) ) {
+					return false;
+				}
 			}
 		}
 
