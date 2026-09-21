@@ -23,6 +23,11 @@ class TS_Compat {
 		foreach ( array( 'wp_ajax_wcmlim_get_quantity_attributes', 'wp_ajax_nopriv_wcmlim_get_quantity_attributes' ) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'guard_quantity_attributes' ), 1 );
 		}
+
+		// Evita el bucle de recargas y el "¿Cambiar de tienda?" cuando no hay cambio de sucursal.
+		foreach ( array( 'wp_ajax_wcmlim_ajax_cart_count', 'wp_ajax_nopriv_wcmlim_ajax_cart_count' ) as $hook ) {
+			add_action( $hook, array( __CLASS__, 'guard_cart_count' ), 1 );
+		}
 	}
 
 	/**
@@ -96,6 +101,65 @@ class TS_Compat {
 	}
 
 	/**
+	 * El selector de sucursal de Multi Locations consulta wcmlim_ajax_cart_count en cada evento
+	 * "change", incluidos los que dispara su propio JavaScript al cargar la página. Ese handler no
+	 * comprueba si la sucursal pedida es la que ya estaba activa:
+	 *
+	 * - Si no hay cambio real, termina en die() con una respuesta vacía, y su JavaScript interpreta
+	 *   cualquier respuesta que no empiece por "{" como "recarga la página". Al recargar se repite el
+	 *   mismo evento, y de ahí el bucle de recargas.
+	 * - Si el selector está en "Select" (-1), resuelve la sucursal de destino a null y todos los
+	 *   artículos del carrito le parecen de otra sucursal, así que saca el diálogo "¿Cambiar de
+	 *   tienda?" con la misma sucursal a los dos lados.
+	 *
+	 * Aquí se corta antes en esos dos casos, que por definición no tienen nada que migrar. Un cambio
+	 * de sucursal de verdad sigue pasando entero a Multi Locations, con su diálogo y su recarga.
+	 */
+	public static function guard_cart_count() {
+		if ( ! isset( $_POST['e_value'] ) ) {
+			return;
+		}
+
+		// El nonce lo comprueba Multi Locations; si no es válido, que conteste su propio error.
+		$nonce = isset( $_POST['security'] ) ? sanitize_text_field( wp_unslash( $_POST['security'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wcmlim_locations_nonce' ) ) {
+			return;
+		}
+
+		$value = sanitize_text_field( wp_unslash( $_POST['e_value'] ) );
+
+		// "Select": no se ha elegido sucursal, así que no hay cambio que aplicar.
+		if ( '' === $value || '-1' === $value ) {
+			self::end_cart_count( 'sin sucursal elegida' );
+		}
+
+		$target  = TS_Locations::mli_term_at( $value );
+		$current = isset( $_COOKIE['wcmlim_selected_location_termid'] )
+			? absint( wp_unslash( $_COOKIE['wcmlim_selected_location_termid'] ) )
+			: 0;
+
+		if ( $target && $target === $current ) {
+			self::end_cart_count( 'la sucursal pedida ya era la activa' );
+		}
+	}
+
+	/**
+	 * Respuesta inerte para wcmlim_ajax_cart_count.
+	 *
+	 * Tiene que salir como texto y empezar por "{": su JavaScript sólo deja la página en paz cuando
+	 * recibe una cadena con un JSON cuyo "status" no reconoce. Con wp_send_json() la respuesta llega
+	 * como application/json, jQuery la convierte en objeto y el "else" acabaría recargando la página,
+	 * que es justo lo que se quiere evitar.
+	 */
+	private static function end_cart_count( $reason ) {
+		echo wp_json_encode( array(
+			'status'  => 'ts_sin_cambio',
+			'message' => $reason,
+		) );
+		wp_die();
+	}
+
+	/**
 	 * Estado de los parches, para el diagnóstico.
 	 *
 	 * @return array<string,string>
@@ -109,6 +173,7 @@ class TS_Compat {
 				? __( 'Activo: se suple la función que falta en Multi Locations, así que su "closest location" deja de dar error 500.', 'total-sucursales' )
 				: __( 'No aplicado.', 'total-sucursales' ),
 			'wcmlim_get_quantity_attributes' => __( 'Activo: se responde a las peticiones de stock con un producto inexistente antes de que Multi Locations falle, y con el formato que espera su JavaScript.', 'total-sucursales' ),
+			'wcmlim_ajax_cart_count' => __( 'Activo: se descartan las consultas del selector de sucursal que no suponen ningún cambio, que son las que dejaban la página recargándose en bucle y sacaban el diálogo "¿Cambiar de tienda?" con la misma sucursal a los dos lados.', 'total-sucursales' ),
 		);
 	}
 }
