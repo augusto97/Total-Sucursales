@@ -3,7 +3,7 @@
  * Plugin Name:       Total Sucursales
  * Plugin URI:        https://github.com/augusto97/Total-Sucursales
  * Description:       Reglas de sucursales por estado, radio de retiro en tienda (pickup) y condiciones para Advanced Shipping, sobre WooCommerce Multi Locations Inventory Management y States and Municipalities of Venezuela.
- * Version:           0.2.1
+ * Version:           0.2.2
  * Author:            Augusto
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TS_VERSION', '0.2.1' );
+define( 'TS_VERSION', '0.2.2' );
 define( 'TS_PLUGIN_FILE', __FILE__ );
 define( 'TS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
