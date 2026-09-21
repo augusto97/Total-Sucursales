@@ -213,27 +213,108 @@ class TS_Settings {
 	}
 
 	private static function render_status() {
-		$deps  = total_sucursales()->deps;
-		$rows  = array(
+		$deps = total_sucursales()->deps;
+		$rows = array(
 			'WooCommerce'                                  => $deps['woocommerce'],
 			'Multi Locations Inventory Management (MLI)'   => taxonomy_exists( 'locations' ),
 			'Advanced Shipping (WAS)'                      => class_exists( 'WPC_Condition' ),
 			'States and Municipalities of Venezuela (SMV)' => $deps['smv'],
 		);
-		$split = get_option( 'wcmlim_enable_split_packages' ) === 'on';
-		echo '<h2>' . esc_html__( 'Estado de la integración', 'total-sucursales' ) . '</h2><table class="widefat striped" style="max-width:700px">';
+		$split = 'on' === get_option( 'wcmlim_enable_split_packages' );
+
+		echo '<h2>' . esc_html__( 'Estado de la integración', 'total-sucursales' ) . '</h2><table class="widefat striped" style="max-width:820px">';
 		foreach ( $rows as $label => $ok ) {
 			echo '<tr><td>' . esc_html( $label ) . '</td><td>' . ( $ok ? '<span style="color:green">&#10004;</span>' : '<span style="color:#c00">&#10008;</span>' ) . '</td></tr>';
 		}
 		echo '<tr><td>' . esc_html__( 'MLI: dividir paquetes por sucursal (wcmlim_enable_split_packages)', 'total-sucursales' ) . '</td><td>' . ( $split ? esc_html__( 'Activo: el pickup se evalúa por paquete/sucursal.', 'total-sucursales' ) : esc_html__( 'Inactivo: el carrito debe contener una sola sucursal para ofrecer pickup.', 'total-sucursales' ) ) . '</td></tr>';
-		$locs = TS_Locations::all();
-		$sin  = 0;
-		foreach ( $locs as $l ) {
-			if ( ! $l['has_coords'] || '' === $l['state'] ) {
-				$sin++;
+		echo '</table>';
+
+		self::render_locations_diagnostic();
+	}
+
+	/**
+	 * Diagnóstico por sucursal: por qué una sede no aparece en la tienda.
+	 */
+	private static function render_locations_diagnostic() {
+		if ( ! taxonomy_exists( 'locations' ) ) {
+			return;
+		}
+		TS_Locations::flush_cache();
+		$locations = TS_Locations::all();
+		$manual    = TS_Location_Filter::manual_exclusions();
+		$states    = ts_get_ve_states();
+
+		echo '<h2>' . esc_html__( 'Diagnóstico de sucursales', 'total-sucursales' ) . '</h2>';
+		echo '<p class="description" style="max-width:820px">' . esc_html__( 'Una sucursal sólo se muestra a los clientes de su estado si tiene el estado cargado y no está oculta en Multi Locations. Sin coordenadas no se puede calcular distancia ni ofrecer retiro en tienda.', 'total-sucursales' ) . '</p>';
+
+		if ( empty( $locations ) ) {
+			echo '<p><strong>' . esc_html__( 'No hay sucursales cargadas en Multi Locations.', 'total-sucursales' ) . '</strong></p>';
+			return;
+		}
+
+		echo '<table class="widefat striped" style="max-width:1000px"><thead><tr>'
+			. '<th>' . esc_html__( 'ID', 'total-sucursales' ) . '</th>'
+			. '<th>' . esc_html__( 'Sucursal', 'total-sucursales' ) . '</th>'
+			. '<th>' . esc_html__( 'Estado guardado', 'total-sucursales' ) . '</th>'
+			. '<th>' . esc_html__( 'Se interpreta como', 'total-sucursales' ) . '</th>'
+			. '<th>' . esc_html__( 'Coordenadas', 'total-sucursales' ) . '</th>'
+			. '<th>' . esc_html__( 'Diagnóstico', 'total-sucursales' ) . '</th>'
+			. '</tr></thead><tbody>';
+
+		$edit_base = admin_url( 'term.php?taxonomy=locations&post_type=product&tag_ID=' );
+
+		foreach ( $locations as $id => $l ) {
+			$problems = array();
+			$hidden   = in_array( (int) $id, $manual, true );
+
+			if ( $hidden ) {
+				$problems[] = __( 'Oculta en MLI → Settings → Location → "Hide Locations From Frontend". No se muestra a ningún cliente.', 'total-sucursales' );
+			}
+			if ( '' === $l['state'] ) {
+				$problems[] = __( 'Sin estado: se muestra a todos los clientes, pero nunca se filtra por zona. Carga el campo "State".', 'total-sucursales' );
+			} elseif ( ! isset( $states[ $l['state'] ] ) ) {
+				/* translators: %s valor guardado */
+				$problems[] = sprintf( __( 'El estado "%s" no corresponde a ningún estado de Venezuela. Vuelve a elegirlo en el desplegable "State".', 'total-sucursales' ), $l['state_raw'] );
+			}
+			if ( ! $l['has_coords'] ) {
+				$problems[] = __( 'Sin coordenadas: nunca podrá ofrecer retiro en tienda. Carga "Location Lat / Lng".', 'total-sucursales' );
+			}
+
+			$state_label = '' === $l['state']
+				? '<span style="color:#c00">' . esc_html__( '(vacío)', 'total-sucursales' ) . '</span>'
+				: esc_html( isset( $states[ $l['state'] ] ) ? $states[ $l['state'] ] . ' (' . $l['state'] . ')' : $l['state'] );
+
+			echo '<tr>'
+				. '<td>' . (int) $id . '</td>'
+				. '<td><a href="' . esc_url( $edit_base . (int) $id ) . '">' . esc_html( $l['name'] ) . '</a></td>'
+				. '<td><code>' . esc_html( '' === $l['state_raw'] ? '—' : $l['state_raw'] ) . '</code></td>'
+				. '<td>' . $state_label . '</td>'
+				. '<td>' . ( $l['has_coords'] ? esc_html( $l['lat'] . ', ' . $l['lng'] ) : '<span style="color:#c00">' . esc_html__( 'faltan', 'total-sucursales' ) . '</span>' ) . '</td>'
+				. '<td>' . ( empty( $problems )
+					? '<span style="color:green">' . esc_html__( 'Correcta', 'total-sucursales' ) . '</span>'
+					: '<span style="color:#c00">' . implode( '<br>', array_map( 'esc_html', $problems ) ) . '</span>' )
+				. '</td>'
+				. '</tr>';
+		}
+		echo '</tbody></table>';
+
+		$by_state = array();
+		foreach ( $locations as $id => $l ) {
+			if ( '' !== $l['state'] && ! in_array( (int) $id, $manual, true ) ) {
+				$by_state[ $l['state'] ][] = $l['name'];
 			}
 		}
-		echo '<tr><td>' . esc_html__( 'Sucursales cargadas', 'total-sucursales' ) . '</td><td>' . count( $locs ) . ( $sin ? ' <span style="color:#c00">(' . sprintf( esc_html__( '%d sin estado o sin coordenadas', 'total-sucursales' ), $sin ) . ')</span>' : '' ) . '</td></tr>';
-		echo '</table>';
+		ksort( $by_state );
+		echo '<p style="margin-top:12px"><strong>' . esc_html__( 'Lo que verá el cliente según su estado:', 'total-sucursales' ) . '</strong></p><ul style="list-style:disc;margin-left:20px;max-width:820px">';
+		if ( empty( $by_state ) ) {
+			echo '<li>' . esc_html__( 'Ninguna sucursal se puede filtrar por estado; todos los clientes verán la lista completa.', 'total-sucursales' ) . '</li>';
+		} else {
+			foreach ( $by_state as $code => $names ) {
+				$label = isset( $states[ $code ] ) ? $states[ $code ] : $code;
+				echo '<li><strong>' . esc_html( $label ) . ':</strong> ' . esc_html( implode( ', ', $names ) ) . '</li>';
+			}
+			echo '<li>' . esc_html__( 'Clientes de cualquier otro estado: verán todas las sucursales no ocultas.', 'total-sucursales' ) . '</li>';
+		}
+		echo '</ul>';
 	}
 }

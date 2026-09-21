@@ -97,6 +97,10 @@ class TS_Location_Filter {
 		if ( is_admin() && ! wp_doing_ajax() ) {
 			return false;
 		}
+		// Nunca filtrar fuera del front: WP-CLI, cron e importadores deben ver todas las sucursales.
+		if ( ( defined( 'WP_CLI' ) && WP_CLI ) || wp_doing_cron() ) {
+			return false;
+		}
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST && ! apply_filters( 'ts_filter_on_rest', false ) ) {
 			return false;
 		}
@@ -105,7 +109,10 @@ class TS_Location_Filter {
 
 	/**
 	 * IDs a excluir = exclusiones manuales + sucursales fuera del estado del cliente
-	 * (sólo si el estado tiene al menos una sucursal).
+	 * (sólo si el estado tiene al menos una sucursal visible).
+	 *
+	 * El filtro nunca deja la tienda sin sucursales: si aplicarlo ocultaría todas, se descarta
+	 * el filtro por estado y se respetan sólo las exclusiones manuales de Multi Locations.
 	 *
 	 * @return int[]
 	 */
@@ -113,22 +120,34 @@ class TS_Location_Filter {
 		if ( null !== self::$computed ) {
 			return self::$computed;
 		}
-		$manual = self::manual_exclusions();
-		$state  = TS_Customer::get_state();
+		$manual  = self::manual_exclusions();
+		$all     = TS_Locations::all_ids();
+		$state   = TS_Customer::get_state();
 
 		$by_state = array();
-		if ( '' !== $state ) {
-			$in_state = TS_Locations::ids_by_state( $state );
+		if ( '' !== $state && ! empty( $all ) ) {
+			// Las sucursales que el administrador ocultó en Multi Locations no cuentan como
+			// "sucursales del estado": si la única del estado está oculta, no se filtra nada.
+			$in_state = array_diff( TS_Locations::ids_by_state( $state ), $manual );
 			if ( ! empty( $in_state ) ) {
-				$by_state = array_diff( TS_Locations::all_ids(), $in_state );
+				$by_state = array_diff( $all, $in_state );
 			}
 		}
 
 		$ids = array_values( array_unique( array_merge( $manual, $by_state ) ) );
+
+		// Red de seguridad: nunca dejar cero sucursales visibles.
+		if ( ! empty( $all ) && ! array_diff( $all, $ids ) ) {
+			$ids = $manual;
+			if ( ! array_diff( $all, $ids ) ) {
+				$ids = array();
+			}
+		}
+
 		$ids = apply_filters( 'ts_excluded_location_ids', $ids, $state, $manual );
 
-		self::$computed = $ids;
-		return $ids;
+		self::$computed = array_values( array_unique( array_map( 'intval', (array) $ids ) ) );
+		return self::$computed;
 	}
 
 	/**

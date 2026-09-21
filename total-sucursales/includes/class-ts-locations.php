@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class TS_Locations {
 
-	const TRANSIENT = 'ts_locations_index';
+	const TRANSIENT = 'ts_locations_index_v2';
 
 	/** @var array|null */
 	private static $index = null;
@@ -36,7 +36,7 @@ class TS_Locations {
 		}
 		$cached = get_transient( self::TRANSIENT );
 		if ( is_array( $cached ) ) {
-			self::$index = $cached;
+			self::$index = self::hydrate( $cached );
 			return self::$index;
 		}
 
@@ -56,8 +56,23 @@ class TS_Locations {
 			}
 		}
 
-		self::$index = $index;
 		set_transient( self::TRANSIENT, $index, HOUR_IN_SECONDS * 12 );
+		self::$index = self::hydrate( $index );
+		return self::$index;
+	}
+
+	/**
+	 * Normaliza el estado de cada sucursal al leer.
+	 *
+	 * El transient guarda el valor tal cual lo escribió Multi Locations; la conversión a código
+	 * de WooCommerce se hace en cada request para que un caché creado antes de que WooCommerce
+	 * cargara sus estados no deje códigos mal resueltos.
+	 */
+	private static function hydrate( array $index ) {
+		foreach ( $index as $id => $row ) {
+			$raw                    = isset( $row['state_raw'] ) ? $row['state_raw'] : '';
+			$index[ $id ]['state']  = ts_normalize_state( $raw );
+		}
 		return $index;
 	}
 
@@ -70,6 +85,7 @@ class TS_Locations {
 			$state = get_term_meta( $id, 'wcmlim_country_state', true ); // rama alternativa de guardado en MLI
 		}
 		$has = ts_valid_coords( $lat, $lng );
+		$state = trim( (string) $state );
 
 		$street = trim( get_term_meta( $id, 'wcmlim_street_number', true ) . ' ' . get_term_meta( $id, 'wcmlim_route', true ) );
 		if ( '' === $street ) {
@@ -84,6 +100,7 @@ class TS_Locations {
 			'id'         => $id,
 			'name'       => $term->name,
 			'slug'       => $term->slug,
+			'state_raw'  => $state,
 			'state'      => ts_normalize_state( $state ),
 			'city'       => $city,
 			'lat'        => $has ? (float) $lat : null,
@@ -124,6 +141,25 @@ class TS_Locations {
 			}
 		}
 		return $ids;
+	}
+
+	/**
+	 * Sucursales sin estado o sin coordenadas, para el diagnóstico del panel de ajustes.
+	 *
+	 * @return array{no_state:int[],no_coords:int[]}
+	 */
+	public static function incomplete() {
+		$no_state  = array();
+		$no_coords = array();
+		foreach ( self::all() as $id => $l ) {
+			if ( '' === $l['state'] ) {
+				$no_state[] = $id;
+			}
+			if ( ! $l['has_coords'] ) {
+				$no_coords[] = $id;
+			}
+		}
+		return array( 'no_state' => $no_state, 'no_coords' => $no_coords );
 	}
 
 	/**
