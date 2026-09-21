@@ -36,6 +36,20 @@ Escenarios de `e2e-blocks.js` (tema de bloques Twenty Twenty-Five, carrito y che
 | B1 | GPS en Maracaibo | Product Collection filtrado por sede, select de sede de MLI en producto, carrito por bloques, select de municipio por estado (ciudad libre oculta), retiro en tienda, panel de distancias, pedido creado con ciudad = municipio y pickup en Delicias |
 | B2 | Sin GPS, estado manual | sólo envío nacional; el botón "Usar mi ubicación" dentro del checkout por bloques (extensionCartUpdate) habilita retiro y muestra 3,1 km |
 
+## Regresión del filtro por estado
+
+`repro-filtro-estado.php` reproduce el caso reportado en producción (una sucursal oculta en
+"Hide Locations From Frontend" dejaba el switcher vacío al elegir su estado) y comprueba los cuatro
+escenarios de datos:
+
+```bash
+php wp-cli.phar --allow-root --path=wordpress eval-file repro-filtro-estado.php
+```
+
+Resultado esperado tras la corrección de 0.2.0: ningún escenario devuelve una lista vacía, y el
+estado guardado como nombre ("Carabobo") se reconoce igual que el código ("CA"). Ojo: el script borra
+y recrea las sucursales, así que después hay que volver a ejecutar `seed.php`.
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.

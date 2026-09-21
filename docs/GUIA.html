@@ -120,7 +120,7 @@
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
       <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda sólo en la sucursal más cercana dentro de un radio. Todo sobre Multi Locations, Advanced Shipping y States and Municipalities of Venezuela.</p>
-      <div class="meta"><span>plugin 0.1.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <div class="meta"><span>plugin 0.2.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -169,6 +169,7 @@
         <li><strong>State</strong>: selecciona el estado. Este código es el que se compara con el estado del cliente.</li>
         <li><strong>Location Lat / Lng</strong>: latitud y longitud de la tienda. Sin ellas no se calcula distancia y la sede nunca será elegible para retiro. Se obtienen con clic derecho sobre el local en Google Maps u OpenStreetMap.</li>
         <li><strong>City, Street address, Phone, horario</strong>: opcionales, se muestran en el checkout y el pedido.</li>
+        <li>Revisa que la sede <strong>no esté marcada</strong> en <em>MULTILOCA → Settings → Location → "Hide Locations From Frontend"</em>: ahí se ocultan sedes a todos los clientes y es la causa más común de que una sucursal no aparezca.</li>
         <li>Elimina o deja sin stock la sede <strong>"Online Store"</strong> que Multi Locations crea al activarse: no tiene estado ni coordenadas y es la sede por defecto cuando el cliente aún no eligió.</li>
       </ul>
       <figure class="tall"><img src="guia/02-mli-location-edit.png" alt="Pantalla de edición de una sucursal en Multi Locations con los campos State y Lat/Lng resaltados" loading="lazy"><figcaption>Edición de la sede "Tienda Delicias": State = Zulia y Lat/Lng cargados (recuadros rojos). El resto de campos son los de Multi Locations.</figcaption></figure>
@@ -234,6 +235,10 @@
         <tr><td>Geocodificar la dirección de envío</td><td>Nominatim</td><td>Qué usar cuando el cliente no comparte el GPS. <em>Nominatim</em> (OpenStreetMap) es gratuito, requiere un correo de contacto y los resultados se guardan 30 días. <em>Google</em> necesita clave; si se deja vacía reutiliza la clave de Multi Locations. <em>No geocodificar</em>: sin GPS no hay retiro.</td></tr>
       </table></div>
       <figure class="tall"><img src="guia/04-ts-settings.png" alt="Pestaña de ajustes Total Sucursales en WooCommerce" loading="lazy"><figcaption>Pestaña completa. El cuadro "Estado de la integración" del final avisa de sedes sin estado o sin coordenadas: aquí marca 1 porque la "Online Store" por defecto no tiene datos.</figcaption></figure>
+      <h3>Diagnóstico de sucursales</h3>
+      <p>Al final de esa misma pestaña hay una tabla con una fila por sucursal. Es lo primero que hay que mirar cuando una sede no aparece en la tienda: dice el estado tal como quedó guardado, cómo lo interpreta el plugin, si tiene coordenadas y si está oculta en Multi Locations. Debajo resume qué verá un cliente de cada estado.</p>
+      <figure><img src="guia/15-diagnostico.png" alt="Panel de diagnóstico con una fila por sucursal y sus problemas detectados" loading="lazy"><figcaption>Ejemplo con tres problemas reales: una sede oculta en Multi Locations y sin coordenadas, y otra sin estado cargado.</figcaption></figure>
+
       <div class="callout warn"><p><strong>Sobre las direcciones venezolanas:</strong> la geocodificación por dirección es imprecisa en Venezuela (urbanizaciones, "casa sin número"). La fuente fiable es el GPS del navegador. Deja la geocodificación como respaldo, no como método principal.</p></div>
     </section>
 
@@ -334,6 +339,10 @@
       </div></div>
       <div class="tablewrap"><table>
         <tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr>
+        <tr><td>Al elegir un estado, el switcher de sedes queda vacío ("Seleccionar" sin opciones)</td><td>La única sucursal de ese estado está marcada en <em>MULTILOCA → Settings → Location → "Hide Locations From Frontend"</em>, o no tiene el campo State cargado.</td><td>Abre el <strong>Diagnóstico de sucursales</strong> (paso 05): señala la sede oculta o sin estado. Desmárcala de "Hide Locations From Frontend" o carga su estado. Desde la versión 0.2.0 el plugin ya no deja la lista vacía: si el filtro ocultaría todas, muestra las que haya.</td></tr>
+        <tr><td>"Otro estado / ver todas las sucursales" no muestra todas</td><td>Las que faltan están ocultas en "Hide Locations From Frontend" de Multi Locations. Esa opción se respeta siempre, también en modo "ver todas".</td><td>Quitarlas de esa lista. El diagnóstico marca cuáles están ocultas.</td></tr>
+        <tr><td>Al elegir el estado no se selecciona sola la sucursal de esa zona</td><td>Ninguna sede visible pertenece al estado elegido (oculta, sin estado, o con el estado mal guardado).</td><td>Igual que arriba. Con la sede visible y su estado correcto, el plugin la selecciona automáticamente.</td></tr>
+        <tr><td>El estado de una sede se ve raro en el diagnóstico (por ejemplo <code>Carabobo</code> en vez de <code>CA</code>)</td><td>Se cargó con el autocompletado de direcciones de Multi Locations, que escribe el nombre largo del estado.</td><td>Desde 0.2.0 el plugin reconoce el nombre igual que el código, así que funciona. Aun así conviene volver a elegir el estado en el desplegable "State".</td></tr>
         <tr><td>Nunca aparece "Retiro en tienda"</td><td>La sede no tiene Lat/Lng, o el cliente no compartió GPS y la geocodificación está en "No geocodificar".</td><td>Cargar coordenadas en la sede. Revisar el geocodificador. Probar con el botón del checkout.</td></tr>
         <tr><td>Aparecen las dos opciones a la vez</td><td>Las reglas de Advanced Shipping no tienen la condición, o una está en "Sí" y la otra sin condición.</td><td>Revisar que "Envío nacional" tenga la condición en "No".</td></tr>
         <tr><td>La tienda sale vacía</td><td>La sede activa es la "Online Store" sin stock, o el filtro de Multi Locations está activo en un tema de bloques.</td><td>Borrar o cargar stock en "Online Store". Apagar el filtro de Multi Locations y dejar el de este plugin.</td></tr>

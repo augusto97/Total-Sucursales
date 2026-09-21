@@ -1,5 +1,10 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const BASE = 'http://127.0.0.1:8080';
+const { execSync } = require('child_process');
+// IDs de las sedes resueltos por nombre: el seed puede recrearlas con IDs distintos.
+const LOC = JSON.parse(execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$o=array(); foreach(get_terms(array("taxonomy"=>"locations","hide_empty"=>false)) as $t){$o[$t->name]=$t->term_id;} echo json_encode($o);' 2>/dev/null`).toString().trim().split('\n').pop());
+const ID = n => String(LOC[n]);
+
 const SHOTS = __dirname + '/shots/';
 const results = [];
 function log(name, ok, detail) { results.push({ name, ok, detail }); console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? ' — ' + detail : '')); }
@@ -69,7 +74,7 @@ async function distanceInfo(page) {
     await page.waitForLoadState('networkidle');
     const ck = await cookies(ctx);
     log('E1 cookie ts_estado=ZU por GPS', ck.ts_estado === 'ZU', JSON.stringify({ ts_estado: ck.ts_estado, src: ck.ts_estado_src, sel: ck.wcmlim_selected_location, selid: ck.wcmlim_selected_location_termid, lat: ck.wcmlim_user_lat }));
-    log('E1 sucursal seleccionada = Delicias (17)', ck.wcmlim_selected_location_termid === '17', ck.wcmlim_selected_location_termid);
+    log('E1 sucursal seleccionada = Delicias', ['29'].includes(ck.wcmlim_selected_location_termid), ck.wcmlim_selected_location_termid);
     const modalVisible = await page.$eval('#ts-state-modal', e => !e.hidden).catch(() => false);
     log('E1 modal no visible', !modalVisible);
     const sel = await page.$eval('#ts-state-select', e => e.value).catch(() => 'n/a');
@@ -164,13 +169,13 @@ async function distanceInfo(page) {
     await page.waitForTimeout(2000); await page.waitForLoadState('networkidle');
     const ck = await cookies(ctx);
     const prods = await shopProducts(page);
-    log('E4 Carabobo manual: cookie CA, sede Valencia, tienda con Producto D', ck.ts_estado === 'CA' && ck.wcmlim_selected_location_termid === '20' && JSON.stringify(prods) === JSON.stringify(['Producto D (Valencia)']), JSON.stringify({ ck: ck.ts_estado, selid: ck.wcmlim_selected_location_termid, prods }));
+    log('E4 Carabobo manual: cookie CA, sede Valencia, tienda con Producto D', ck.ts_estado === 'CA' && ck.wcmlim_selected_location_termid === ID('Tienda Valencia') && JSON.stringify(prods) === JSON.stringify(['Producto D (Valencia)']), JSON.stringify({ ck: ck.ts_estado, selid: ck.wcmlim_selected_location_termid, prods }));
     // cambiar estado por el selector del header a Zulia
     await page.goto(BASE + '/', { waitUntil: 'networkidle' });
     await page.selectOption('#ts-state-select', 'ZU');
     await page.waitForTimeout(2000); await page.waitForLoadState('networkidle');
     const ck2 = await cookies(ctx);
-    log('E4 cambio a Zulia por selector: sede reasignada a una de Zulia', ck2.ts_estado === 'ZU' && ['17', '18'].includes(ck2.wcmlim_selected_location_termid), JSON.stringify({ ck: ck2.ts_estado, sel: ck2.wcmlim_selected_location, selid: ck2.wcmlim_selected_location_termid }));
+    log('E4 cambio a Zulia por selector: sede reasignada a una de Zulia', ck2.ts_estado === 'ZU' && [ID('Tienda Delicias'), ID('Tienda San Francisco')].includes(ck2.wcmlim_selected_location_termid), JSON.stringify({ ck: ck2.ts_estado, sel: ck2.wcmlim_selected_location, selid: ck2.wcmlim_selected_location_termid }));
     // checkout sin GPS y sin geocoder → envío nacional
     await addToCart(page, 'producto-a-delicias-y-chacao');
     await fillCheckout(page, 'ZU', 'Maracaibo');
@@ -191,7 +196,6 @@ async function distanceInfo(page) {
 
   // ---------- Escenario 5: variante B (split de paquetes, dos sedes) ----------
   {
-    const { execSync } = require('child_process');
     const wp = (cmd) => execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress ${cmd} 2>/dev/null`).toString();
     wp('option update wcmlim_clear_cart ""'); wp('option update wcmlim_enable_split_packages on');
     const ctx = await ctxWithGeo(browser, { latitude: 10.6427, longitude: -71.6125 });
@@ -206,7 +210,7 @@ async function distanceInfo(page) {
     await page.selectOption('#wcmlim-change-lc-select', sw.find(x => /Chacao/.test(x.t)).v);
     await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle' }), page.evaluate(() => document.getElementById('lc-switch-form').submit())]);
     const ckSw = await cookies(ctx);
-    log('E5 switcher MLI: sede activa Chacao (19)', ckSw.wcmlim_selected_location_termid === '19', JSON.stringify({ sel: ckSw.wcmlim_selected_location, selid: ckSw.wcmlim_selected_location_termid }));
+    log('E5 switcher MLI: sede activa Chacao', ckSw.wcmlim_selected_location_termid === ID('Tienda Chacao'), JSON.stringify({ sel: ckSw.wcmlim_selected_location, selid: ckSw.wcmlim_selected_location_termid }));
     const optsC = await addToCart(page, 'producto-c-chacao', 'Chacao');
     log('E5 producto A lista todas las sedes con stock', optsA.some(t => /Chacao/.test(t)) && optsA.some(t => /Delicias/.test(t)), JSON.stringify(optsA));
     await page.goto(BASE + '/cart/', { waitUntil: 'networkidle' });

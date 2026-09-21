@@ -1,5 +1,10 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const BASE = 'http://127.0.0.1:8080';
+const { execSync } = require('child_process');
+// IDs de las sedes resueltos por nombre: el seed puede recrearlas con IDs distintos.
+const LOC = JSON.parse(execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$o=array(); foreach(get_terms(array("taxonomy"=>"locations","hide_empty"=>false)) as $t){$o[$t->name]=$t->term_id;} echo json_encode($o);' 2>/dev/null`).toString().trim().split('\n').pop());
+const ID = n => String(LOC[n]);
+
 const SHOTS = __dirname + '/shots/';
 const results = [];
 function log(name, ok, detail) { results.push({ name, ok }); console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? ' — ' + detail : '')); }
@@ -54,7 +59,7 @@ async function panel(page) {
     page.on('pageerror', e => console.log('  [pageerror]', String(e).slice(0, 200)));
     await page.goto(BASE + '/', { waitUntil: 'networkidle' }); await page.waitForTimeout(2500); await page.waitForLoadState('networkidle');
     const ck = await cookies(ctx);
-    log('B1 estado ZU por GPS (tema de bloques)', ck.ts_estado === 'ZU' && ck.wcmlim_selected_location_termid === '17', JSON.stringify({ ts: ck.ts_estado, selid: ck.wcmlim_selected_location_termid }));
+    log('B1 estado ZU por GPS (tema de bloques)', ck.ts_estado === 'ZU' && ck.wcmlim_selected_location_termid === ID('Tienda Delicias'), JSON.stringify({ ts: ck.ts_estado, selid: ck.wcmlim_selected_location_termid }));
     await page.goto(BASE + '/shop/', { waitUntil: 'networkidle' });
     const prods = await page.$$eval('.wp-block-woocommerce-product-collection .wp-block-post-title, .wc-block-product-template .wp-block-post-title', els => els.map(e => e.textContent.trim()));
     log('B1 Product Collection filtrado por sede Delicias', JSON.stringify(prods) === JSON.stringify(['Producto A (Delicias y Chacao)']), JSON.stringify(prods));
@@ -77,8 +82,7 @@ async function panel(page) {
     log('B1 pedido creado desde checkout por bloques', !!m, page.url());
     await page.screenshot({ path: SHOTS + 'b1-thankyou-blocks.png', fullPage: true });
     if (m) {
-      const { execSync } = require('child_process');
-      const out = execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$o=wc_get_order(${m[1]}); echo json_encode(["city"=>$o->get_shipping_city(),"bcity"=>$o->get_billing_city(),"pickup"=>$o->get_meta("_ts_pickup_location_name"),"src"=>$o->get_meta("_ts_coords_source"),"pk"=>$o->get_meta("_ts_packages")]);' 2>/dev/null`).toString();
+        const out = execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$o=wc_get_order(${m[1]}); echo json_encode(["city"=>$o->get_shipping_city(),"bcity"=>$o->get_billing_city(),"pickup"=>$o->get_meta("_ts_pickup_location_name"),"src"=>$o->get_meta("_ts_coords_source"),"pk"=>$o->get_meta("_ts_packages")]);' 2>/dev/null`).toString();
       const o = JSON.parse(out.trim().split('\n').pop());
       log('B1 pedido: ciudad = municipio elegido, pickup Delicias, coords gps', /Maracaibo/.test(o.city) && /Maracaibo/.test(o.bcity) && o.pickup === 'Tienda Delicias' && o.src === 'gps', out.trim().slice(-300));
     }

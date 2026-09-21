@@ -95,16 +95,64 @@ function ts_state_name( $code ) {
 }
 
 /**
- * Normaliza un código de estado (mayúsculas, sin espacios).
+ * Clave comparable de un texto: sin acentos, minúsculas, sólo letras y números.
+ */
+function ts_key( $text ) {
+	$text = remove_accents( (string) $text );
+	$text = strtolower( trim( $text ) );
+	return preg_replace( '/[^a-z0-9]+/', '', $text );
+}
+
+/**
+ * Mapa de equivalencias para reconocer un estado: código y nombre apuntan al mismo código.
+ *
+ * @return array<string,string>
+ */
+function ts_state_lookup() {
+	static $map = null;
+	if ( null !== $map ) {
+		return $map;
+	}
+	$map = array();
+	foreach ( ts_get_ve_states() as $code => $name ) {
+		$map[ strtoupper( $code ) ] = $code;
+		$key = ts_key( $name );
+		if ( '' !== $key ) {
+			$map[ $key ] = $code;
+		}
+	}
+	return $map;
+}
+
+/**
+ * Normaliza un estado a su código de WooCommerce.
+ *
+ * Acepta el código ("ZU"), el formato país:estado ("VE:ZU") y el nombre completo con o sin
+ * acentos ("Zulia", "Anzoategui"), porque el autocompletado de direcciones de Multi Locations
+ * guarda el nombre largo del estado en lugar del código.
  */
 function ts_normalize_state( $code ) {
-	$code = strtoupper( trim( (string) $code ) );
-	// Algunas instalaciones guardan "VE:ZU".
-	if ( false !== strpos( $code, ':' ) ) {
-		$parts = explode( ':', $code );
-		$code  = end( $parts );
+	$raw = trim( (string) $code );
+	if ( '' === $raw ) {
+		return '';
 	}
-	return $code;
+	// Algunas instalaciones guardan "VE:ZU".
+	foreach ( array( ':', '|' ) as $sep ) {
+		if ( false !== strpos( $raw, $sep ) ) {
+			$parts = explode( $sep, $raw );
+			$raw   = trim( end( $parts ) );
+		}
+	}
+	$map = ts_state_lookup();
+	$up  = strtoupper( $raw );
+	if ( isset( $map[ $up ] ) ) {
+		return $map[ $up ];
+	}
+	$key = ts_key( $raw );
+	if ( '' !== $key && isset( $map[ $key ] ) ) {
+		return $map[ $key ];
+	}
+	return $up;
 }
 
 /**
