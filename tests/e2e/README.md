@@ -89,6 +89,20 @@ Elección del cliente &gt; sucursal más cercana por GPS &gt; sucursal por defec
 filtro por estado por encima de todo. Incluye el caso de apagado: sin sucursal por defecto configurada,
 una carga de página no debe asignar ninguna por su cuenta.
 
+## Textos en español y dirección de cada tienda
+
+`textos-tienda.js` recorre lo que ve el cliente con la traducción de Multi Locations activa:
+
+```bash
+node textos-tienda.js
+```
+
+Ventana de estado y selector de la cabecera, ficha de producto en vista de lista (título, cantidades y
+ciudad · dirección bajo cada tienda) y de desplegable, carrito clásico y por bloques, la línea del
+pedido y los dos diálogos de SweetAlert de Multi Locations (cambio de tienda y productos no
+disponibles). Comprueba también que un texto editado en los ajustes se usa, que un texto personalizado
+en Multi Locations no se pisa y que su texto de fábrica en inglés sale en español.
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.

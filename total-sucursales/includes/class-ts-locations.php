@@ -248,6 +248,34 @@ class TS_Locations {
 	}
 
 	/**
+	 * "Ciudad · Dirección" de una tienda, para mostrarla bajo su nombre. Vacío si no tiene ninguna.
+	 */
+	public static function address_line( $id ) {
+		$row = self::get( $id );
+		if ( ! $row ) {
+			return '';
+		}
+		$parts = array_filter( array( trim( (string) $row['city'] ), trim( (string) $row['address'] ) ), 'strlen' );
+		return implode( ' · ', $parts );
+	}
+
+	/**
+	 * Mapa term_id => "Ciudad · Dirección" de las tiendas que tienen alguno de los dos datos.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function address_lines() {
+		$out = array();
+		foreach ( self::all() as $id => $row ) {
+			$line = self::address_line( $id );
+			if ( '' !== $line ) {
+				$out[ (int) $id ] = $line;
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * La inversa de mli_index_of(): la sucursal que ocupa esa posición en la lista de MLI.
 	 *
 	 * @param string|int $index Índice posicional tal y como viaja en las cookies de MLI.

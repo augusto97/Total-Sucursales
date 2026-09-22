@@ -50,6 +50,8 @@ final class TS_Plugin {
 	private function includes() {
 		require_once TS_PLUGIN_DIR . 'includes/ts-functions.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-settings.php';
+		require_once TS_PLUGIN_DIR . 'includes/class-ts-texts.php';
+		require_once TS_PLUGIN_DIR . 'includes/class-ts-mli-i18n.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-locations.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-geocoder.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-customer.php';
@@ -76,6 +78,7 @@ final class TS_Plugin {
 		TS_Blocks::init();
 		TS_Debug::init();
 		TS_Compat::init();
+		TS_MLI_I18n::init();
 		TS_Frontend::init();
 		TS_Checkout::init();
 		TS_Order::init();

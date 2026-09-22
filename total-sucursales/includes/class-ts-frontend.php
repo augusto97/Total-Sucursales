@@ -42,13 +42,15 @@ class TS_Frontend {
 			'states'          => $states,
 			'selected_location_id' => TS_Customer::selected_mli_location_id(),
 			'single_location_view' => TS_Settings::is_yes( 'single_location_view' ) && is_product(),
+			'location_address'     => ( is_product() && TS_Settings::is_yes( 'show_location_address' ) ) ? TS_Locations::address_lines() : new stdClass(),
 			'is_checkout'     => is_checkout(),
 			'i18n'            => array(
-				'all_states'   => __( 'Todos los estados', 'total-sucursales' ),
-				'locating'     => __( 'Obteniendo tu ubicación…', 'total-sucursales' ),
-				'geo_error'    => __( 'No pudimos obtener tu ubicación. Elige tu estado manualmente.', 'total-sucursales' ),
-				'geo_denied'   => __( 'Sin acceso a tu ubicación. Elige tu estado manualmente.', 'total-sucursales' ),
-				'located'      => __( 'Ubicación registrada. Recalculando envíos…', 'total-sucursales' ),
+				'all_states'   => TS_Texts::get( 'all_states' ),
+				'locating'     => TS_Texts::get( 'locating' ),
+				'geo_error'    => TS_Texts::get( 'geo_error' ),
+				'geo_denied'   => TS_Texts::get( 'geo_denied' ),
+				'located'      => TS_Texts::get( 'located' ),
+				'checkout_error' => TS_Texts::get( 'checkout_error' ),
 			),
 		) );
 	}
@@ -57,7 +59,7 @@ class TS_Frontend {
 	 * [ts_selector_estado] – select de estados con sucursales para el header.
 	 */
 	public static function shortcode_selector( $atts = array() ) {
-		$atts   = shortcode_atts( array( 'label' => __( 'Estado', 'total-sucursales' ), 'class' => '' ), $atts, 'ts_selector_estado' );
+		$atts   = shortcode_atts( array( 'label' => TS_Texts::get( 'selector_label' ), 'class' => '' ), $atts, 'ts_selector_estado' );
 		$states = TS_Locations::states_with_locations();
 		$cur    = TS_Customer::get_state();
 
@@ -68,7 +70,7 @@ class TS_Frontend {
 				<label for="ts-state-select"><?php echo esc_html( $atts['label'] ); ?></label>
 			<?php endif; ?>
 			<select id="ts-state-select" class="ts-state-select">
-				<option value=""><?php esc_html_e( 'Todos los estados', 'total-sucursales' ); ?></option>
+				<option value=""><?php echo esc_html( TS_Texts::get( 'all_states' ) ); ?></option>
 				<?php foreach ( $states as $code => $name ) : ?>
 					<option value="<?php echo esc_attr( $code ); ?>" <?php selected( $cur, $code ); ?>><?php echo esc_html( $name ); ?></option>
 				<?php endforeach; ?>
@@ -96,19 +98,19 @@ class TS_Frontend {
 		?>
 		<div id="ts-state-modal" class="ts-modal" hidden>
 			<div class="ts-modal__box" role="dialog" aria-modal="true" aria-labelledby="ts-modal-title">
-				<h3 id="ts-modal-title"><?php echo esc_html( TS_Settings::get( 'modal_title' ) ); ?></h3>
-				<p><?php echo esc_html( TS_Settings::get( 'modal_text' ) ); ?></p>
+				<h3 id="ts-modal-title"><?php echo esc_html( TS_Texts::get( 'modal_title' ) ); ?></h3>
+				<p><?php echo esc_html( TS_Texts::get( 'modal_text' ) ); ?></p>
 				<p class="ts-modal__status" aria-live="polite"></p>
 				<select class="ts-modal__select">
-					<option value=""><?php esc_html_e( 'Selecciona tu estado…', 'total-sucursales' ); ?></option>
+					<option value=""><?php echo esc_html( TS_Texts::get( 'modal_placeholder' ) ); ?></option>
 					<?php foreach ( $states as $code => $name ) : ?>
 						<option value="<?php echo esc_attr( $code ); ?>"><?php echo esc_html( $name ); ?></option>
 					<?php endforeach; ?>
-					<option value="__all__"><?php esc_html_e( 'Otro estado / ver todas las sucursales', 'total-sucursales' ); ?></option>
+					<option value="__all__"><?php echo esc_html( TS_Texts::get( 'modal_all' ) ); ?></option>
 				</select>
 				<div class="ts-modal__actions">
-					<button type="button" class="button ts-modal__gps"><?php esc_html_e( 'Usar mi ubicación', 'total-sucursales' ); ?></button>
-					<button type="button" class="button button-primary ts-modal__ok"><?php esc_html_e( 'Continuar', 'total-sucursales' ); ?></button>
+					<button type="button" class="button ts-modal__gps"><?php echo esc_html( TS_Texts::get( 'modal_gps' ) ); ?></button>
+					<button type="button" class="button button-primary ts-modal__ok"><?php echo esc_html( TS_Texts::get( 'modal_ok' ) ); ?></button>
 				</div>
 			</div>
 		</div>

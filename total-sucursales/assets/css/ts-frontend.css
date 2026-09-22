@@ -23,3 +23,11 @@
 .ts-badge--pickup { background: #e6f6ea; color: #1b7a34; }
 .ts-badge--national { background: #eef2f7; color: #3a4a5c; }
 .ts-distance-note { display: block; color: #666; margin-top: .5em; }
+
+/* Ciudad y dirección bajo cada tienda en la ficha de producto */
+.ts-loc-address {
+	font-size: .85em;
+	line-height: 1.35;
+	opacity: .75;
+	margin: 2px 0 0;
+}
