@@ -14,15 +14,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 class TS_Debug {
 
 	const FATALS_OPTION = 'ts_last_fatals';
+	const FATALS_VERSION_OPTION = 'ts_last_fatals_version';
 
 	/** @var array|null memoria por request */
 	private static $conflicts = null;
 
 	public static function init() {
 		add_action( 'wp_footer', array( __CLASS__, 'render' ), 999 );
+		self::forget_fatals_from_previous_version();
 		if ( TS_Settings::is_yes( 'debug_front' ) ) {
 			register_shutdown_function( array( __CLASS__, 'capture_fatal' ) );
 		}
+	}
+
+	/**
+	 * Al actualizar el plugin se vacía el registro de errores fatales.
+	 *
+	 * Los que hubiera son de un código que ya no se está ejecutando, así que sólo confunden: dan la
+	 * impresión de estar ocurriendo ahora cuando puede que la actualización los haya corregido. No se
+	 * pierde nada, porque si el error sigue ahí se vuelve a registrar en cuanto ocurra.
+	 */
+	private static function forget_fatals_from_previous_version() {
+		if ( get_option( self::FATALS_VERSION_OPTION ) === TS_VERSION ) {
+			return;
+		}
+		delete_option( self::FATALS_OPTION );
+		update_option( self::FATALS_VERSION_OPTION, TS_VERSION, false );
 	}
 
 	/**
@@ -213,11 +230,39 @@ class TS_Debug {
 				#ts-debug .bad,#ts-debug .bad *{color:#f87171!important}
 				#ts-debug .title,#ts-debug .title *{color:#2dd4bf!important;font-weight:700!important}
 				#ts-debug ul{margin:4px 0 0;padding-left:18px}
+				#ts-debug li{margin-bottom:4px}
+				#ts-debug summary{cursor:pointer}
+				#ts-debug pre{white-space:pre-wrap;word-break:break-all;margin:4px 0 0;padding:0}
+				#ts-debug.ts-min{max-height:none;overflow:visible}
+				#ts-debug.ts-min>*:not(.ts-bar){display:none!important}
 			</style>
-			<div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px">
+			<div class="ts-bar" style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px">
 				<span class="title">Total Sucursales · diagnóstico <?php echo esc_html( TS_VERSION ); ?></span>
-				<a href="#" class="muted" onclick="document.getElementById('ts-debug').remove();return false">cerrar ✕</a>
+				<span>
+					<a href="#" class="muted" id="ts-debug-min"><?php esc_html_e( 'plegar', 'total-sucursales' ); ?></a>
+					<a href="#" class="muted" style="margin-left:12px" onclick="document.getElementById('ts-debug').remove();return false"><?php esc_html_e( 'cerrar', 'total-sucursales' ); ?> ✕</a>
+				</span>
 			</div>
+			<script>
+			(function () {
+				// Plegado recordado: el panel tapa media pantalla y estorba mientras se prueba la tienda.
+				var panel = document.getElementById('ts-debug');
+				var link  = document.getElementById('ts-debug-min');
+				var KEY   = 'ts_debug_min';
+				function paint() {
+					var min = false;
+					try { min = localStorage.getItem(KEY) === '1'; } catch (e) {}
+					panel.classList.toggle('ts-min', min);
+					link.textContent = min ? <?php echo wp_json_encode( __( 'desplegar', 'total-sucursales' ) ); ?> : <?php echo wp_json_encode( __( 'plegar', 'total-sucursales' ) ); ?>;
+				}
+				link.addEventListener('click', function (e) {
+					e.preventDefault();
+					try { localStorage.setItem(KEY, panel.classList.contains('ts-min') ? '0' : '1'); } catch (e2) {}
+					paint();
+				});
+				paint();
+			})();
+			</script>
 			<table>
 				<?php foreach ( $rows as $k => $v ) : ?>
 					<tr>
@@ -273,7 +318,13 @@ class TS_Debug {
 							<?php
 							/* translators: %s tiempo transcurrido */
 							echo esc_html( sprintf( __( 'hace %s', 'total-sucursales' ), human_time_diff( (int) $f['time'] ) ) . ' · ' );
-							echo esc_html( ( $f['action'] ? 'action=' . $f['action'] . ' · ' : '' ) . $f['message'] . ' · ' . $f['file'] );
+							// La traza de PHP ocupa varias pantallas: se deja plegada y a la vista sólo el error.
+							$parts = preg_split( '/\s*Stack trace:\s*/', (string) $f['message'], 2 );
+							// El mensaje termina repitiendo la ruta absoluta del fichero, que ya va aparte.
+							$head  = preg_replace( '#\s+in\s+/\S+:\d+$#', '', trim( $parts[0] ) );
+							$trace = isset( $parts[1] ) ? trim( $parts[1] ) : '';
+							$where = preg_replace( '#^wp-content/plugins/#', '', (string) $f['file'] );
+							echo esc_html( ( $f['action'] ? 'action=' . $f['action'] . ' · ' : '' ) . $head . ' · ' . $where );
 							if ( empty( $f['version'] ) || $f['version'] !== TS_VERSION ) {
 								echo esc_html( ' · ' . (
 									empty( $f['version'] )
@@ -283,6 +334,12 @@ class TS_Debug {
 								) );
 							}
 							?>
+							<?php if ( '' !== $trace ) : ?>
+								<details>
+									<summary class="muted"><?php esc_html_e( 'ver traza', 'total-sucursales' ); ?></summary>
+									<pre><?php echo esc_html( $trace ); ?></pre>
+								</details>
+							<?php endif; ?>
 						</li>
 					<?php endforeach; ?>
 				</ul>
