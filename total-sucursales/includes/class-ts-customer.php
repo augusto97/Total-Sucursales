@@ -20,6 +20,8 @@ class TS_Customer {
 	public static function init() {
 		// Usuarios con dirección guardada: fijar estado si no hay cookie.
 		add_action( 'wp', array( __CLASS__, 'maybe_state_from_account' ), 5 );
+		// Después del estado: la sucursal por defecto sólo vale si el filtro por estado la deja ver.
+		add_action( 'wp', array( __CLASS__, 'maybe_default_location' ), 6 );
 		add_action( 'wp_login', array( __CLASS__, 'on_login' ), 10, 2 );
 	}
 
@@ -229,11 +231,58 @@ class TS_Customer {
 				}
 			}
 			if ( ! $target ) {
+				$target = self::default_location_if_visible( $visible_ids );
+			}
+			if ( ! $target ) {
 				$target = $visible_ids[0];
 			}
 		}
 
 		self::select_mli_location( $target );
+	}
+
+	/**
+	 * La sucursal por defecto de los ajustes, si está visible para este cliente.
+	 *
+	 * Se respeta el filtro por estado: una sucursal de otro estado no puede colarse por aquí.
+	 *
+	 * @param int[] $visible_ids Sucursales visibles ahora mismo.
+	 * @return int term_id, o 0.
+	 */
+	private static function default_location_if_visible( array $visible_ids ) {
+		$default = TS_Settings::default_location_id();
+		return ( $default && in_array( $default, $visible_ids, true ) ) ? $default : 0;
+	}
+
+	/**
+	 * Asigna sucursal a quien navega sin ninguna activa, cuando hay una por defecto configurada.
+	 *
+	 * resync_mli_selection() sólo entra cuando el cliente elige estado (incluido "ver todas"). Quien
+	 * no contesta nada al selector se queda sin sucursal activa, y por tanto sin catálogo de sucursal.
+	 *
+	 * El reparto lo decide resync_mli_selection(), que ya aplica el orden bueno (la más cercana si
+	 * conocemos la posición, luego la configurada, luego la primera visible); aquí sólo se decide
+	 * cuándo hace falta llamarla. Sin sucursal por defecto configurada no se toca nada: el ajuste es
+	 * voluntario y sin él un visitante que aún no ha contestado sigue sin sucursal asignada.
+	 */
+	public static function maybe_default_location() {
+		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			return;
+		}
+		if ( ! TS_Settings::default_location_id() ) {
+			return;
+		}
+		$current = self::selected_mli_location_id();
+		if ( $current ) {
+			$visible_ids = array_map(
+				function ( $t ) { return (int) $t->term_id; },
+				TS_Locations::mli_term_list()
+			);
+			if ( in_array( (int) $current, $visible_ids, true ) ) {
+				return; // Ya hay una sucursal válida: no se pisa.
+			}
+		}
+		self::resync_mli_selection();
 	}
 
 	/**
