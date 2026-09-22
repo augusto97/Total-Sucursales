@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.2.7
+Stable tag: 0.2.8
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por radio, exponiendo condiciones para Advanced Shipping.
@@ -37,6 +37,10 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.2.8 =
+* Corregido: el panel de diagnóstico ocupaba media pantalla porque imprimía entera la traza de cada error fatal. Ahora se ve sólo el error y su fichero, con la traza plegada, y el panel se puede plegar del todo desde su cabecera (queda recordado).
+* Mejorado: el registro de errores fatales se vacía solo al actualizar el plugin. Los que hubiera son de un código que ya no se ejecuta, así que sólo confundían; si el error sigue ahí, vuelve a registrarse en cuanto ocurra.
 
 = 0.2.7 =
 * Mejorado: el registro de errores fatales del panel de diagnóstico anota con qué versión del plugin se registró cada uno. Los que vienen de una versión anterior a la instalada se marcan como tales, porque suelen estar ya corregidos y hasta ahora parecían actuales.
