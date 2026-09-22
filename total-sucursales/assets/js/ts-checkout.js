@@ -18,15 +18,15 @@
 					$st.text(ts_params.i18n.located);
 					$(document.body).trigger('update_checkout');
 				} else {
-					$st.text(ts_params.i18n.geo_error);
+					$st.text(ts_params.i18n.checkout_error);
 					$btn.prop('disabled', false);
 				}
 			}).fail(function () {
-				$st.text(ts_params.i18n.geo_error);
+				$st.text(ts_params.i18n.checkout_error);
 				$btn.prop('disabled', false);
 			});
 		}, function (code) {
-			$st.text(code === 'denied' ? ts_params.i18n.geo_denied : ts_params.i18n.geo_error);
+			$st.text(ts_params.i18n.checkout_error);
 			$btn.prop('disabled', false);
 		});
 	});

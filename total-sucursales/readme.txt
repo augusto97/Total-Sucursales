@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por radio, exponiendo condiciones para Advanced Shipping.
@@ -37,6 +37,12 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.4.0 =
+* Añadido: todos los textos que ve el cliente se pueden cambiar en los ajustes (ventana de estado, selector de la cabecera, checkout y los textos fijos de Multi Locations). Están en español por defecto y hablan de "tienda"; un campo vacío vuelve al texto por defecto.
+* Añadido: Multi Locations en español. Su lista de stock, sus diálogos, el carrito (también el de bloques), la página del pedido y los correos pasan a español y dicen "Tienda" donde decían "Location". No se modifica Multi Locations; los textos que tienen ajuste propio en su panel se respetan si ya se cambiaron allí.
+* Añadido: la ciudad y la dirección de cada tienda aparecen bajo su nombre en la lista de stock de la ficha de producto, en todas las vistas de esa lista.
+* Cambiado: los textos por defecto dicen "tienda" en lugar de "sucursal". Los textos del selector que se guardaron sin cambiar con la redacción anterior se actualizan solos; los personalizados se conservan.
 
 = 0.3.0 =
 * Añadido: ajuste "Sucursal por defecto". Se aplica a quien no elige ninguna: los que responden "ver todas las sucursales" y los que navegan sin contestar al selector, que hasta ahora se quedaban sin sucursal activa o con la primera de la lista. No pisa la elección del cliente, ni la sucursal más cercana cuando se conoce su posición, ni el filtro por estado: si la sucursal configurada no está visible para ese cliente, se usa la primera que sí lo esté. Sin configurar, el comportamiento es el de siempre.

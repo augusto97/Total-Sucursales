@@ -135,10 +135,76 @@
 		}
 	};
 
+	/**
+	 * Página de producto: ciudad y dirección bajo el nombre de cada tienda de la lista de stock.
+	 *
+	 * Multi Locations tiene nueve plantillas para esa lista y ninguna ofrece un filtro, pero todas
+	 * marcan cada tienda con .location-stock-item[data-location-id]. Se inserta una línea debajo
+	 * del nombre (.location-name) o, si la plantilla no lo marca, debajo de la primera fila.
+	 */
+	/**
+	 * Alinea la línea con el texto del nombre. Cada plantilla de MLI y cada tema ponen el nombre a
+	 * una distancia distinta (radio más o menos grande, padding propio), así que se mide.
+	 */
+	function alignWith($line, $name) {
+		if (!$name || !$name.length || !$name.is(':visible')) {
+			return;
+		}
+		var range = document.createRange();
+		range.selectNodeContents($name[0]);
+		var textLeft = range.getBoundingClientRect().left;
+		var diff = textLeft - $line[0].getBoundingClientRect().left;
+		if (diff > 0 && diff < 200) {
+			$line.css('margin-left', diff + 'px');
+		}
+	}
+
+	TS.locationAddress = function () {
+		var map = ts_params.location_address || {};
+		if ($.isEmptyObject(map)) {
+			return;
+		}
+		var PENDING = '.location-stock-item[data-location-id]:not([data-ts-addr])';
+		var paint = function () {
+			$(PENDING).each(function () {
+				var $item = $(this).attr('data-ts-addr', '1');
+				var line = map[String($item.attr('data-location-id')).trim()];
+				if (!line) {
+					return;
+				}
+				var $line = $('<div class="ts-loc-address"></div>').text(line);
+				var $name = $item.find('.location-name').first();
+				if ($name.length) {
+					$line.insertAfter($name);
+				} else {
+					// Sin .location-name es la vista de lista: el nombre va en el <label> del radio.
+					$line.insertAfter($item.children().first());
+					$name = $item.find('label strong, label').first();
+				}
+				alignWith($line, $name);
+			});
+		};
+		paint();
+		// MLI rehace la lista al cambiar de variación.
+		$(document.body).on('found_variation wcmlim_locations_loaded', function () { setTimeout(paint, 50); });
+		if (window.MutationObserver) {
+			// Sólo repinta si aparecen tiendas sin línea: sliders y carruseles mutan el DOM sin parar.
+			var t;
+			new MutationObserver(function () {
+				if (!document.querySelector(PENDING)) {
+					return;
+				}
+				clearTimeout(t);
+				t = setTimeout(paint, 60);
+			}).observe(document.body, { childList: true, subtree: true });
+		}
+	};
+
 	$(function () {
 		TS.bindModal();
 		TS.bindSelector();
 		TS.singleLocationView();
+		TS.locationAddress();
 		if (!ts_params.is_checkout) {
 			TS.autoDetect();
 		}

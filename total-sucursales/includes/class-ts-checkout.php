@@ -82,9 +82,9 @@ class TS_Checkout {
 		<tr class="ts-checkout-geo">
 			<td colspan="2">
 				<button type="button" class="button ts-checkout-geo__btn" <?php disabled( $has ); ?>>
-					<?php echo $has ? esc_html__( 'Ubicación registrada', 'total-sucursales' ) : esc_html__( 'Usar mi ubicación para retiro en tienda', 'total-sucursales' ); ?>
+					<?php echo esc_html( TS_Texts::get( $has ? 'checkout_registered' : 'checkout_button' ) ); ?>
 				</button>
-				<small class="ts-checkout-geo__hint"><?php esc_html_e( 'Comparte tu posición para saber si puedes retirar en la sucursal más cercana.', 'total-sucursales' ); ?></small>
+				<small class="ts-checkout-geo__hint"><?php echo esc_html( TS_Texts::get( 'checkout_hint' ) ); ?></small>
 				<span class="ts-checkout-geo__status" aria-live="polite"></span>
 			</td>
 		</tr>
@@ -122,18 +122,18 @@ class TS_Checkout {
 							<?php if ( null !== $p['distance_km'] ) : ?>
 								<span class="ts-distance"><?php echo esc_html( ts_format_km( $p['distance_km'] ) ); ?></span>
 							<?php else : ?>
-								<span class="ts-distance ts-distance--unknown"><?php esc_html_e( 'distancia no disponible', 'total-sucursales' ); ?></span>
+								<span class="ts-distance ts-distance--unknown"><?php echo esc_html( TS_Texts::get( 'unknown_distance' ) ); ?></span>
 							<?php endif; ?>
 							<?php if ( $p['pickup_eligible'] ) : ?>
-								<span class="ts-badge ts-badge--pickup"><?php echo esc_html( TS_Settings::get( 'pickup_label' ) ); ?></span>
+								<span class="ts-badge ts-badge--pickup"><?php echo esc_html( TS_Texts::get( 'pickup_label' ) ); ?></span>
 							<?php else : ?>
-								<span class="ts-badge ts-badge--national"><?php esc_html_e( 'Envío nacional', 'total-sucursales' ); ?></span>
+								<span class="ts-badge ts-badge--national"><?php echo esc_html( TS_Texts::get( 'national' ) ); ?></span>
 							<?php endif; ?>
 						</li>
 					<?php endforeach; ?>
 				</ul>
 				<?php if ( ! $summary['coords'] ) : ?>
-					<small class="ts-distance-note"><?php esc_html_e( 'No conocemos tu posición: comparte tu ubicación o completa la dirección para evaluar el retiro en tienda.', 'total-sucursales' ); ?></small>
+					<small class="ts-distance-note"><?php echo esc_html( TS_Texts::get( 'no_position' ) ); ?></small>
 				<?php endif; ?>
 			</td>
 		</tr>

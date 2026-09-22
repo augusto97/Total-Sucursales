@@ -15,6 +15,7 @@ class TS_Settings {
 	private static $cache = null;
 
 	public static function init() {
+		TS_Texts::migrate();
 		add_filter( 'woocommerce_settings_tabs_array', array( __CLASS__, 'add_tab' ), 60 );
 		add_action( 'woocommerce_settings_tabs_total_sucursales', array( __CLASS__, 'render_tab' ) );
 		add_action( 'woocommerce_update_options_total_sucursales', array( __CLASS__, 'save' ) );
@@ -32,15 +33,14 @@ class TS_Settings {
 			'checkout_geo_button'  => 'yes',
 			'show_distance_info'   => 'yes',
 			'single_location_view' => 'no',
+			'show_location_address' => 'yes',
 			'catalog_filter'       => 'yes',
 			'default_location'     => 0,
 			'blocks_municipio'     => 'yes',
 			'debug_front'          => 'no',
 			'mli_shims'            => 'yes',
-			// Sin __() aquí: defaults() puede ejecutarse antes de init (WP 6.7+ avisa si se cargan traducciones antes).
-			'pickup_label'         => 'Retiro en tienda',
-			'modal_title'          => '¿Desde qué estado nos visitas?',
-			'modal_text'           => 'Elige tu estado para mostrarte las sucursales y el catálogo disponible en tu zona.',
+			'mli_spanish'          => 'yes',
+			// Los textos que ve el cliente (y sus valores por defecto) están en TS_Texts.
 		);
 	}
 
@@ -105,7 +105,7 @@ class TS_Settings {
 
 	public static function fields() {
 		$p = self::OPTION;
-		return array(
+		$main = array(
 			array(
 				'title' => __( 'Sucursales y estado del cliente', 'total-sucursales' ),
 				'type'  => 'title',
@@ -132,18 +132,6 @@ class TS_Settings {
 				'custom_attributes' => array( 'min' => 0, 'step' => 1 ),
 			),
 			array(
-				'title'   => __( 'Título del selector de estado', 'total-sucursales' ),
-				'id'      => "{$p}[modal_title]",
-				'type'    => 'text',
-				'default' => self::defaults()['modal_title'],
-			),
-			array(
-				'title'   => __( 'Texto del selector de estado', 'total-sucursales' ),
-				'id'      => "{$p}[modal_text]",
-				'type'    => 'textarea',
-				'default' => self::defaults()['modal_text'],
-			),
-			array(
 				'title'   => __( 'Sucursal por defecto', 'total-sucursales' ),
 				'id'      => "{$p}[default_location]",
 				'type'    => 'select',
@@ -163,6 +151,13 @@ class TS_Settings {
 				'id'      => "{$p}[blocks_municipio]",
 				'type'    => 'checkbox',
 				'desc'    => __( 'Registra un select de municipios por estado (datos de States and Municipalities of Venezuela) en el checkout por bloques y oculta el campo de ciudad libre. Sin efecto en el checkout clásico.', 'total-sucursales' ),
+				'default' => 'yes',
+			),
+			array(
+				'title'   => __( 'Producto: ciudad y dirección bajo cada tienda', 'total-sucursales' ),
+				'id'      => "{$p}[show_location_address]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'En la lista de stock por tienda de la página de producto, añade debajo del nombre de cada tienda su ciudad y su dirección, tomadas de la ficha de la tienda en Multi Locations (campos Locality/City y Street Number + Route). Si activas también los campos de dirección en MULTILOCA → Display settings, la dirección saldría dos veces: usa sólo uno de los dos.', 'total-sucursales' ),
 				'default' => 'yes',
 			),
 			array(
@@ -228,6 +223,21 @@ class TS_Settings {
 			),
 			array( 'type' => 'sectionend', 'id' => 'ts_section_radius' ),
 
+
+			array(
+				'title' => __( 'Idioma de Multi Locations', 'total-sucursales' ),
+				'type'  => 'title',
+				'id'    => 'ts_section_mli_lang',
+			),
+			array(
+				'title'   => __( 'Multi Locations en español', 'total-sucursales' ),
+				'id'      => "{$p}[mli_spanish]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'Muestra en español, y hablando de "tienda" en lugar de "location", los textos que Multi Locations enseña al cliente: la lista de stock de la ficha de producto, sus diálogos, el carrito y la tienda de cada línea del pedido. No modifica Multi Locations.', 'total-sucursales' ),
+				'default' => 'yes',
+			),
+			array( 'type' => 'sectionend', 'id' => 'ts_section_mli_lang' ),
+			'__TEXTS__',
 			array(
 				'title' => __( 'Diagnóstico', 'total-sucursales' ),
 				'type'  => 'title',
@@ -250,6 +260,17 @@ class TS_Settings {
 			),
 			array( 'type' => 'sectionend', 'id' => 'ts_section_debug' ),
 		);
+
+		// Los textos van justo antes del bloque de diagnóstico.
+		$out = array();
+		foreach ( $main as $field ) {
+			if ( '__TEXTS__' === $field ) {
+				$out = array_merge( $out, TS_Texts::fields( $p ) );
+				continue;
+			}
+			$out[] = $field;
+		}
+		return $out;
 	}
 
 	public static function render_tab() {
