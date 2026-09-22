@@ -33,6 +33,7 @@ class TS_Settings {
 			'show_distance_info'   => 'yes',
 			'single_location_view' => 'no',
 			'catalog_filter'       => 'yes',
+			'default_location'     => 0,
 			'blocks_municipio'     => 'yes',
 			'debug_front'          => 'no',
 			'mli_shims'            => 'yes',
@@ -70,6 +71,27 @@ class TS_Settings {
 			$key = trim( (string) get_option( 'wcmlim_google_api_key', '' ) ); // Reutiliza la clave de MLI si existe.
 		}
 		return $key;
+	}
+
+	/**
+	 * Sucursal por defecto para quien no elige ninguna, o 0 si no se ha configurado.
+	 */
+	public static function default_location_id() {
+		return (int) self::get( 'default_location', 0 );
+	}
+
+	/**
+	 * Opciones del selector de sucursal por defecto.
+	 *
+	 * @return array<int|string,string>
+	 */
+	private static function location_options() {
+		$options = array( 0 => __( '— Ninguna: se usa la primera sucursal disponible —', 'total-sucursales' ) );
+		foreach ( TS_Locations::all() as $id => $row ) {
+			$state = '' !== $row['state'] ? ' (' . $row['state'] . ')' : '';
+			$options[ (int) $id ] = $row['name'] . $state;
+		}
+		return $options;
 	}
 
 	public static function is_yes( $key ) {
@@ -120,6 +142,14 @@ class TS_Settings {
 				'id'      => "{$p}[modal_text]",
 				'type'    => 'textarea',
 				'default' => self::defaults()['modal_text'],
+			),
+			array(
+				'title'   => __( 'Sucursal por defecto', 'total-sucursales' ),
+				'id'      => "{$p}[default_location]",
+				'type'    => 'select',
+				'desc'    => __( 'Se aplica a quien no elige sucursal: los que responden "ver todas las sucursales" y los que navegan sin elegir nada. No pisa una elección del cliente, ni la sucursal más cercana cuando se conoce su posición, ni el filtro por estado: si la sucursal elegida aquí no está visible para ese cliente, se usa la primera que sí lo esté.', 'total-sucursales' ),
+				'options' => self::location_options(),
+				'default' => 0,
 			),
 			array(
 				'title'   => __( 'Filtrar el catálogo por stock de la sucursal seleccionada', 'total-sucursales' ),

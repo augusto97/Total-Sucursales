@@ -79,6 +79,26 @@ class TS_Debug {
 		update_option( self::FATALS_OPTION, array_slice( $list, 0, 5 ), false );
 	}
 
+	/**
+	 * Sucursal por defecto configurada, avisando si el filtro por estado la deja fuera.
+	 */
+	private static function default_location_label() {
+		$id = TS_Settings::default_location_id();
+		if ( ! $id ) {
+			return __( '(ninguna: se usa la primera sucursal disponible)', 'total-sucursales' );
+		}
+		$row   = TS_Locations::get( $id );
+		$label = ( $row ? $row['name'] : __( 'sucursal borrada', 'total-sucursales' ) ) . ' #' . $id;
+		$visible_ids = array_map(
+			function ( $t ) { return (int) $t->term_id; },
+			TS_Locations::mli_term_list()
+		);
+		if ( ! in_array( (int) $id, $visible_ids, true ) ) {
+			$label .= ' · ' . __( 'no visible para este cliente: se usa la primera disponible', 'total-sucursales' );
+		}
+		return $label;
+	}
+
 	public static function is_active() {
 		if ( ! isset( $_GET['ts_debug'] ) || '1' !== (string) $_GET['ts_debug'] ) {
 			return false;
@@ -208,6 +228,7 @@ class TS_Debug {
 			__( 'Estado del cliente', 'total-sucursales' ) => ( '' === $state ? __( '(ninguno: se muestran todas)', 'total-sucursales' ) : $state . ' · ' . ts_state_name( $state ) ) . ' [' . ( TS_Customer::get_state_source() ? TS_Customer::get_state_source() : 'sin definir' ) . ']',
 			__( 'Cookie ts_estado', 'total-sucursales' ) => var_export( ts_get_cookie( TS_Customer::COOKIE_STATE ), true ),
 			__( 'Sucursal seleccionada (MLI)', 'total-sucursales' ) => 'termid=' . var_export( ts_get_cookie( 'wcmlim_selected_location_termid' ), true ) . ' · índice=' . var_export( ts_get_cookie( 'wcmlim_selected_location' ), true ),
+			__( 'Sucursal por defecto (ajustes)', 'total-sucursales' ) => self::default_location_label(),
 			__( 'Posición del cliente', 'total-sucursales' ) => $coords ? $coords['lat'] . ', ' . $coords['lng'] . ' (' . $coords['source'] . ')' : __( '(desconocida)', 'total-sucursales' ),
 			__( 'Filtro por estado', 'total-sucursales' ) => $applies ? __( 'activo', 'total-sucursales' ) : __( 'NO se aplica en esta página', 'total-sucursales' ),
 			__( 'Ocultas en MLI (ajuste del admin)', 'total-sucursales' ) => empty( $manual ) ? __( '(ninguna)', 'total-sucursales' ) : implode( ', ', $manual ),

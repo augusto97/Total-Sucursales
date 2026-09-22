@@ -44,13 +44,36 @@ async function fillCheckout(page, state = 'ZU', cityContains = 'Maracaibo') {
   await page.waitForSelector('#order_review', { state: 'visible' });
   return city;
 }
+// Espera a que se cumpla una condición en vez de dormir un tiempo fijo: las esperas por reloj
+// competían con el POST de "añadir al carrito" y con el refresco del checkout, y fallaban a ratos.
+async function waitFor(check, timeoutMs = 15000, stepMs = 250) {
+  const t0 = Date.now();
+  for (;;) {
+    if (await check()) return true;
+    if (Date.now() - t0 > timeoutMs) return false;
+    await new Promise(r => setTimeout(r, stepMs));
+  }
+}
+async function cartItemCount(ctx) {
+  const c = (await ctx.cookies()).find(x => x.name === 'woocommerce_items_in_cart');
+  return c ? Number(c.value) : 0;
+}
+async function clickAddToCart(page) {
+  const ctx = page.context();
+  const before = await cartItemCount(ctx);
+  await page.click('button.single_add_to_cart_button');
+  return waitFor(async () => (await cartItemCount(ctx)) > before);
+}
+async function shippingLabels(page) {
+  return page.$$eval('#shipping_method li label, tr.woocommerce-shipping-totals td label, tr.woocommerce-shipping-totals td', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim())).catch(() => []);
+}
+
 async function addToCart(page, slug, locMatch) {
   await page.goto(BASE + '/product/' + slug + '/', { waitUntil: 'networkidle' });
   const opt = await page.$$eval('select.select_location option', o => o.map(x => ({ v: x.value, t: x.textContent })));
   const pick = opt.find(x => locMatch ? new RegExp(locMatch).test(x.t) : x.v !== '-1');
   if (pick) { await page.selectOption('select.select_location', pick.v); await page.waitForTimeout(800); }
-  await page.click('button.single_add_to_cart_button');
-  await page.waitForTimeout(2500);
+  await clickAddToCart(page);
   return opt.map(x => x.t.trim());
 }
 async function shippingMethods(page) {
@@ -95,8 +118,7 @@ async function distanceInfo(page) {
     // add to cart (seleccionar Delicias si hace falta)
     const delOpt = await page.$$eval('select.select_location option', o => o.map(x => ({ v: x.value, t: x.textContent })).find(x => /Delicias/.test(x.t)));
     if (delOpt) { await page.selectOption('select.select_location', delOpt.v); await page.waitForTimeout(800); }
-    await page.click('button.single_add_to_cart_button');
-    await page.waitForTimeout(2500);
+    await clickAddToCart(page);
     await page.goto(BASE + '/cart/', { waitUntil: 'networkidle' });
     const cartItems = await page.$$eval('.woocommerce-cart-form__cart-item .product-name', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     log('E1 carrito con Producto A y sede', cartItems.length === 1 && /Producto A/.test(cartItems[0]), JSON.stringify(cartItems));
@@ -189,7 +211,7 @@ async function distanceInfo(page) {
     // ahora dar permiso GPS (Maracaibo) y usar el botón del checkout
     await ctx.grantPermissions(['geolocation']); await ctx.setGeolocation({ latitude: 10.6427, longitude: -71.6125 });
     await page.click('.ts-checkout-geo__btn');
-    await page.waitForTimeout(3500);
+    await waitFor(async () => (await shippingLabels(page)).some(t => /Retiro en tienda/.test(t)));
     const sm2 = await shippingMethods(page);
     log('E4 botón GPS en checkout: aparece Retiro en tienda', sm2.some(t => /Retiro en tienda/.test(t)), JSON.stringify(sm2));
     await page.screenshot({ path: SHOTS + 'e4-checkout-gps.png', fullPage: true });

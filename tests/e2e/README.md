@@ -77,6 +77,18 @@ Cambiar a la sucursal que ya estaba activa y dejar el selector en "Select" no de
 ni abrir ningún diálogo. La tercera comprobación es el control: un cambio de sucursal de verdad tiene
 que seguir mostrando el aviso de Multi Locations, para que la prueba no pase con el aviso desactivado.
 
+## Sucursal por defecto
+
+`sucursal-por-defecto.js` comprueba el orden de precedencia del ajuste `default_location`:
+
+```bash
+node sucursal-por-defecto.js
+```
+
+Elección del cliente &gt; sucursal más cercana por GPS &gt; sucursal por defecto &gt; primera visible, con el
+filtro por estado por encima de todo. Incluye el caso de apagado: sin sucursal por defecto configurada,
+una carga de página no debe asignar ninguna por su cuenta.
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.

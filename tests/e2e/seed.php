@@ -123,7 +123,7 @@ if ( empty( $zone->get_shipping_methods() ) ) {
 }
 
 // Total Sucursales: sin geocodificador (no hay red hacia Nominatim en este entorno).
-update_option( 'ts_settings', array( 'radius_km' => 10, 'detect_state' => 'gps', 'geocoder' => 'none', 'checkout_geo_button' => 'yes', 'show_distance_info' => 'yes', 'single_location_view' => 'no' ) );
+update_option( 'ts_settings', array( 'radius_km' => 10, 'detect_state' => 'gps', 'geocoder' => 'none', 'checkout_geo_button' => 'yes', 'show_distance_info' => 'yes', 'single_location_view' => 'no', 'default_location' => 0 ) );
 delete_transient( 'ts_locations_index' );
 
 echo "Sucursales: " . wp_json_encode( $ids ) . "\nZona: $zone_id\n";
