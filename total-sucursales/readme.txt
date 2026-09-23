@@ -4,16 +4,16 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 
-Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por radio, exponiendo condiciones para Advanced Shipping.
+Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
 
 == Dependencias ==
 
 * WooCommerce
 * MULTILOCA - WooCommerce Multi Locations Inventory Management (taxonomía `locations`)
-* Advanced Shipping for WooCommerce (Jeroen Sormani) – opcional, para las condiciones de envío
+* Advanced Shipping for WooCommerce (Jeroen Sormani) – opcional: el plugin trae su propio método de envío; sólo hace falta para reglas más elaboradas
 * States and Municipalities of Venezuela for WooCommerce – recomendado, para estados y municipios en el checkout
 
 == Configuración rápida ==
@@ -22,9 +22,9 @@ Filtra las sucursales de Multi Locations por el estado del cliente y decide reti
 2. WooCommerce > Ajustes > Total Sucursales: radio de retiro (10 km), detección del estado, geocodificador.
 3. Coloca `[ts_selector_estado]` en el header (opcional) y el switcher de MLI `[wcmlim_locations_switch]`.
 4. En MLI activa "Restrict to One Location" (una sucursal por carrito) o "Split order Packages by location" (varias sucursales, un paquete por sucursal).
-5. En Advanced Shipping crea dos reglas:
-   * "Retiro en tienda": condición *Sucursal elegible para pickup* = Sí, costo 0.
-   * "Envío nacional": condición *Sucursal elegible para pickup* = No (+ las condiciones de tarifa que necesites).
+5. Envío, una de las dos (no ambas en la misma zona):
+   * Sin Advanced Shipping: WooCommerce > Ajustes > Envío > tu zona > Añadir método > "Total Sucursales: retiro o envío nacional". Pon el nombre y costo del retiro y del envío.
+   * Con Advanced Shipping: crea dos reglas, "Retiro en tienda" (condición *Sucursal elegible para pickup* = Sí, costo 0) y "Envío nacional" (*Sucursal elegible para pickup* = No + las condiciones de tarifa que necesites).
 
 == Temas y checkout por bloques ==
 
@@ -37,6 +37,10 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.5.0 =
+* Añadido: método de envío propio, "Total Sucursales: retiro o envío nacional". Se añade a una zona como cualquier método de WooCommerce y ofrece "Retiro en tienda" en la tienda más cercana al cliente dentro del radio y "Envío nacional" en las demás, con nombres y costos configurables y la opción de ofrecer también el envío donde se puede retirar. Con él ya no hace falta Advanced Shipping: basta con Multi Locations y States and Municipalities of Venezuela.
+* Cambiado: Advanced Shipping pasa a ser opcional. Ya no se avisa de que falta; en su lugar se avisa si no hay nada que decida el envío (ni el método propio en una zona ni Advanced Shipping activo). El estado de la integración muestra cuál de los dos se está usando.
 
 = 0.4.0 =
 * Añadido: todos los textos que ve el cliente se pueden cambiar en los ajustes (ventana de estado, selector de la cabecera, checkout y los textos fijos de Multi Locations). Están en español por defecto y hablan de "tienda"; un campo vacío vuelve al texto por defecto.

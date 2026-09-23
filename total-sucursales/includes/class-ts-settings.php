@@ -172,7 +172,7 @@ class TS_Settings {
 			array(
 				'title' => __( 'Retiro en tienda por radio', 'total-sucursales' ),
 				'type'  => 'title',
-				'desc'  => __( 'La sucursal más cercana al cliente dentro del radio es la única elegible para PICKUP. Las demás sucursales del pedido se tratan como envío nacional. Usa las condiciones "Total Sucursales" en las reglas de Advanced Shipping.', 'total-sucursales' ),
+				'desc'  => __( 'La sucursal más cercana al cliente dentro del radio es la única elegible para PICKUP. Las demás sucursales del pedido se tratan como envío nacional. Para convertirlo en tarifas, añade el método de envío «Total Sucursales: retiro o envío nacional» a tu zona en WooCommerce → Ajustes → Envío (no necesita Advanced Shipping), o usa las condiciones "Total Sucursales" en las reglas de Advanced Shipping.', 'total-sucursales' ),
 				'id'    => 'ts_section_radius',
 			),
 			array(
@@ -292,15 +292,31 @@ class TS_Settings {
 		$rows = array(
 			'WooCommerce'                                  => $deps['woocommerce'],
 			'Multi Locations Inventory Management (MLI)'   => taxonomy_exists( 'locations' ),
-			'Advanced Shipping (WAS)'                      => class_exists( 'WPC_Condition' ),
 			'States and Municipalities of Venezuela (SMV)' => $deps['smv'],
 		);
+		if ( function_exists( 'WC' ) ) {
+			WC()->shipping(); // Carga los métodos de envío (y con ellos TS_Shipping_Method).
+		}
+		$in_zone = class_exists( 'TS_Shipping_Method' ) && TS_Shipping_Method::is_in_any_zone();
+		$was     = class_exists( 'WPC_Condition' );
 		$split = 'on' === get_option( 'wcmlim_enable_split_packages' );
 
 		echo '<h2>' . esc_html__( 'Estado de la integración', 'total-sucursales' ) . '</h2><table class="widefat striped" style="max-width:820px">';
 		foreach ( $rows as $label => $ok ) {
 			echo '<tr><td>' . esc_html( $label ) . '</td><td>' . ( $ok ? '<span style="color:green">&#10004;</span>' : '<span style="color:#c00">&#10008;</span>' ) . '</td></tr>';
 		}
+		echo '<tr><td>' . esc_html__( 'Envío: método «Total Sucursales» en una zona', 'total-sucursales' ) . '</td><td>'
+			. ( $in_zone
+				? '<span style="color:green">&#10004;</span> ' . esc_html__( 'Decide entre retiro y envío nacional sin Advanced Shipping.', 'total-sucursales' )
+				: ( $was
+					? esc_html__( 'No se usa: el envío lo deciden las reglas de Advanced Shipping.', 'total-sucursales' )
+					: '<span style="color:#c00">&#10008;</span> ' . esc_html__( 'Añádelo a tu zona en WooCommerce → Ajustes → Envío.', 'total-sucursales' ) ) )
+			. '</td></tr>';
+		echo '<tr><td>' . esc_html__( 'Advanced Shipping (opcional)', 'total-sucursales' ) . '</td><td>'
+			. ( $was
+				? esc_html__( 'Activo: sus reglas pueden usar las condiciones de Total Sucursales.', 'total-sucursales' ) . ( $in_zone ? ' ' . esc_html__( 'No pongas sus reglas y el método «Total Sucursales» en la misma zona: el cliente vería las tarifas repetidas.', 'total-sucursales' ) : '' )
+				: esc_html__( 'No instalado. No hace falta si usas el método «Total Sucursales».', 'total-sucursales' ) )
+			. '</td></tr>';
 		echo '<tr><td>' . esc_html__( 'MLI: dividir paquetes por sucursal (wcmlim_enable_split_packages)', 'total-sucursales' ) . '</td><td>' . ( $split ? esc_html__( 'Activo: el pickup se evalúa por paquete/sucursal.', 'total-sucursales' ) : esc_html__( 'Inactivo: el carrito debe contener una sola sucursal para ofrecer pickup.', 'total-sucursales' ) ) . '</td></tr>';
 		echo '</table>';
 

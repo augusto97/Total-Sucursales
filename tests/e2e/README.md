@@ -103,6 +103,19 @@ pedido y los dos diálogos de SweetAlert de Multi Locations (cambio de tienda y 
 disponibles). Comprueba también que un texto editado en los ajustes se usa, que un texto personalizado
 en Multi Locations no se pisa y que su texto de fábrica en inglés sale en español.
 
+## Envío sin Advanced Shipping
+
+`envio-sin-was.js` desactiva Advanced Shipping, pone el método propio "Total Sucursales" en la zona
+(retiro 0, envío nacional 5) con `envio-modo.php`, y al terminar lo deja todo como estaba:
+
+```bash
+node envio-sin-was.js
+```
+
+Comprueba el admin (sin errores, sin pedir Advanced Shipping, y con aviso si no hay método en ninguna
+zona), retiro dentro del radio, envío nacional sin posición, un pedido con dos tiendas (una línea de
+cada tipo), la opción de ofrecer también el envío donde se puede retirar y el checkout por bloques.
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.
