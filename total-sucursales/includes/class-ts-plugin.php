@@ -84,13 +84,25 @@ final class TS_Plugin {
 		TS_Order::init();
 		TS_Product_View::init();
 		TS_WAS_Conditions::init();
+
+		// Método de envío propio: retiro o envío nacional sin necesitar Advanced Shipping.
+		add_action( 'woocommerce_shipping_init', function () {
+			require_once TS_PLUGIN_DIR . 'includes/class-ts-shipping-method.php';
+		} );
+		add_filter( 'woocommerce_shipping_methods', function ( $methods ) {
+			$methods['total_sucursales'] = 'TS_Shipping_Method';
+			return $methods;
+		} );
 	}
 
 	public function late_dependency_check() {
 		$this->deps['mli'] = taxonomy_exists( 'locations' ) && function_exists( 'setLocation' );
 		$this->deps['was'] = class_exists( 'WPC_Condition' );
-		if ( is_admin() && ( ! $this->deps['mli'] || ! $this->deps['was'] ) ) {
-			add_action( 'admin_notices', array( $this, 'notice_missing_optional' ) );
+		if ( is_admin() ) {
+			if ( ! $this->deps['mli'] ) {
+				add_action( 'admin_notices', array( $this, 'notice_missing_optional' ) );
+			}
+			add_action( 'admin_notices', array( $this, 'notice_no_shipping_engine' ) );
 		}
 	}
 
@@ -98,13 +110,36 @@ final class TS_Plugin {
 		echo '<div class="notice notice-error"><p>' . esc_html__( 'Total Sucursales requiere WooCommerce activo.', 'total-sucursales' ) . '</p></div>';
 	}
 
+	/**
+	 * Sin el método de envío de Total Sucursales en ninguna zona y sin Advanced Shipping, nada
+	 * convierte "puede retirar / no puede" en tarifas: el cliente vería los métodos de la zona sin
+	 * distinción. Sólo se avisa en las pantallas de WooCommerce y de plugins, para no molestar.
+	 */
+	public function notice_no_shipping_engine() {
+		if ( $this->deps['was'] ) {
+			return; // Con Advanced Shipping las reglas pueden estar hechas allí.
+		}
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || ! in_array( $screen->id, array( 'woocommerce_page_wc-settings', 'plugins', 'dashboard' ), true ) ) {
+			return;
+		}
+		if ( ! class_exists( 'TS_Shipping_Method' ) && function_exists( 'WC' ) ) {
+			WC()->shipping(); // Carga los métodos (dispara woocommerce_shipping_init).
+		}
+		if ( class_exists( 'TS_Shipping_Method' ) && TS_Shipping_Method::is_in_any_zone() ) {
+			return;
+		}
+		echo '<div class="notice notice-warning"><p>' . wp_kses_post( sprintf(
+			/* translators: %s ruta del menú */
+			__( '<strong>Total Sucursales:</strong> para ofrecer retiro en tienda y envío nacional, añade el método de envío <strong>«Total Sucursales: retiro o envío nacional»</strong> a tu zona de envío en %s. No hace falta Advanced Shipping.', 'total-sucursales' ),
+			'<em>WooCommerce → Ajustes → Envío</em>'
+		) ) . '</p></div>';
+	}
+
 	public function notice_missing_optional() {
 		$missing = array();
 		if ( ! $this->deps['mli'] ) {
 			$missing[] = 'WooCommerce Multi Locations Inventory Management';
-		}
-		if ( ! $this->deps['was'] ) {
-			$missing[] = 'Advanced Shipping for WooCommerce';
 		}
 		if ( empty( $missing ) ) {
 			return;

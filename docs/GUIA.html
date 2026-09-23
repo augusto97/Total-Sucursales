@@ -106,7 +106,7 @@
       <li><a href="#stock"><span class="n">03</span>Stock por sucursal</a></li>
       <li><a href="#mli"><span class="n">04</span>Ajustes de Multi Locations</a></li>
       <li><a href="#ajustes"><span class="n">05</span>Ajustes de Total Sucursales</a></li>
-      <li><a href="#envio"><span class="n">06</span>Reglas de envío</a></li>
+      <li><a href="#envio"><span class="n">06</span>Envío: retiro o envío nacional</a></li>
       <li><a href="#header"><span class="n">07</span>Selector en el header</a></li>
       <li><a href="#cliente"><span class="n">08</span>Lo que ve el cliente</a></li>
       <li><a href="#verificar"><span class="n">09</span>Verificación</a></li>
@@ -126,7 +126,7 @@
     <section class="step" id="que-hace">
       <div class="stephead"><div class="stepnum">00</div><div>
         <h2>Qué hace el plugin</h2>
-        <p>Es un plugin "pegamento": no reemplaza a los otros tres, los conecta. Multi Locations sigue siendo donde se cargan las sucursales y el stock; Advanced Shipping sigue siendo donde se crean las tarifas; States and Municipalities sigue aportando estados y municipios.</p>
+        <p>Es un plugin "pegamento": no reemplaza a los otros tres, los conecta. Multi Locations sigue siendo donde se cargan las sucursales y el stock y States and Municipalities sigue aportando estados y municipios. Las tarifas de retiro y envío las pone su propio método de envío o, si lo prefieres, las reglas de Advanced Shipping.</p>
       </div></div>
       <div class="flow">
         <div><b>1 · Estado del cliente</b>Se detecta por GPS del navegador, por la dirección guardada de su cuenta, o se pregunta con un selector.</div>
@@ -147,7 +147,7 @@
         <tr><th>Plugin</th><th>Obligatorio</th><th>Para qué</th></tr>
         <tr><td>WooCommerce</td><td><span class="pill ok">sí</span></td><td>Base.</td></tr>
         <tr><td>MULTILOCA – Multi Locations Inventory Management</td><td><span class="pill ok">sí</span></td><td>Sucursales, stock por sede, selector de sede, carrito por sede.</td></tr>
-        <tr><td>Advanced Shipping for WooCommerce</td><td><span class="pill">recomendado</span></td><td>Reglas de envío con las condiciones "Total Sucursales". Sin él no hay condición de pickup por radio.</td></tr>
+        <tr><td>Advanced Shipping for WooCommerce</td><td><span class="pill">opcional</span></td><td>No hace falta: Total Sucursales trae su propio método de envío para retiro y envío nacional. Sólo si quieres reglas más elaboradas (tarifas por peso, por subtotal, escalones por distancia) con las condiciones "Total Sucursales".</td></tr>
         <tr><td>States and Municipalities of Venezuela for WooCommerce</td><td><span class="pill">recomendado</span></td><td>Estados con código (ZU, DC…) y lista de municipios. Los códigos de estado deben coincidir entre la sede y el cliente.</td></tr>
         <tr><td>Total Sucursales</td><td><span class="pill ok">sí</span></td><td>Este plugin. Actívalo al final.</td></tr>
       </table></div>
@@ -258,9 +258,25 @@
 
     <section class="step" id="envio">
       <div class="stephead"><div class="stepnum">06</div><div>
-        <h2>Reglas de envío en Advanced Shipping</h2>
-        <p>Ruta: <span class="path">WooCommerce → Ajustes → Envío → zona "Venezuela" → Añadir método → Advanced Shipping</span>. Se necesitan dos reglas como mínimo. El plugin añade tres condiciones nuevas al desplegable, bajo el grupo "Total Sucursales".</p>
+        <h2>Envío: retiro en tienda o envío nacional</h2>
+        <p>Hay dos formas de convertir &laquo;esta tienda está dentro del radio&raquo; en tarifas. Usa <strong>una de las dos</strong> en la zona, no ambas: el cliente vería las tarifas repetidas.</p>
       </div></div>
+      <h3>Opción A (recomendada): el método de envío de Total Sucursales</h3>
+      <p>No necesita Advanced Shipping. Ruta: <span class="path">WooCommerce → Ajustes → Envío → zona "Venezuela" → Añadir método de envío → Total Sucursales: retiro o envío nacional</span>. Luego pulsa <em>Editar</em> en el método:</p>
+      <ol class="plain">
+        <li><strong>Nombre y costo del retiro</strong>: lo que ve el cliente en la tienda donde puede retirar. Normalmente <code>0</code>.</li>
+        <li><strong>Nombre y costo del envío</strong>: para las demás tiendas del pedido. Déjalo en <code>0</code> si el envío se cobra aparte.</li>
+        <li><strong>Envío también donde se puede retirar</strong>: si lo marcas, en la tienda más cercana el cliente elige entre retirar o recibirlo; si no, sólo se le ofrece el retiro.</li>
+      </ol>
+      <div class="grid2">
+        <figure><img src="guia/19-metodo-envio.png" alt="Ajustes del método de envío Total Sucursales: nombre y costo del retiro, nombre y costo del envío" loading="lazy"><figcaption>Ajustes del método. En la lista de la zona aparece como &laquo;Retiro en tienda / Envío nacional&raquo;.</figcaption></figure>
+        <div>
+          <p>El resultado es el mismo que con las dos reglas de la opción B: en cada pedido, una sola tienda (la más cercana dentro del radio) ofrece retiro y las demás, envío nacional. Si Advanced Shipping no está instalado y el método no está en ninguna zona, el plugin lo avisa en el escritorio y en <em>Estado de la integración</em>.</p>
+        </div>
+      </div>
+
+      <h3>Opción B: reglas de Advanced Shipping</h3>
+      <p>Sólo si ya usas Advanced Shipping o necesitas reglas más elaboradas. Ruta: <span class="path">WooCommerce → Ajustes → Envío → zona "Venezuela" → Añadir método → Advanced Shipping</span>. Se necesitan dos reglas como mínimo. El plugin añade tres condiciones nuevas al desplegable, bajo el grupo "Total Sucursales".</p>
       <div class="tablewrap"><table>
         <tr><th>Condición</th><th>Operadores</th><th>Valor</th><th>Cuándo usarla</th></tr>
         <tr><td><strong>Sucursal elegible para pickup (radio)</strong></td><td>Es / No es</td><td>Sí / No</td><td>La principal. "Sí" sólo se cumple para la sede más cercana dentro del radio.</td></tr>
@@ -284,7 +300,7 @@
         <figure><img src="guia/07-was-rule-national.png" alt="Regla Envío nacional con la condición Sucursal elegible para pickup = No" loading="lazy"><figcaption>La regla "Envío nacional".</figcaption></figure>
         <figure><img src="guia/05-shipping-zone.png" alt="Zona de envío Venezuela con las dos reglas" loading="lazy"><figcaption>Zona "Venezuela" con los dos métodos activos.</figcaption></figure>
       </div>
-      <div class="callout"><p>No uses el método "Pickup Location" de Multi Locations ni el "Recogida local" de WooCommerce para esto: ninguno de los dos sabe qué sede está dentro del radio. Las reglas de Advanced Shipping con la condición de arriba sí.</p></div>
+      <div class="callout"><p>No uses el método "Pickup Location" de Multi Locations ni el "Recogida local" de WooCommerce para esto: ninguno de los dos sabe qué sede está dentro del radio. El método de Total Sucursales y las reglas de Advanced Shipping con la condición de arriba sí.</p></div>
     </section>
 
     <section class="step" id="header">
@@ -360,7 +376,9 @@
         <tr><td>Al elegir el estado no se selecciona sola la sucursal de esa zona</td><td>Ninguna sede visible pertenece al estado elegido (oculta, sin estado, o con el estado mal guardado).</td><td>Igual que arriba. Con la sede visible y su estado correcto, el plugin la selecciona automáticamente.</td></tr>
         <tr><td>El estado de una sede se ve raro en el diagnóstico (por ejemplo <code>Carabobo</code> en vez de <code>CA</code>)</td><td>Se cargó con el autocompletado de direcciones de Multi Locations, que escribe el nombre largo del estado.</td><td>Desde 0.2.0 el plugin reconoce el nombre igual que el código, así que funciona. Aun así conviene volver a elegir el estado en el desplegable "State".</td></tr>
         <tr><td>Nunca aparece "Retiro en tienda"</td><td>La sede no tiene Lat/Lng, o el cliente no compartió GPS y la geocodificación está en "No geocodificar".</td><td>Cargar coordenadas en la sede. Revisar el geocodificador. Probar con el botón del checkout.</td></tr>
-        <tr><td>Aparecen las dos opciones a la vez</td><td>Las reglas de Advanced Shipping no tienen la condición, o una está en "Sí" y la otra sin condición.</td><td>Revisar que "Envío nacional" tenga la condición en "No".</td></tr>
+        <tr><td>Aparecen las dos opciones a la vez</td><td>Con el método de Total Sucursales: está marcada &laquo;Envío también donde se puede retirar&raquo;. Con Advanced Shipping: las reglas no tienen la condición, o una está en "Sí" y la otra sin condición.</td><td>Desmarcar la opción del método, o revisar que la regla "Envío nacional" tenga la condición en "No".</td></tr>
+        <tr><td>Las tarifas salen repetidas</td><td>En la zona están a la vez el método de Total Sucursales y las reglas de Advanced Shipping.</td><td>Dejar sólo uno de los dos en la zona.</td></tr>
+        <tr><td>No aparece ni retiro ni envío nacional</td><td>Ni el método de Total Sucursales está en la zona ni hay reglas de Advanced Shipping.</td><td>Añadir el método en la zona (opción A del paso 06).</td></tr>
         <tr><td>La tienda sale vacía</td><td>La sede activa es la "Online Store" sin stock, o el filtro de Multi Locations está activo en un tema de bloques.</td><td>Borrar o cargar stock en "Online Store". Apagar el filtro de Multi Locations y dejar el de este plugin.</td></tr>
         <tr><td>El switcher de sedes de Multi Locations no cambia al elegir</td><td>Multi Locations sólo carga el script que envía ese formulario cuando tiene activado alguno de sus modos de autodetección.</td><td>Activar un modo de detección en Multi Locations (por ejemplo "With Browser") o usar el popup de sedes <code>[wcmlim_locations_popup]</code>.</td></tr>
         <tr><td>El cliente ve un estado equivocado</td><td>Está lejos de las sedes y su estado se dedujo por la sede más cercana.</td><td>Bajar "Distancia máxima para inferir el estado" o usar el modo "Preguntar siempre".</td></tr>
