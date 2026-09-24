@@ -11,12 +11,25 @@ const SHOTS = __dirname + '/shots/';
 const results = [];
 function log(name, ok, detail) { results.push({ name, ok }); console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? ' — ' + detail : '')); }
 async function cookies(ctx) { const c = await ctx.cookies(BASE); const o = {}; c.forEach(k => o[k.name] = k.value); return o; }
+// Elegir tienda dispara un AJAX de MLI que además bloquea el botón de compra hasta que responde: se
+// espera a eso (no a un reloj) y, si el clic cayó con el botón bloqueado, se repite una vez.
 async function addToCart(page, slug, re) {
   await page.goto(BASE + '/product/' + slug + '/', { waitUntil: 'networkidle' });
   const o = await page.$$eval('select.select_location option', o => o.map(x => ({ v: x.value, t: x.textContent })));
   const p = o.find(x => re ? re.test(x.t) : x.v !== '-1');
-  if (p) { await page.selectOption('select.select_location', p.v); await page.waitForTimeout(600); }
-  await page.click('button.single_add_to_cart_button'); await page.waitForTimeout(2500);
+  if (p) {
+    const done = page.waitForResponse(r => /wcmlim_set_location_on_change/.test(r.request().postData() || ''), { timeout: 10000 }).catch(() => null);
+    await page.selectOption('select.select_location', p.v);
+    await done;
+    await page.waitForLoadState('networkidle');
+  }
+  const count = async () => Number(((await page.context().cookies()).find(c => c.name === 'woocommerce_items_in_cart') || {}).value || 0);
+  const before = await count();
+  for (let attempt = 0; attempt < 2 && (await count()) <= before; attempt++) {
+    await page.waitForFunction(() => { const b = document.querySelector('button.single_add_to_cart_button'); return b && !b.disabled; }, null, { timeout: 10000 }).catch(() => {});
+    await page.click('button.single_add_to_cart_button');
+    for (let i = 0; i < 40 && (await count()) <= before; i++) await page.waitForTimeout(250);
+  }
   return o.map(x => x.t.trim());
 }
 async function fillBlockCheckout(page, state, muniRe) {
@@ -116,6 +129,35 @@ async function panel(page) {
     log('B2 tras botón GPS (extensionCartUpdate): Retiro en tienda y distancia 3,1 km', sm.some(t => /Retiro en tienda/.test(t)) && pn.li.some(t => /3[,.]1 km/.test(t)), JSON.stringify({ sm, pn }));
     await page.screenshot({ path: SHOTS + 'b2-checkout-blocks-gps.png', fullPage: true });
     await ctx.close();
+  }
+
+  // ---------- B3: otro plugin vuelve a mostrar y exigir la "Ciudad" de Venezuela ----------
+  // El plugin la oculta (la sustituye el municipio); si otro filtro la saca después, el checkout se
+  // quedaba sin envío hasta que el cliente escribía la ciudad. Debe rellenarse con el municipio y ocultarse.
+  {
+    const fs = require('fs');
+    const mu = __dirname + '/wordpress/wp-content/mu-plugins';
+    const file = mu + '/ts-conflict-city.php';
+    fs.mkdirSync(mu, { recursive: true });
+    fs.writeFileSync(file, "<?php\nadd_filter( 'woocommerce_get_country_locale', function ( $l ) { $l['VE']['city'] = array( 'hidden' => false, 'required' => true, 'label' => 'Ciudad' ); return $l; }, 5000 );\n");
+    try {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+      await ctx.addCookies([{ name: 'ts_estado', value: 'ZU', url: BASE }, { name: 'ts_estado_src', value: 'manual', url: BASE }]);
+      const page = await ctx.newPage();
+      await addToCart(page, 'producto-a-delicias-y-chacao', /Delicias/);
+      await fillBlockCheckout(page, 'ZU', /Maracaibo/);
+      await page.waitForTimeout(3000);
+      const city = await page.evaluate(() => {
+        const i = document.querySelector('#shipping-city');
+        const w = i && i.closest('.wc-block-components-text-input, .wc-block-components-address-form__city');
+        return { exists: !!i, value: i ? i.value : null, hidden: w ? getComputedStyle(w).display === 'none' : null };
+      });
+      const sm = await shippingOptions(page);
+      log('B3 "Ciudad" forzada por otro plugin: se oculta, se rellena con el municipio y hay retiro', city.exists && city.hidden && /Maracaibo/.test(city.value || '') && sm.some(t => /Retiro en tienda/.test(t)), JSON.stringify({ city, sm }));
+      await ctx.close();
+    } finally {
+      fs.unlinkSync(file);
+    }
   }
 
   await browser.close();

@@ -78,6 +78,42 @@
 		return h('div', { className: 'ts-blocks-panel' }, children);
 	}
 
+	/*
+	 * Venezuela: la ciudad libre la sustituye el select de municipio y el plugin la oculta. Si otro
+	 * plugin o el tema la vuelve a mostrar (y a exigir), el cliente vería "Ciudad" y "Municipio" y
+	 * WooCommerce no calcularía el envío hasta que escribiera la ciudad. Aquí se copia el municipio
+	 * elegido en la ciudad y se oculta el campo.
+	 */
+	function syncCity() {
+		var store = wp.data.select('wc/store/cart');
+		if (!store || !store.getCustomerData) { return; }
+		var data = store.getCustomerData() || {};
+		var dispatch = wp.data.dispatch('wc/store/cart');
+		[['shipping', 'shippingAddress', 'setShippingAddress'], ['billing', 'billingAddress', 'setBillingAddress']].forEach(function (t) {
+			var addr = data[t[1]];
+			var input = document.getElementById(t[0] + '-city');
+			var wrap = input ? input.closest('.wc-block-components-text-input, .wc-block-components-address-form__city') : null;
+			// Sólo si el select de municipio de ese estado está en el formulario (el ajuste puede estar apagado).
+			var ve = addr && addr.country === 'VE' && addr.state &&
+				document.querySelector('[id^="' + t[0] + '"][id$="municipio-' + String(addr.state).toLowerCase() + '"]');
+			if (wrap) { wrap.style.display = ve ? 'none' : ''; }
+			if (!ve) { return; }
+			var muni = addr[NS + '/municipio-' + String(addr.state).toLowerCase()];
+			if (muni && addr.city !== muni && typeof dispatch[t[2]] === 'function') {
+				var next = {};
+				Object.keys(addr).forEach(function (k) { next[k] = addr[k]; });
+				next.city = muni;
+				dispatch[t[2]](next);
+			}
+		});
+	}
+	var syncing = false;
+	wp.data.subscribe(function () {
+		if (syncing) { return; }
+		syncing = true;
+		try { syncCity(); } finally { syncing = false; }
+	});
+
 	wp.plugins.registerPlugin('total-sucursales-shipping', {
 		render: function () { return h(Slot, null, h(Panel)); },
 		scope: 'woocommerce-checkout'

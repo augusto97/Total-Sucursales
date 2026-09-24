@@ -133,9 +133,19 @@ class TS_Shipping_Method extends WC_Shipping_Method {
 	 * ¿Hay alguna zona con este método activado?
 	 */
 	public static function is_in_any_zone() {
+		return ! empty( self::instance_ids() );
+	}
+
+	/**
+	 * instance_id de este método en todas las zonas (sólo los activados).
+	 *
+	 * @return int[]
+	 */
+	public static function instance_ids() {
 		if ( ! class_exists( 'WC_Shipping_Zones' ) ) {
-			return false;
+			return array();
 		}
+		$ids     = array();
 		$zones   = WC_Shipping_Zones::get_zones();
 		$zones[] = array( 'zone_id' => 0 ); // "Resto del mundo".
 		foreach ( $zones as $z ) {
@@ -145,10 +155,10 @@ class TS_Shipping_Method extends WC_Shipping_Method {
 			}
 			foreach ( $zone->get_shipping_methods( true ) as $method ) {
 				if ( self::ID === $method->id ) {
-					return true;
+					$ids[] = (int) $method->instance_id;
 				}
 			}
 		}
-		return false;
+		return $ids;
 	}
 }
