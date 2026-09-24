@@ -25,7 +25,9 @@ class TS_Blocks {
 			add_action( 'woocommerce_blocks_loaded', array( __CLASS__, 'register_store_api' ) );
 		}
 		add_action( 'woocommerce_init', array( __CLASS__, 'register_municipio_fields' ), 20 );
-		add_filter( 'woocommerce_get_country_locale', array( __CLASS__, 'hide_city_in_blocks' ), 20 );
+		// Tarde, para ganar a otros plugins que vuelvan a mostrar la ciudad de Venezuela; si aun así sale,
+		// ts-blocks-checkout.js la rellena con el municipio y la oculta.
+		add_filter( 'woocommerce_get_country_locale', array( __CLASS__, 'hide_city_in_blocks' ), 999 );
 		add_action( 'woocommerce_store_api_cart_update_customer_from_request', array( __CLASS__, 'on_update_customer' ), 10, 2 );
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( __CLASS__, 'on_update_order' ), 10, 2 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );

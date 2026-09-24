@@ -438,6 +438,9 @@ class TS_Settings {
 		if ( 'radius' !== self::pickup_criterion() ) {
 			echo '<tr><td>' . esc_html__( 'Retiro por municipio', 'total-sucursales' ) . '</td><td>' . self::municipio_status() . '</td></tr>';
 		}
+		if ( $in_zone && 'on' === get_option( 'wcmlim_enable_shipping_methods' ) ) {
+			echo '<tr><td>' . esc_html__( 'MLI: métodos de envío por tienda (Assign Shipping Methods to each location)', 'total-sucursales' ) . '</td><td>' . self::mli_methods_status() . '</td></tr>';
+		}
 		echo '</table>';
 
 		if ( class_exists( 'TS_Debug' ) ) {
@@ -460,6 +463,41 @@ class TS_Settings {
 		}
 
 		self::render_locations_diagnostic();
+	}
+
+	/**
+	 * Con "Assign Shipping Methods to each location" activado, Multi Locations quita de cada paquete
+	 * los métodos de envío que no estén marcados en la ficha de su tienda ("Select Shipping Methods"),
+	 * y avisa con "Cart item ... could not be delivered in shipping zone". Si el método «Total
+	 * Sucursales» no está marcado en una tienda, sus pedidos se quedan sin ninguna opción de envío.
+	 * Ojo: si la ficha se guardó sin ninguno marcado, la lista queda vacía y Multi Locations los quita
+	 * todos; sólo una tienda que nunca guardó ese campo se libra.
+	 *
+	 * @return string HTML ya escapado.
+	 */
+	private static function mli_methods_status() {
+		$ours    = TS_Shipping_Method::instance_ids();
+		$hidden  = class_exists( 'TS_Location_Filter' ) ? TS_Location_Filter::manual_exclusions() : array();
+		$blocked = array();
+		foreach ( TS_Locations::all() as $id => $l ) {
+			if ( in_array( (int) $id, $hidden, true ) ) {
+				continue;
+			}
+			$methods = get_term_meta( $id, 'wcmlim_shipping_method', true );
+			if ( is_array( $methods ) && ! array_intersect( $ours, array_map( 'intval', $methods ) ) ) {
+				$blocked[] = $l['name'];
+			}
+		}
+		if ( ! $blocked ) {
+			return '<span style="color:green">&#10004;</span> ' . esc_html__( 'Activo, y el método «Total Sucursales» está permitido en todas las tiendas.', 'total-sucursales' );
+		}
+		return '<span style="color:#c00">&#10008;</span> ' . esc_html(
+			sprintf(
+				/* translators: %s lista de tiendas */
+				__( 'Multi Locations quita el método «Total Sucursales» en: %s. Sus pedidos no tendrán ninguna opción de envío ("could not be delivered in shipping zone"). Márcalo en "Select Shipping Methods" de la ficha de cada tienda (Productos → Locations), o desactiva "Assign Shipping Methods to each location" en MULTILOCA → Settings.', 'total-sucursales' ),
+				implode( ', ', $blocked )
+			)
+		);
 	}
 
 	/**

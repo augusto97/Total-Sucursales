@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.6.3
+Stable tag: 0.6.4
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,10 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.6.4 =
+* Añadido: "Estado de la integración" avisa cuando Multi Locations tiene activado "Assign Shipping Methods to each location" y el método «Total Sucursales» no está marcado en alguna tienda. En ese caso Multi Locations lo quita y el pedido se queda sin opciones de envío ("Cart item … could not be delivered in shipping zone").
+* Corregido: si otro plugin o el tema volvía a mostrar el campo "Ciudad" de Venezuela en el checkout por bloques, el cliente veía "Ciudad" y "Municipio" a la vez y el envío no se calculaba hasta escribir la ciudad. Ahora la ciudad se rellena con el municipio elegido y se oculta.
 
 = 0.6.3 =
 * Corregido: el aviso "Sucursales sin grupo de ubicaciones" (ajustes y panel de diagnóstico) salía aunque la función de grupos de Multi Locations estuviera apagada. El grupo sólo hace falta con "Enable location group" activado, que es cuando aparece el campo "Location Group" en la ficha de la tienda.
