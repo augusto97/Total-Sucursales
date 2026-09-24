@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.6.4
+Stable tag: 0.7.0
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,10 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.7.0 =
+* Añadido: "Ocultar las opciones de envío" y "Tiendas autorizadas para envíos" (WooCommerce > Ajustes > Total Sucursales > Opciones de envío en el checkout). En los pedidos de tiendas no autorizadas el cliente no ve las opciones de envío ni la línea de envío del resumen (carrito y checkout, clásico y por bloques); por debajo el pedido sigue recibiendo "Retiro en tienda" (elegido solo, sin el envío nacional) o "Envío nacional". En las autorizadas se ve todo como siempre.
+* Cambiado: cuando al cliente le aparece la opción de retiro (por ejemplo, al elegir su municipio), queda elegida por defecto.
 
 = 0.6.4 =
 * Añadido: "Estado de la integración" avisa cuando Multi Locations tiene activado "Assign Shipping Methods to each location" y el método «Total Sucursales» no está marcado en alguna tienda. En ese caso Multi Locations lo quita y el pedido se queda sin opciones de envío ("Cart item … could not be delivered in shipping zone").

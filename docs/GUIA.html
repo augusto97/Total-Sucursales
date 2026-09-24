@@ -120,7 +120,7 @@
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
       <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda según el municipio del cliente o su distancia a la tienda; en las demás, envío nacional. Todo sobre Multi Locations y States and Municipalities of Venezuela, con Advanced Shipping como opción.</p>
-      <div class="meta"><span>plugin 0.6.4</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <div class="meta"><span>plugin 0.7.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -285,6 +285,21 @@
           <p>El retiro por municipio no necesita coordenadas ni geocodificación. El radio sigue sirviendo para el cliente que comparte su posición y está cerca de una tienda de otro municipio; con <em>Sólo por municipio</em> se ignora.</p>
         </div>
       </div>
+      <h3 id="envio-oculto">Ocultar las opciones de envío salvo en las tiendas autorizadas</h3>
+      <p>Si sólo algunas tiendas están autorizadas para hacer envíos, en <span class="path">WooCommerce → Ajustes → Total Sucursales → Opciones de envío en el checkout</span>:</p>
+      <ol class="plain">
+        <li><strong>Ocultar las opciones de envío</strong>: activado.</li>
+        <li><strong>Tiendas autorizadas para envíos</strong>: elige las que sí pueden. En sus pedidos el checkout se ve como siempre.</li>
+      </ol>
+      <div class="grid2">
+        <figure class="tall"><img src="guia/23-envio-oculto-bloques.png" alt="Checkout por bloques sin el bloque de opciones de envío ni la línea de envío del resumen" loading="lazy"><figcaption>Pedido de una tienda no autorizada: sin opciones de envío ni línea de envío en el resumen. Por debajo, este pedido lleva &laquo;Retiro en tienda&raquo;.</figcaption></figure>
+        <div>
+          <p>En los pedidos de las demás tiendas el cliente no ve las opciones de envío ni la línea de envío del resumen, ni en el carrito ni en el checkout (clásico o por bloques). Es sólo visual: el pedido sigue recibiendo <strong>Retiro en tienda</strong> si el cliente puede retirar (queda elegido solo y se descarta el envío nacional) o <strong>Envío nacional</strong> si no. Así queda en el pedido, en el correo y en &laquo;Dónde retirar tu pedido&raquo;.</p>
+          <p>El costo del envío se sigue sumando al total aunque no se vea: con las opciones ocultas, deja el envío en costo 0. Si el pedido tiene productos de varias tiendas, las opciones se ven si alguna está autorizada.</p>
+          <p>En todos los casos, cuando al cliente le aparece la opción de retiro (por ejemplo, al elegir su municipio), queda elegida por defecto.</p>
+        </div>
+      </div>
+
       <h3>Opción A (recomendada): el método de envío de Total Sucursales</h3>
       <p>No necesita Advanced Shipping. Ruta: <span class="path">WooCommerce → Ajustes → Envío → zona "Venezuela" → Añadir método de envío → Total Sucursales: retiro o envío nacional</span>. Luego pulsa <em>Editar</em> en el método:</p>
       <ol class="plain">

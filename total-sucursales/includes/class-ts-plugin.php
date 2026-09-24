@@ -55,6 +55,7 @@ final class TS_Plugin {
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-locations.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-municipios.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-location-admin.php';
+		require_once TS_PLUGIN_DIR . 'includes/class-ts-shipping-ui.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-geocoder.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-customer.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-location-filter.php';
@@ -77,6 +78,7 @@ final class TS_Plugin {
 		TS_Customer::init();
 		TS_Location_Filter::init();
 		TS_Packages::init();
+		TS_Shipping_UI::init();
 		TS_Catalog::init();
 		TS_Blocks::init();
 		TS_Debug::init();

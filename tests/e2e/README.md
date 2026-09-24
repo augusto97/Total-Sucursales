@@ -166,6 +166,19 @@ se respeta y en el alta pide primero el estado. Restaura las tiendas al terminar
 node ficha-municipio.js
 ```
 
+## Opciones de envío ocultas
+
+`envio-oculto.js` activa "Ocultar las opciones de envío" y comprueba: carrito y checkout clásicos sin
+filas de envío a la vista; por debajo "Retiro en tienda" con Maracaibo y "Envío nacional" con Cabimas;
+el pedido con retiro y "Dónde retirar"; una tienda autorizada con todo a la vista; con el método propio
+ofreciendo también el envío, que en la autorizada el retiro queda elegido al aparecer y que en la no
+autorizada sólo queda el retiro; y el checkout por bloques sin el bloque de opciones ni la línea de
+envío. Restaura ajustes, motor de envío y páginas.
+
+```bash
+node envio-oculto.js
+```
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.

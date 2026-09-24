@@ -37,3 +37,10 @@
 .ts-pickup-where ul { margin: 0; padding: 0; list-style: none; }
 .ts-pickup-where li + li { margin-top: .5em; }
 .ts-pickup-where__address { display: block; color: #555; }
+/* "Ocultar las opciones de envío": carrito y checkout por bloques. */
+body.ts-hide-shipping .wp-block-woocommerce-checkout-shipping-method-block,
+body.ts-hide-shipping .wp-block-woocommerce-checkout-shipping-methods-block,
+body.ts-hide-shipping .wp-block-woocommerce-checkout-pickup-options-block,
+body.ts-hide-shipping .wp-block-woocommerce-checkout-order-summary-shipping-block,
+body.ts-hide-shipping .wp-block-woocommerce-cart-order-summary-shipping-block,
+body.ts-hide-shipping .wc-block-components-totals-shipping { display: none !important; }
