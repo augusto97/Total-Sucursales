@@ -7,6 +7,17 @@
 	}
 	var TS = window.TotalSucursales;
 
+	// WooCommerce no recalcula el checkout clásico mientras quede vacío algún campo de dirección
+	// obligatorio, así que el retiro aparecería al terminar de escribir la dirección y no al elegir el
+	// municipio. Con el retiro por municipio el municipio decide por sí solo: se recalcula al elegirlo.
+	if (ts_params.pickup_by_municipio) {
+		$(document.body).on('change', 'select#billing_city, select#shipping_city', function () {
+			if ($(this).val()) {
+				$(document.body).trigger('update_checkout');
+			}
+		});
+	}
+
 	$(document).on('click', '.ts-checkout-geo__btn', function (e) {
 		e.preventDefault();
 		var $btn = $(this).prop('disabled', true);

@@ -6,18 +6,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WPC_Ts_Sede_Pickup_Condition' ) ) {
 
 	/**
-	 * Condición: el paquete pertenece a LA sucursal elegible para pickup
-	 * (la más cercana al cliente dentro del radio configurado). Sólo una por pedido.
+	 * Condición: la tienda del paquete ofrece retiro según el criterio (municipio del cliente y/o
+	 * radio) y el alcance (una tienda por pedido o todas las que califiquen) de los ajustes.
 	 */
 	class WPC_Ts_Sede_Pickup_Condition extends WPC_Condition {
 
 		public function __construct() {
-			$this->name        = __( 'Sucursal elegible para pickup', 'total-sucursales' );
+			$this->name        = __( 'Sucursal elegible para retiro', 'total-sucursales' );
 			$this->slug        = 'ts_sede_pickup';
 			$this->group       = __( 'Total Sucursales', 'total-sucursales' );
 			$this->description = sprintf(
 				/* translators: %s radio en km */
-				__( '"Sí" únicamente para la sucursal más cercana al cliente dentro del radio configurado (%s km). Usa "Sí" en la regla de retiro en tienda y "No" en la de envío nacional.', 'total-sucursales' ),
+				__( '"Sí" para la tienda donde el cliente puede retirar, según el criterio de los ajustes de Total Sucursales (municipio del cliente y/o radio de %s km). Usa "Sí" en la regla de retiro en tienda y "No" en la de envío nacional.', 'total-sucursales' ),
 				TS_Settings::radius_km()
 			);
 			parent::__construct();
@@ -35,7 +35,7 @@ if ( ! class_exists( 'WPC_Ts_Sede_Pickup_Condition' ) ) {
 				'type'    => 'select',
 				'class'   => array( 'wpc-value' ),
 				'options' => array(
-					'yes' => __( 'Sí (dentro del radio, la más cercana)', 'total-sucursales' ),
+					'yes' => __( 'Sí (puede retirar en esta tienda)', 'total-sucursales' ),
 					'no'  => __( 'No (envío nacional)', 'total-sucursales' ),
 				),
 			);

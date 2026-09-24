@@ -16,6 +16,8 @@ class TS_Settings {
 
 	public static function init() {
 		TS_Texts::migrate();
+		add_action( 'woocommerce_admin_field_ts_pickup_municipios', array( __CLASS__, 'render_municipios_field' ) );
+		add_filter( 'woocommerce_admin_settings_sanitize_option_' . TS_Municipios::OPTION, array( __CLASS__, 'sanitize_municipios_field' ), 10, 3 );
 		add_filter( 'woocommerce_settings_tabs_array', array( __CLASS__, 'add_tab' ), 60 );
 		add_action( 'woocommerce_settings_tabs_total_sucursales', array( __CLASS__, 'render_tab' ) );
 		add_action( 'woocommerce_update_options_total_sucursales', array( __CLASS__, 'save' ) );
@@ -24,6 +26,8 @@ class TS_Settings {
 	public static function defaults() {
 		return array(
 			'radius_km'            => 10,
+			'pickup_criterion'     => 'both',
+			'pickup_scope'         => 'one',
 			'detect_state'         => 'gps',      // gps | ask | off
 			'state_detect_max_km'  => 100,
 			'ask_if_gps_fails'     => 'yes',
@@ -58,6 +62,22 @@ class TS_Settings {
 			return $all[ $key ];
 		}
 		return $default;
+	}
+
+	/**
+	 * Qué hace que una tienda ofrezca retiro: radius | municipio | both.
+	 */
+	public static function pickup_criterion() {
+		$v = (string) self::get( 'pickup_criterion', 'both' );
+		return in_array( $v, array( 'radius', 'municipio', 'both' ), true ) ? $v : 'both';
+	}
+
+	/**
+	 * Cuántas tiendas de un pedido pueden ofrecer retiro: one | all.
+	 */
+	public static function pickup_scope() {
+		$v = (string) self::get( 'pickup_scope', 'one' );
+		return in_array( $v, array( 'one', 'all' ), true ) ? $v : 'one';
 	}
 
 	public static function radius_km() {
@@ -170,10 +190,39 @@ class TS_Settings {
 			array( 'type' => 'sectionend', 'id' => 'ts_section_state' ),
 
 			array(
-				'title' => __( 'Retiro en tienda por radio', 'total-sucursales' ),
+				'title' => __( 'Retiro en tienda', 'total-sucursales' ),
 				'type'  => 'title',
-				'desc'  => __( 'La sucursal más cercana al cliente dentro del radio es la única elegible para PICKUP. Las demás sucursales del pedido se tratan como envío nacional. Para convertirlo en tarifas, añade el método de envío «Total Sucursales: retiro o envío nacional» a tu zona en WooCommerce → Ajustes → Envío (no necesita Advanced Shipping), o usa las condiciones "Total Sucursales" en las reglas de Advanced Shipping.', 'total-sucursales' ),
+				'desc'  => __( 'Decide en qué tiendas de cada pedido puede retirar el cliente; en las demás se le ofrece envío nacional. Para convertirlo en tarifas, añade el método de envío «Total Sucursales: retiro o envío nacional» a tu zona en WooCommerce → Ajustes → Envío (no necesita Advanced Shipping), o usa las condiciones "Total Sucursales" en las reglas de Advanced Shipping.', 'total-sucursales' ),
 				'id'    => 'ts_section_radius',
+			),
+			array(
+				'title'   => __( 'Criterio para ofrecer retiro', 'total-sucursales' ),
+				'id'      => "{$p}[pickup_criterion]",
+				'type'    => 'select',
+				'desc'    => __( 'Por municipio: el municipio que el cliente elige en el checkout está entre los que acepta la tienda (tabla de abajo). No necesita GPS. Por radio: el cliente está a menos de la distancia indicada; hace falta conocer su posición (GPS o dirección). Con "municipio o radio" basta con cualquiera de los dos.', 'total-sucursales' ),
+				'desc_tip' => false,
+				'options' => array(
+					'both'      => __( 'Municipio o radio (recomendado)', 'total-sucursales' ),
+					'municipio' => __( 'Sólo por municipio', 'total-sucursales' ),
+					'radius'    => __( 'Sólo por radio', 'total-sucursales' ),
+				),
+				'default' => 'both',
+			),
+			array(
+				'title'   => __( 'Tiendas con retiro por pedido', 'total-sucursales' ),
+				'id'      => "{$p}[pickup_scope]",
+				'type'    => 'select',
+				'desc'    => __( 'Cuando el pedido tiene productos de varias tiendas y más de una cumple el criterio. "Una sola": la más cercana si se conoce la posición del cliente; si no, la que tiene elegida en el selector de tiendas. Con "una tienda por carrito" en Multi Locations cada pedido es de una sola tienda y esto no cambia nada.', 'total-sucursales' ),
+				'options' => array(
+					'one' => __( 'Una sola tienda por pedido', 'total-sucursales' ),
+					'all' => __( 'Todas las tiendas que cumplan el criterio', 'total-sucursales' ),
+				),
+				'default' => 'one',
+			),
+			array(
+				'title' => __( 'Municipios que pueden retirar en cada tienda', 'total-sucursales' ),
+				'id'    => TS_Municipios::OPTION,
+				'type'  => 'ts_pickup_municipios',
 			),
 			array(
 				'title'             => __( 'Radio de retiro (km)', 'total-sucursales' ),
@@ -271,6 +320,74 @@ class TS_Settings {
 			$out[] = $field;
 		}
 		return $out;
+	}
+
+	/**
+	 * Tabla "Municipios que pueden retirar en cada tienda": una fila por tienda con un selector
+	 * múltiple (con buscador) de los 335 municipios, agrupados por estado y con el de la tienda primero.
+	 */
+	public static function render_municipios_field( $field ) {
+		$locations = TS_Locations::all();
+		$munis     = TS_Municipios::all();
+		$states    = ts_get_ve_states();
+		$name      = TS_Municipios::OPTION;
+		?>
+		<tr valign="top">
+			<th scope="row" class="titledesc"><?php echo esc_html( $field['title'] ); ?></th>
+			<td class="forminp">
+				<?php if ( empty( $munis ) ) : ?>
+					<p class="description"><?php esc_html_e( 'Hace falta el plugin States and Municipalities of Venezuela para elegir municipios. Mientras tanto el retiro sólo puede decidirse por radio.', 'total-sucursales' ); ?></p>
+				<?php elseif ( empty( $locations ) ) : ?>
+					<p class="description"><?php esc_html_e( 'Aún no hay tiendas en Multi Locations.', 'total-sucursales' ); ?></p>
+				<?php else : ?>
+					<p class="description" style="margin-bottom:8px"><?php esc_html_e( 'Un cliente de cualquiera de estos municipios puede retirar en la tienda. Incluye los municipios de su área metropolitana (por ejemplo Maracaibo y San Francisco). Si no configuras una tienda, se usa el municipio de la ciudad de su ficha en Multi Locations.', 'total-sucursales' ); ?></p>
+					<table class="widefat striped ts-municipios" style="max-width:820px">
+						<thead><tr><th style="width:30%"><?php esc_html_e( 'Tienda', 'total-sucursales' ); ?></th><th><?php esc_html_e( 'Municipios', 'total-sucursales' ); ?></th></tr></thead>
+						<tbody>
+						<?php foreach ( $locations as $id => $loc ) : ?>
+							<?php
+							$selected   = TS_Municipios::for_location( $id );
+							$configured = TS_Municipios::is_configured( $id );
+							$order      = array_keys( $munis );
+							if ( $loc['state'] && isset( $munis[ $loc['state'] ] ) ) {
+								$order = array_merge( array( $loc['state'] ), array_diff( $order, array( $loc['state'] ) ) );
+							}
+							?>
+							<tr>
+								<td>
+									<strong><?php echo esc_html( $loc['name'] ); ?></strong><br>
+									<span class="description"><?php echo esc_html( trim( $loc['city'] . ( $loc['state'] ? ' · ' . $loc['state'] : '' ), ' ·' ) ); ?></span>
+								</td>
+								<td>
+									<input type="hidden" name="<?php echo esc_attr( $name . '[' . (int) $id . '][]' ); ?>" value="">
+									<select multiple="multiple" class="wc-enhanced-select ts-municipios-select" style="width:100%"
+										name="<?php echo esc_attr( $name . '[' . (int) $id . '][]' ); ?>"
+										data-location-id="<?php echo (int) $id; ?>"
+										data-placeholder="<?php esc_attr_e( 'Sin municipios: sólo por radio', 'total-sucursales' ); ?>">
+										<?php foreach ( $order as $code ) : ?>
+											<optgroup label="<?php echo esc_attr( isset( $states[ $code ] ) ? $states[ $code ] : $code ); ?>">
+												<?php foreach ( $munis[ $code ] as $key => $m ) : ?>
+													<option value="<?php echo esc_attr( $key ); ?>" <?php selected( in_array( $key, $selected, true ) ); ?>><?php echo esc_html( $m['name'] . ( $m['capital'] && $m['capital'] !== $m['name'] ? ' (' . $m['capital'] . ')' : '' ) ); ?></option>
+												<?php endforeach; ?>
+											</optgroup>
+										<?php endforeach; ?>
+									</select>
+									<?php if ( ! $configured ) : ?>
+										<span class="description"><?php echo esc_html( empty( $selected ) ? __( 'Sin configurar y su ciudad no coincide con ningún municipio: elige los municipios a mano.', 'total-sucursales' ) : __( 'Propuesto a partir de la ciudad de la tienda. Se guarda al pulsar "Guardar cambios".', 'total-sucursales' ) ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<?php
+	}
+
+	public static function sanitize_municipios_field( $value, $option, $raw_value ) {
+		return TS_Municipios::sanitize( $raw_value );
 	}
 
 	public static function render_tab() {

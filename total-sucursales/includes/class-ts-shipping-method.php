@@ -25,7 +25,7 @@ class TS_Shipping_Method extends WC_Shipping_Method {
 		$this->id                 = self::ID;
 		$this->instance_id        = absint( $instance_id );
 		$this->method_title       = __( 'Total Sucursales: retiro o envío nacional', 'total-sucursales' );
-		$this->method_description = __( 'Ofrece "Retiro en tienda" en la tienda más cercana al cliente dentro del radio de Total Sucursales, y "Envío nacional" en las demás. No necesita Advanced Shipping.', 'total-sucursales' );
+		$this->method_description = __( 'Ofrece "Retiro en tienda" en la tienda donde el cliente puede retirar (por su municipio o por el radio, según los ajustes de Total Sucursales) y "Envío nacional" en las demás. No necesita Advanced Shipping.', 'total-sucursales' );
 		$this->supports           = array( 'shipping-zones', 'instance-settings', 'instance-settings-modal' );
 
 		$this->init();

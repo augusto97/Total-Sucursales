@@ -73,7 +73,7 @@ class TS_Checkout {
 	 * Botón "Usar mi ubicación" encima de los métodos de envío.
 	 */
 	public static function render_geo_button() {
-		if ( ! TS_Settings::is_yes( 'checkout_geo_button' ) ) {
+		if ( ! TS_Packages::geo_button_enabled() ) {
 			return;
 		}
 		$coords = TS_Customer::get_coords();
@@ -119,10 +119,9 @@ class TS_Checkout {
 					<?php foreach ( $rows as $p ) : ?>
 						<li>
 							<strong><?php echo esc_html( $p['location_name'] ); ?></strong>
-							<?php if ( null !== $p['distance_km'] ) : ?>
-								<span class="ts-distance"><?php echo esc_html( ts_format_km( $p['distance_km'] ) ); ?></span>
-							<?php else : ?>
-								<span class="ts-distance ts-distance--unknown"><?php echo esc_html( TS_Texts::get( 'unknown_distance' ) ); ?></span>
+							<?php $lbl = TS_Packages::row_label( $p ); ?>
+							<?php if ( '' !== $lbl['label'] ) : ?>
+								<span class="ts-distance<?php echo $lbl['unknown'] ? ' ts-distance--unknown' : ''; ?>"><?php echo esc_html( $lbl['label'] ); ?></span>
 							<?php endif; ?>
 							<?php if ( $p['pickup_eligible'] ) : ?>
 								<span class="ts-badge ts-badge--pickup"><?php echo esc_html( TS_Texts::get( 'pickup_label' ) ); ?></span>
@@ -132,7 +131,7 @@ class TS_Checkout {
 						</li>
 					<?php endforeach; ?>
 				</ul>
-				<?php if ( ! $summary['coords'] ) : ?>
+				<?php if ( TS_Packages::needs_position_note( $summary ) ) : ?>
 					<small class="ts-distance-note"><?php echo esc_html( TS_Texts::get( 'no_position' ) ); ?></small>
 				<?php endif; ?>
 			</td>

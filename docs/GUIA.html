@@ -119,8 +119,8 @@
     <header class="hero">
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
-      <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda sólo en la sucursal más cercana dentro de un radio. Todo sobre Multi Locations, Advanced Shipping y States and Municipalities of Venezuela.</p>
-      <div class="meta"><span>plugin 0.2.4</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda según el municipio del cliente o su distancia a la tienda; en las demás, envío nacional. Todo sobre Multi Locations y States and Municipalities of Venezuela, con Advanced Shipping como opción.</p>
+      <div class="meta"><span>plugin 0.6.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -132,8 +132,8 @@
         <div><b>1 · Estado del cliente</b>Se detecta por GPS del navegador, por la dirección guardada de su cuenta, o se pregunta con un selector.</div>
         <div><b>2 · Sucursales visibles</b>Sólo las sedes de ese estado. Si el estado no tiene sedes, se muestran todas.</div>
         <div><b>3 · Catálogo</b>Se ven los productos con stock en la sede activa. Funciona en tienda clásica y en bloques.</div>
-        <div><b>4 · Envío</b>La sede más cercana dentro del radio (10 km) es la única elegible para retiro en tienda. El resto, envío nacional.</div>
-        <div><b>5 · Pedido</b>Cada pedido guarda posición del cliente, distancia por sede y cuál quedó como pickup.</div>
+        <div><b>4 · Envío</b>Retiro en tienda si el municipio del cliente está entre los que acepta la tienda o si está a menos del radio (10 km). El resto, envío nacional.</div>
+        <div><b>5 · Pedido</b>Cada pedido guarda municipio y posición del cliente, distancia por sede, cuál quedó como pickup y por qué.</div>
       </div>
       <div class="callout info"><p><strong>Una sola idea para no perderse:</strong> las "sucursales" son las <em>Locations</em> de Multi Locations. El plugin no tiene su propia lista de sedes. Si una sede no existe en Multi Locations, no existe para nadie.</p></div>
     </section>
@@ -202,8 +202,8 @@
       <h3>a) Modo de carrito: elige uno</h3>
       <div class="tablewrap"><table>
         <tr><th>Objetivo</th><th>Ajuste en Multi Locations</th><th>Cómo se comporta el envío</th></tr>
-        <tr><td>Una sola sede por pedido (requisitos 6 y 7 del cliente)</td><td>Pestaña <em>Location</em> → <strong>Restrict to One Location</strong> = activado. <em>Split order Packages by location</em> = desactivado.</td><td>Un paquete. Si la sede del carrito está a ≤ radio del cliente → retiro en tienda; si no → envío nacional.</td></tr>
-        <tr><td>Varias sedes por pedido (sección "Determinar envío")</td><td>Pestaña <em>Shipping and Payment Method</em> → <strong>Split order Packages by location</strong> = activado. <em>Restrict to One Location</em> = desactivado.</td><td>Un paquete por sede. Sólo la sede más cercana dentro del radio recibe retiro; las demás, envío nacional. El pedido tendrá tantas líneas de envío como sedes.</td></tr>
+        <tr><td>Una sola sede por pedido (requisitos 6 y 7 del cliente)</td><td>Pestaña <em>Location</em> → <strong>Restrict to One Location</strong> = activado. <em>Split order Packages by location</em> = desactivado.</td><td>Un paquete. Si el cliente puede retirar en la sede del carrito (por municipio o por radio) → retiro en tienda; si no → envío nacional.</td></tr>
+        <tr><td>Varias sedes por pedido (sección "Determinar envío")</td><td>Pestaña <em>Shipping and Payment Method</em> → <strong>Split order Packages by location</strong> = activado. <em>Restrict to One Location</em> = desactivado.</td><td>Un paquete por sede. Recibe retiro una sola sede o todas las que cumplan, según el ajuste <em>Tiendas con retiro por pedido</em>; las demás, envío nacional. El pedido tendrá tantas líneas de envío como sedes.</td></tr>
       </table></div>
       <div class="grid2">
         <figure><img src="guia/08-mli-settings-cart.png" alt="Ajuste Restrict to One Location en Multi Locations" loading="lazy"><figcaption>Pestaña Location → "Restrict to One Location" (recuadro rojo). Activado para el modo de una sede por pedido.</figcaption></figure>
@@ -231,8 +231,11 @@
         <tr><td>Producto: ciudad y dirección bajo cada tienda</td><td>activado</td><td>En la lista de stock por tienda de la ficha de producto añade, debajo del nombre, la ciudad y la dirección de la tienda (campos Locality/City y Street Number + Route de su ficha en Multi Locations). Funciona con todas las vistas de esa lista. No lo combines con los campos de dirección de <span class="path">MULTILOCA → Display settings → Location Fields Display Settings</span>: la dirección saldría dos veces.</td></tr>
         <tr><td>Multi Locations en español</td><td>activado</td><td>Traduce al español, y hablando de &laquo;tienda&raquo; en lugar de &laquo;location&raquo;, lo que Multi Locations enseña al cliente: lista de stock, diálogos, carrito, pedido y correos. Ver <a href="#textos">Textos y español</a>.</td></tr>
         <tr><td>Producto: mostrar sólo la sucursal seleccionada</td><td>desactivado</td><td>En la página de producto oculta las demás sedes cuando ya hay una elegida.</td></tr>
-        <tr><td>Radio de retiro</td><td>10 km</td><td>Umbral para que una sede sea elegible para retiro en tienda.</td></tr>
-        <tr><td>Botón "Usar mi ubicación" en el checkout</td><td>activado</td><td>Permite al cliente enviar su GPS desde el checkout si no lo hizo al navegar.</td></tr>
+        <tr><td>Criterio para ofrecer retiro</td><td>Municipio o radio</td><td><em>Por municipio</em>: el municipio que el cliente elige en el checkout está entre los que acepta la tienda. No necesita GPS. <em>Por radio</em>: el cliente está a menos del radio; hace falta conocer su posición. Con <em>municipio o radio</em> basta cualquiera de los dos. Ver <a href="#municipios">Retiro por municipio</a>.</td></tr>
+        <tr><td>Tiendas con retiro por pedido</td><td>Una sola tienda</td><td>Sólo importa si un pedido tiene productos de varias tiendas (modo split) y más de una cumple. <em>Una sola</em>: la más cercana si se conoce la posición; si no, la elegida en el selector de tiendas; si no, la primera. <em>Todas</em>: cada tienda que cumpla ofrece retiro.</td></tr>
+        <tr><td>Municipios que pueden retirar en cada tienda</td><td>el de la ciudad de la tienda</td><td>Tabla con una fila por tienda. Añade los municipios del área metropolitana (por ejemplo San Francisco en Delicias). Una tienda sin municipios sólo ofrece retiro por radio.</td></tr>
+        <tr><td>Radio de retiro</td><td>10 km</td><td>Distancia máxima para el criterio por radio. No se usa con <em>Sólo por municipio</em>.</td></tr>
+        <tr><td>Botón "Usar mi ubicación" en el checkout</td><td>activado</td><td>Permite al cliente enviar su GPS desde el checkout si no lo hizo al navegar. Sólo aparece cuando le puede servir: no con <em>Sólo por municipio</em> ni cuando ya puede retirar por su municipio.</td></tr>
         <tr><td>Mostrar distancia a cada sucursal</td><td>activado</td><td>Lista bajo los métodos de envío con la distancia y la etiqueta Retiro / Envío nacional.</td></tr>
         <tr><td>Corregir fallos conocidos de Multi Locations</td><td>activado</td><td>Evita dos errores 500 de Multi Locations en <code>admin-ajax.php</code>. No modifica su código, así que sobrevive a sus actualizaciones.</td></tr>
         <tr><td>Geocodificar la dirección de envío</td><td>Nominatim</td><td>Qué usar cuando el cliente no comparte el GPS. <em>Nominatim</em> (OpenStreetMap) es gratuito, requiere un correo de contacto y los resultados se guardan 30 días. <em>Google</em> necesita clave; si se deja vacía reutiliza la clave de Multi Locations. <em>No geocodificar</em>: sin GPS no hay retiro.</td></tr>
@@ -259,19 +262,34 @@
     <section class="step" id="envio">
       <div class="stephead"><div class="stepnum">06</div><div>
         <h2>Envío: retiro en tienda o envío nacional</h2>
-        <p>Hay dos formas de convertir &laquo;esta tienda está dentro del radio&raquo; en tarifas. Usa <strong>una de las dos</strong> en la zona, no ambas: el cliente vería las tarifas repetidas.</p>
+        <p>Primero se decide <strong>dónde puede retirar</strong> el cliente (por su municipio o por la distancia); después, un método de envío convierte eso en tarifas. Para las tarifas hay dos formas: usa <strong>una de las dos</strong> en la zona, no ambas, porque el cliente vería las tarifas repetidas.</p>
       </div></div>
+      <h3 id="municipios">Retiro por municipio</h3>
+      <p>Las zonas de envío de WooCommerce llegan sólo hasta el estado: no permiten decir &laquo;en Maracaibo se retira en Delicias y en Cabimas va por envío nacional&raquo;. Eso se configura aquí, en <span class="path">WooCommerce → Ajustes → Total Sucursales → Retiro en tienda</span>, y la zona se queda con el estado (o con todo el país).</p>
+      <ol class="plain">
+        <li><strong>Criterio para ofrecer retiro</strong>: <em>Municipio o radio</em> (recomendado). El cliente que pone su municipio en el checkout ya ve el retiro sin compartir el GPS; el que está cerca de una tienda de otro municipio también, si comparte su posición.</li>
+        <li><strong>Municipios que pueden retirar en cada tienda</strong>: cada tienda viene propuesta con el municipio de su ciudad (el campo City de su ficha en Multi Locations). Añade los del área metropolitana y pulsa <em>Guardar cambios</em>. Una misma tienda puede aceptar varios municipios y un municipio puede estar en varias tiendas.</li>
+        <li><strong>Tiendas con retiro por pedido</strong>: <em>Una sola tienda</em> salvo que quieras que, en un pedido con productos de varias tiendas, el cliente pueda retirar en todas las que le quedan cerca.</li>
+      </ol>
+      <figure><img src="guia/20-retiro-municipio-ajustes.png" alt="Ajustes de retiro: criterio, tiendas con retiro por pedido y tabla de municipios por tienda" loading="lazy"><figcaption>Delicias acepta Maracaibo y San Francisco; la tienda San Francisco, sólo su municipio. Las filas con &laquo;Propuesto a partir de la ciudad de la tienda&raquo; aún no se han guardado.</figcaption></figure>
+      <div class="grid2">
+        <figure class="tall"><img src="guia/21-checkout-municipio.png" alt="Checkout clásico con Retiro en tienda para un cliente de Maracaibo sin GPS" loading="lazy"><figcaption>Cliente sin GPS que elige el municipio Maracaibo: &laquo;Retiro en tienda&raquo; en Delicias, marcado &laquo;en tu municipio&raquo;. Con Cabimas le saldría &laquo;Envío nacional&raquo;.</figcaption></figure>
+        <div>
+          <p>El checkout recalcula las tarifas en cuanto el cliente elige el municipio, aunque todavía no haya escrito la dirección ni el teléfono. Funciona igual en el checkout clásico (con el desplegable de States and Municipalities) y en el de bloques (con el select de municipio de este plugin). Si el tema deja la ciudad como texto libre, se reconoce el nombre del municipio o el de su capital (&laquo;Ciudad Ojeda&raquo; es el municipio Lagunillas).</p>
+          <p>El retiro por municipio no necesita coordenadas ni geocodificación. El radio sigue sirviendo para el cliente que comparte su posición y está cerca de una tienda de otro municipio; con <em>Sólo por municipio</em> se ignora.</p>
+        </div>
+      </div>
       <h3>Opción A (recomendada): el método de envío de Total Sucursales</h3>
       <p>No necesita Advanced Shipping. Ruta: <span class="path">WooCommerce → Ajustes → Envío → zona "Venezuela" → Añadir método de envío → Total Sucursales: retiro o envío nacional</span>. Luego pulsa <em>Editar</em> en el método:</p>
       <ol class="plain">
         <li><strong>Nombre y costo del retiro</strong>: lo que ve el cliente en la tienda donde puede retirar. Normalmente <code>0</code>.</li>
         <li><strong>Nombre y costo del envío</strong>: para las demás tiendas del pedido. Déjalo en <code>0</code> si el envío se cobra aparte.</li>
-        <li><strong>Envío también donde se puede retirar</strong>: si lo marcas, en la tienda más cercana el cliente elige entre retirar o recibirlo; si no, sólo se le ofrece el retiro.</li>
+        <li><strong>Envío también donde se puede retirar</strong>: si lo marcas, en la tienda donde puede retirar el cliente elige entre retirar o recibirlo; si no, sólo se le ofrece el retiro.</li>
       </ol>
       <div class="grid2">
         <figure><img src="guia/19-metodo-envio.png" alt="Ajustes del método de envío Total Sucursales: nombre y costo del retiro, nombre y costo del envío" loading="lazy"><figcaption>Ajustes del método. En la lista de la zona aparece como &laquo;Retiro en tienda / Envío nacional&raquo;.</figcaption></figure>
         <div>
-          <p>El resultado es el mismo que con las dos reglas de la opción B: en cada pedido, una sola tienda (la más cercana dentro del radio) ofrece retiro y las demás, envío nacional. Si Advanced Shipping no está instalado y el método no está en ninguna zona, el plugin lo avisa en el escritorio y en <em>Estado de la integración</em>.</p>
+          <p>El resultado es el mismo que con las dos reglas de la opción B: las tiendas donde el cliente puede retirar (por municipio o por radio, según los ajustes) ofrecen retiro y las demás, envío nacional. Si Advanced Shipping no está instalado y el método no está en ninguna zona, el plugin lo avisa en el escritorio y en <em>Estado de la integración</em>.</p>
         </div>
       </div>
 
@@ -279,21 +297,21 @@
       <p>Sólo si ya usas Advanced Shipping o necesitas reglas más elaboradas. Ruta: <span class="path">WooCommerce → Ajustes → Envío → zona "Venezuela" → Añadir método → Advanced Shipping</span>. Se necesitan dos reglas como mínimo. El plugin añade tres condiciones nuevas al desplegable, bajo el grupo "Total Sucursales".</p>
       <div class="tablewrap"><table>
         <tr><th>Condición</th><th>Operadores</th><th>Valor</th><th>Cuándo usarla</th></tr>
-        <tr><td><strong>Sucursal elegible para pickup (radio)</strong></td><td>Es / No es</td><td>Sí / No</td><td>La principal. "Sí" sólo se cumple para la sede más cercana dentro del radio.</td></tr>
-        <tr><td>Distancia del cliente a la sucursal (km)</td><td>≤ / ≥</td><td>número</td><td>Para tarifas escalonadas por distancia (por ejemplo delivery local hasta 5 km).</td></tr>
+        <tr><td><strong>Sucursal elegible para retiro</strong></td><td>Es / No es</td><td>Sí / No</td><td>La principal. "Sí" se cumple en la tienda (o tiendas) donde el cliente puede retirar según el criterio y el alcance de los ajustes.</td></tr>
+        <tr><td>Distancia del cliente a la sucursal (km)</td><td>≤ / ≥</td><td>número</td><td>Para tarifas escalonadas por distancia (por ejemplo delivery local hasta 5 km). Sólo se cumple si se conoce la posición del cliente.</td></tr>
         <tr><td>Sucursal del paquete</td><td>Es / No es</td><td>lista de sedes</td><td>Para una tarifa específica de una sede concreta.</td></tr>
       </table></div>
       <h3>Regla 1: Retiro en tienda</h3>
       <ol class="plain">
         <li>Título: <code>Retiro en tienda</code>.</li>
-        <li>Condición: <strong>Sucursal elegible para pickup (radio)</strong> · <strong>Es</strong> · <strong>Sí</strong>.</li>
+        <li>Condición: <strong>Sucursal elegible para retiro</strong> · <strong>Es</strong> · <strong>Sí</strong>.</li>
         <li>Shipping cost: <code>0</code>. Guardar.</li>
       </ol>
       <figure><img src="guia/06-was-rule-pickup.png" alt="Regla Retiro en tienda en Advanced Shipping con la condición Sucursal elegible para pickup = Sí" loading="lazy"><figcaption>La regla "Retiro en tienda" tal como queda guardada.</figcaption></figure>
       <h3>Regla 2: Envío nacional</h3>
       <ol class="plain">
         <li>Título: <code>Envío nacional</code>.</li>
-        <li>Condición: <strong>Sucursal elegible para pickup (radio)</strong> · <strong>Es</strong> · <strong>No</strong>.</li>
+        <li>Condición: <strong>Sucursal elegible para retiro</strong> · <strong>Es</strong> · <strong>No</strong>.</li>
         <li>Shipping cost, cost per weight, etc.: la tarifa que aplique. Se pueden añadir más condiciones normales de Advanced Shipping (peso, subtotal, estado del cliente) en la misma regla.</li>
       </ol>
       <div class="grid2">
@@ -356,10 +374,11 @@
         <li>Elegir un estado sin sedes o "Todos": el switcher lista todas.</li>
         <li>Tienda: sólo aparecen productos con stock en la sede activa. Cambiar de sede cambia el catálogo.</li>
         <li>Producto: el select de sede no muestra sedes de otros estados.</li>
-        <li>Checkout con GPS a menos del radio: aparece "Retiro en tienda" y la distancia. Con GPS lejos: sólo "Envío nacional".</li>
-        <li>Checkout sin GPS: sólo "Envío nacional"; al pulsar "Usar mi ubicación" y aceptar, aparece "Retiro en tienda" sin recargar.</li>
-        <li>Si usan split: con dos sedes en el carrito, sólo la más cercana ofrece retiro.</li>
-        <li>Pedido creado: en el admin aparece el panel "Total Sucursales" con posición, distancias y sede de pickup.</li>
+        <li>Checkout sin GPS eligiendo un municipio que acepta la tienda: aparece "Retiro en tienda" con &laquo;en tu municipio&raquo; en cuanto se elige, sin completar el resto. Con un municipio sin tienda: sólo "Envío nacional".</li>
+        <li>Checkout con GPS a menos del radio: aparece "Retiro en tienda" y la distancia. Con GPS lejos y un municipio sin tienda: sólo "Envío nacional".</li>
+        <li>Checkout sin GPS y con un municipio sin tienda: sólo "Envío nacional"; al pulsar "Usar mi ubicación" cerca de una tienda, aparece "Retiro en tienda" sin recargar.</li>
+        <li>Si usan split: con dos sedes en el carrito que cumplen, ofrece retiro una o las dos según <em>Tiendas con retiro por pedido</em>.</li>
+        <li>Pedido creado: en el admin aparece el panel "Total Sucursales" con municipio, posición, distancias y sede de pickup (por municipio o por radio).</li>
       </ul>
     </section>
 
@@ -375,7 +394,9 @@
         <tr><td>"Otro estado / ver todas las sucursales" no muestra todas</td><td>Las que faltan están ocultas en "Hide Locations From Frontend" de Multi Locations. Esa opción se respeta siempre, también en modo "ver todas".</td><td>Quitarlas de esa lista. El diagnóstico marca cuáles están ocultas.</td></tr>
         <tr><td>Al elegir el estado no se selecciona sola la sucursal de esa zona</td><td>Ninguna sede visible pertenece al estado elegido (oculta, sin estado, o con el estado mal guardado).</td><td>Igual que arriba. Con la sede visible y su estado correcto, el plugin la selecciona automáticamente.</td></tr>
         <tr><td>El estado de una sede se ve raro en el diagnóstico (por ejemplo <code>Carabobo</code> en vez de <code>CA</code>)</td><td>Se cargó con el autocompletado de direcciones de Multi Locations, que escribe el nombre largo del estado.</td><td>Desde 0.2.0 el plugin reconoce el nombre igual que el código, así que funciona. Aun así conviene volver a elegir el estado en el desplegable "State".</td></tr>
-        <tr><td>Nunca aparece "Retiro en tienda"</td><td>La sede no tiene Lat/Lng, o el cliente no compartió GPS y la geocodificación está en "No geocodificar".</td><td>Cargar coordenadas en la sede. Revisar el geocodificador. Probar con el botón del checkout.</td></tr>
+        <tr><td>Nunca aparece "Retiro en tienda"</td><td>Por municipio: el municipio del cliente no está en la tabla de esa tienda, o el criterio es <em>Sólo por radio</em>. Por radio: la sede no tiene Lat/Lng, o el cliente no compartió GPS y la geocodificación está en "No geocodificar".</td><td>Revisar la tabla <em>Municipios que pueden retirar en cada tienda</em> y el criterio. Cargar coordenadas en la sede. Probar con el botón del checkout. El panel <code>?ts_debug=1</code> muestra el municipio que se reconoció y desde qué municipios retira cada tienda.</td></tr>
+        <tr><td>El cliente eligió su municipio pero el retiro sólo aparece al terminar de llenar la dirección</td><td>Versión anterior a 0.6.0: WooCommerce no recalcula el checkout clásico hasta que están todos los campos obligatorios de la dirección.</td><td>Actualizar. Desde 0.6.0 el cambio de municipio recalcula al momento.</td></tr>
+        <tr><td>Un municipio no aparece en la lista de una tienda</td><td>La lista viene de States and Municipalities of Venezuela; sin ese plugin activo la tabla queda vacía.</td><td>Activarlo. Los municipios salen agrupados por estado, con el de la tienda primero.</td></tr>
         <tr><td>Aparecen las dos opciones a la vez</td><td>Con el método de Total Sucursales: está marcada &laquo;Envío también donde se puede retirar&raquo;. Con Advanced Shipping: las reglas no tienen la condición, o una está en "Sí" y la otra sin condición.</td><td>Desmarcar la opción del método, o revisar que la regla "Envío nacional" tenga la condición en "No".</td></tr>
         <tr><td>Las tarifas salen repetidas</td><td>En la zona están a la vez el método de Total Sucursales y las reglas de Advanced Shipping.</td><td>Dejar sólo uno de los dos en la zona.</td></tr>
         <tr><td>No aparece ni retiro ni envío nacional</td><td>Ni el método de Total Sucursales está en la zona ni hay reglas de Advanced Shipping.</td><td>Añadir el método en la zona (opción A del paso 06).</td></tr>
@@ -398,14 +419,14 @@
       <div class="tablewrap"><table>
         <tr><th>Hook</th><th>Tipo</th><th>Uso</th></tr>
         <tr><td><code>ts_excluded_location_ids( $ids, $state, $manual )</code></td><td>filtro</td><td>Cambiar qué sedes se ocultan al cliente.</td></tr>
-        <tr><td><code>ts_pickup_eligible_package_key( $key, $packages, $coords, $radius )</code></td><td>filtro</td><td>Cambiar qué paquete recibe retiro (por defecto el más cercano dentro del radio). Devolver <code>null</code> para ninguno.</td></tr>
+        <tr><td><code>ts_pickup_eligible_package_key( $key, $packages, $coords, $radius )</code></td><td>filtro</td><td>Con <em>Una sola tienda por pedido</em>, cambiar qué paquete recibe retiro entre los que cumplen el criterio. Devolver <code>null</code> para ninguno.</td></tr>
         <tr><td><code>ts_catalog_excluded_product_ids( $ids, $location_id )</code></td><td>filtro</td><td>Ajustar los productos ocultos por sede.</td></tr>
         <tr><td><code>ts_geocode_result( $result, $address, $provider )</code></td><td>filtro</td><td>Sobrescribir o corregir la geocodificación.</td></tr>
         <tr><td><code>ts_location_filter_applies( $bool )</code></td><td>filtro</td><td>Desactivar el filtro por estado en contextos concretos.</td></tr>
         <tr><td><code>ts_customer_state_changed( $new, $old, $source )</code></td><td>acción</td><td>Reaccionar al cambio de estado del cliente.</td></tr>
       </table></div>
       <h3>Datos que deja en el pedido</h3>
-      <p><code>_ts_customer_state</code>, <code>_ts_customer_lat</code>, <code>_ts_customer_lng</code>, <code>_ts_coords_source</code> (gps | geocode), <code>_ts_radius_km</code>, <code>_ts_pickup_location_id</code>, <code>_ts_pickup_location_name</code> y <code>_ts_packages</code> (sede, distancia y elegibilidad por paquete). Compatible con HPOS.</p>
+      <p><code>_ts_customer_state</code>, <code>_ts_customer_municipio</code> (clave <code>ZU:maracaibo</code>), <code>_ts_customer_lat</code>, <code>_ts_customer_lng</code>, <code>_ts_coords_source</code> (gps | geocode), <code>_ts_radius_km</code>, <code>_ts_pickup_criterion</code>, <code>_ts_pickup_scope</code>, <code>_ts_pickup_location_id</code> (la primera), <code>_ts_pickup_location_ids</code> (todas), <code>_ts_pickup_location_name</code> y <code>_ts_packages</code> (sede, distancia, elegibilidad y motivo por paquete). Compatible con HPOS.</p>
       <h3>Publicar una versión nueva</h3>
 <pre><code>cd total-sucursales &amp;&amp; cd .. &amp;&amp; zip -r total-sucursales.zip total-sucursales -x "*.gitkeep"
 git checkout release &amp;&amp; cp total-sucursales.zip dist/ &amp;&amp; sha256sum dist/*.zip &gt; dist/SHA256SUMS
