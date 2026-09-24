@@ -44,6 +44,8 @@ class TS_Settings {
 			'debug_front'          => 'no',
 			'mli_shims'            => 'yes',
 			'mli_spanish'          => 'yes',
+			'hide_shipping_ui'     => 'no',
+			'shipping_visible_locations' => array(),
 			// Los textos que ve el cliente (y sus valores por defecto) están en TS_Texts.
 		);
 	}
@@ -110,6 +112,26 @@ class TS_Settings {
 		foreach ( TS_Locations::all() as $id => $row ) {
 			$state = '' !== $row['state'] ? ' (' . $row['state'] . ')' : '';
 			$options[ (int) $id ] = $row['name'] . $state;
+		}
+		return $options;
+	}
+
+	/**
+	 * Tiendas cuyos pedidos sí muestran las opciones de envío cuando están ocultas en general.
+	 *
+	 * @return int[]
+	 */
+	public static function shipping_visible_locations() {
+		return array_values( array_filter( array_map( 'intval', (array) self::get( 'shipping_visible_locations', array() ) ) ) );
+	}
+
+	/**
+	 * @return array<int,string> term_id => "Nombre (ESTADO)"
+	 */
+	private static function store_options() {
+		$options = array();
+		foreach ( TS_Locations::all() as $id => $row ) {
+			$options[ (int) $id ] = $row['name'] . ( '' !== $row['state'] ? ' (' . $row['state'] . ')' : '' );
 		}
 		return $options;
 	}
@@ -271,6 +293,32 @@ class TS_Settings {
 				'default' => '',
 			),
 			array( 'type' => 'sectionend', 'id' => 'ts_section_radius' ),
+
+			array(
+				'title' => __( 'Opciones de envío en el checkout', 'total-sucursales' ),
+				'type'  => 'title',
+				'desc'  => __( 'Para que el cliente no vea las opciones de envío salvo en las tiendas autorizadas para hacer envíos. Es sólo visual: por debajo cada pedido sigue recibiendo "Retiro en tienda" (si su municipio o distancia lo permiten; se elige solo) o "Envío nacional", y así queda en el pedido.', 'total-sucursales' ),
+				'id'    => 'ts_section_shipping_ui',
+			),
+			array(
+				'title'   => __( 'Ocultar las opciones de envío', 'total-sucursales' ),
+				'id'      => "{$p}[hide_shipping_ui]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'No mostrar al cliente las opciones de envío ni la línea de envío del resumen (carrito y checkout, clásico y por bloques), salvo en pedidos de las tiendas de abajo. El costo del envío se sigue sumando al total: úsalo con envío a costo 0.', 'total-sucursales' ),
+				'default' => 'no',
+			),
+			array(
+				'title'   => __( 'Tiendas autorizadas para envíos', 'total-sucursales' ),
+				'id'      => "{$p}[shipping_visible_locations]",
+				'type'    => 'multiselect',
+				'class'   => 'wc-enhanced-select',
+				'css'     => 'min-width:350px;',
+				'desc'    => __( 'En los pedidos de estas tiendas el cliente sí ve y elige las opciones de envío.', 'total-sucursales' ),
+				'desc_tip' => false,
+				'options' => self::store_options(),
+				'default' => array(),
+			),
+			array( 'type' => 'sectionend', 'id' => 'ts_section_shipping_ui' ),
 
 
 			array(

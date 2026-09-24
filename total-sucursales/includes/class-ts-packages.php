@@ -96,6 +96,8 @@ class TS_Packages {
 			$packages[ $key ]['ts_location_id']        = $loc['id'];
 			$packages[ $key ]['ts_location_name']      = $loc['id'] ? TS_Locations::name( $loc['id'] ) : '';
 			$packages[ $key ]['ts_mixed_locations']    = $loc['mixed'];
+			// Va en el paquete para que entre en la clave de la caché de tarifas de WooCommerce.
+			$packages[ $key ]['ts_shipping_visible']   = TS_Shipping_UI::location_visible( $loc['id'] );
 			$packages[ $key ]['ts_distance_km']        = null;
 			$packages[ $key ]['ts_pickup_eligible']    = false;
 			$packages[ $key ]['ts_pickup_qualifies']   = false;

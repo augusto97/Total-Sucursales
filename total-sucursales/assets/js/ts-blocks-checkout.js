@@ -107,11 +107,21 @@
 			}
 		});
 	}
+	// Opciones de envío ocultas (ajuste "Ocultar las opciones de envío"): la clase de <body> la pone el
+	// servidor al cargar la página y aquí se actualiza cuando cambia el carrito.
+	function syncShippingVisibility() {
+		var store = wp.data.select('wc/store/cart');
+		var cart = store && store.getCartData ? store.getCartData() : null;
+		var ext = cart && cart.extensions ? cart.extensions[NS] : null;
+		if (ext && typeof ext.hide_shipping === 'boolean') {
+			document.body.classList.toggle('ts-hide-shipping', ext.hide_shipping);
+		}
+	}
 	var syncing = false;
 	wp.data.subscribe(function () {
 		if (syncing) { return; }
 		syncing = true;
-		try { syncCity(); } finally { syncing = false; }
+		try { syncCity(); syncShippingVisibility(); } finally { syncing = false; }
 	});
 
 	wp.plugins.registerPlugin('total-sucursales-shipping', {
