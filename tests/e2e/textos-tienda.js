@@ -30,8 +30,14 @@ async function addToCart(p) {
   const ctx = p.context();
   const count = async () => Number(((await ctx.cookies()).find(x => x.name === 'woocommerce_items_in_cart') || {}).value || 0);
   const before = await count();
-  await p.click('button.single_add_to_cart_button');
-  for (let i = 0; i < 40 && (await count()) <= before; i++) await p.waitForTimeout(250);
+  const enabled = () => p.waitForFunction(() => { const b = document.querySelector('button.single_add_to_cart_button'); return b && !b.disabled; }, null, { timeout: 10000 }).catch(() => {});
+  // Un intento más si el primer clic cayó mientras MLI aún tenía el botón bloqueado (como haría el
+  // cliente). Si tampoco añade, la prueba del carrito falla igual.
+  for (let attempt = 0; attempt < 2 && (await count()) <= before; attempt++) {
+    await enabled();
+    await p.click('button.single_add_to_cart_button');
+    for (let i = 0; i < 40 && (await count()) <= before; i++) await p.waitForTimeout(250);
+  }
 }
 const ENGLISH = /\b(Location|Locations|In Stock|Sold Out|Stock Information|Select Location|Yes, Change Location|Cancel)\b/;
 

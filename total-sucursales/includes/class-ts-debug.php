@@ -202,15 +202,19 @@ class TS_Debug {
 	/**
 	 * Sucursales que el desplegable de Multi Locations omite por no pertenecer a un grupo.
 	 *
-	 * El controlador AJAX de MLI que rellena el selector (wcmlim_getdropdown_location) sólo
-	 * incluye las sucursales que tienen la meta wcmlim_locator (grupo de ubicaciones), esté o no
-	 * activada la función de grupos. Una sucursal sin grupo no aparece en ese desplegable, aunque
-	 * este plugin la deje visible.
+	 * El controlador AJAX de MLI que rellena el selector de tiendas por grupo
+	 * (wcmlim_getdropdown_location) sólo incluye las sucursales que tienen la meta wcmlim_locator.
+	 * Ese selector (y el script que lo llama) sólo existe con "Enable location group" activado, y
+	 * sólo entonces aparece el campo "Location Group" en la ficha: con los grupos apagados no hace
+	 * falta asignar grupo y no se avisa.
 	 *
 	 * @return array<int,string> id => nombre
 	 */
 	public static function branches_without_group() {
 		$out = array();
+		if ( 'on' !== get_option( 'wcmlim_enable_location_group' ) ) {
+			return $out;
+		}
 		foreach ( TS_Locations::all() as $id => $l ) {
 			$locator = get_term_meta( $id, 'wcmlim_locator', true );
 			if ( '' === $locator || null === $locator ) {

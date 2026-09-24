@@ -445,7 +445,7 @@ class TS_Settings {
 			if ( ! empty( $no_group ) ) {
 				echo '<div class="notice notice-error inline" style="max-width:820px;margin:12px 0;padding:8px 12px"><p><strong>'
 					. esc_html__( 'Sucursales sin grupo de ubicaciones', 'total-sucursales' ) . '</strong><br>'
-					. esc_html__( 'Estas sucursales no pertenecen a ningún grupo de ubicaciones. El desplegable que Multi Locations rellena por AJAX sólo incluye sucursales con grupo asignado, esté o no activada la función de grupos, así que las omite aunque este plugin las deje visibles: si el cliente elige un estado cuya única sucursal está en esta lista, el selector aparece vacío. Asígnales un grupo en el campo "Location Group" de la ficha de la sucursal.', 'total-sucursales' )
+					. esc_html__( 'Estas sucursales no pertenecen a ningún grupo de ubicaciones. Con "Enable location group" activado, el desplegable de tiendas por grupo de Multi Locations sólo incluye sucursales con grupo asignado, así que las omite aunque este plugin las deje visibles: si el cliente elige un estado cuya única sucursal está en esta lista, el selector aparece vacío. Asígnales un grupo en el campo "Location Group" de la ficha de la sucursal.', 'total-sucursales' )
 					. '</p><p>' . esc_html( implode( ' · ', array_map( function ( $id, $n ) { return $n . ' #' . $id; }, array_keys( $no_group ), $no_group ) ) ) . '</p></div>';
 			}
 		}
