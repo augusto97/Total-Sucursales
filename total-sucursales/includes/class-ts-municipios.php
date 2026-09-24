@@ -20,6 +20,9 @@ class TS_Municipios {
 	/** Opción: term_id de la tienda => claves de municipio que pueden retirar allí. */
 	const OPTION = 'ts_pickup_municipios';
 
+	/** Meta de la tienda (term de "locations") con su municipio, elegido en su ficha. */
+	const LOCATION_META = 'ts_municipio';
+
 	/** @var array|null */
 	private static $index = null;
 
@@ -52,6 +55,33 @@ class TS_Municipios {
 
 	public static function has_data() {
 		return ! empty( self::all() );
+	}
+
+	/**
+	 * ¿Es una clave de municipio conocida? ("ZU:maracaibo")
+	 */
+	public static function exists( $key ) {
+		$key = (string) $key;
+		list( $state ) = array_pad( explode( ':', $key, 2 ), 1, '' );
+		$list = self::all();
+		return '' !== $key && isset( $list[ $state ][ $key ] );
+	}
+
+	/**
+	 * Municipio de una tienda: el elegido en su ficha y, si no hay, el que se deduce de su ciudad.
+	 *
+	 * @return string Clave, o ''.
+	 */
+	public static function of_location( $term_id ) {
+		$saved = (string) get_term_meta( (int) $term_id, self::LOCATION_META, true );
+		if ( self::exists( $saved ) ) {
+			return $saved;
+		}
+		$loc = TS_Locations::get( $term_id );
+		if ( ! $loc || '' === $loc['state'] || '' === trim( (string) $loc['city'] ) ) {
+			return '';
+		}
+		return self::resolve( $loc['state'], $loc['city'] );
 	}
 
 	/**
@@ -162,7 +192,8 @@ class TS_Municipios {
 	}
 
 	/**
-	 * Municipio que se propone por defecto para una tienda: el que coincide con la ciudad de su ficha.
+	 * Municipio que se propone por defecto para una tienda: el elegido en su ficha o, si no, el que
+	 * coincide con su ciudad.
 	 *
 	 * Se usa la ciudad y no el nombre de la tienda: "SANTA RITA" puede estar en Maracaibo aunque
 	 * exista un municipio Santa Rita.
@@ -170,11 +201,7 @@ class TS_Municipios {
 	 * @return string[]
 	 */
 	public static function default_for_location( $term_id ) {
-		$loc = TS_Locations::get( $term_id );
-		if ( ! $loc || '' === $loc['state'] || '' === trim( (string) $loc['city'] ) ) {
-			return array();
-		}
-		$key = self::resolve( $loc['state'], $loc['city'] );
+		$key = self::of_location( $term_id );
 		return '' !== $key ? array( $key ) : array();
 	}
 
