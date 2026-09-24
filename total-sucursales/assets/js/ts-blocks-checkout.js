@@ -65,9 +65,14 @@
 					h('span', { className: 'ts-badge ' + (p.pickup_eligible ? 'ts-badge--pickup' : 'ts-badge--national') }, p.pickup_eligible ? i18n.pickup : i18n.national)
 				);
 			})));
-			if (data.show_note) {
-				children.push(h('small', { className: 'ts-distance-note', key: 'note' }, i18n.no_position));
-			}
+		}
+		// El carrito no tiene campo de municipio: su aviso remite al checkout.
+		var inCart = document.body.classList.contains('woocommerce-cart');
+		var note = (inCart ? data.cart_note : data.note) || null;
+		if (data.show_info && note && note.text) {
+			children.push(h('small', { className: 'ts-distance-note', key: 'note' }, [note.text].concat((note.lines || []).map(function (line, i) {
+				return h('span', { className: 'ts-distance-note__line', key: 'l' + i }, line);
+			}))));
 		}
 		if (!children.length) { return null; }
 		return h('div', { className: 'ts-blocks-panel' }, children);

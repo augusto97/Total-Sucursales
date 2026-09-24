@@ -435,6 +435,9 @@ class TS_Settings {
 				: esc_html__( 'No instalado. No hace falta si usas el método «Total Sucursales».', 'total-sucursales' ) )
 			. '</td></tr>';
 		echo '<tr><td>' . esc_html__( 'MLI: dividir paquetes por sucursal (wcmlim_enable_split_packages)', 'total-sucursales' ) . '</td><td>' . ( $split ? esc_html__( 'Activo: el pickup se evalúa por paquete/sucursal.', 'total-sucursales' ) : esc_html__( 'Inactivo: el carrito debe contener una sola sucursal para ofrecer pickup.', 'total-sucursales' ) ) . '</td></tr>';
+		if ( 'radius' !== self::pickup_criterion() ) {
+			echo '<tr><td>' . esc_html__( 'Retiro por municipio', 'total-sucursales' ) . '</td><td>' . self::municipio_status() . '</td></tr>';
+		}
 		echo '</table>';
 
 		if ( class_exists( 'TS_Debug' ) ) {
@@ -457,6 +460,36 @@ class TS_Settings {
 		}
 
 		self::render_locations_diagnostic();
+	}
+
+	/**
+	 * Resumen del retiro por municipio para "Estado de la integración": una tienda visible sin
+	 * municipios (su ciudad no coincide con ninguno y nadie los eligió) sólo ofrece retiro por radio,
+	 * y con "sólo por municipio" no lo ofrece nunca. En la tabla se ve fila a fila; aquí, de un vistazo.
+	 *
+	 * @return string HTML ya escapado.
+	 */
+	private static function municipio_status() {
+		if ( ! TS_Municipios::has_data() ) {
+			return '<span style="color:#c00">&#10008;</span> ' . esc_html__( 'Sin lista de municipios: activa States and Municipalities of Venezuela.', 'total-sucursales' );
+		}
+		$hidden  = class_exists( 'TS_Location_Filter' ) ? TS_Location_Filter::manual_exclusions() : array();
+		$without = array();
+		foreach ( TS_Locations::all() as $id => $l ) {
+			if ( '' === $l['state'] || in_array( (int) $id, $hidden, true ) ) {
+				continue; // Sin estado u oculta: no la ve ningún cliente (lo dice el diagnóstico).
+			}
+			if ( ! TS_Municipios::for_location( $id ) ) {
+				$without[] = $l['name'];
+			}
+		}
+		if ( ! $without ) {
+			return '<span style="color:green">&#10004;</span> ' . esc_html__( 'Todas las tiendas visibles tienen municipios de retiro.', 'total-sucursales' );
+		}
+		$effect = 'municipio' === self::pickup_criterion()
+			? __( 'Con "sólo por municipio" no ofrecen retiro:', 'total-sucursales' )
+			: __( 'Sólo ofrecen retiro por radio:', 'total-sucursales' );
+		return '<span style="color:#c00">&#10008;</span> ' . esc_html( $effect . ' ' . implode( ', ', $without ) . '. ' . __( 'Elige sus municipios en la tabla «Municipios que pueden retirar en cada tienda».', 'total-sucursales' ) );
 	}
 
 	/**

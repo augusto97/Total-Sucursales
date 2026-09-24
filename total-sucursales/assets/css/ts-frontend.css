@@ -31,3 +31,9 @@
 	opacity: .75;
 	margin: 2px 0 0;
 }
+.ts-distance-note__line { display: block; margin-top: .25em; }
+.ts-pickup-where { margin: 1.5em 0; padding: 1em 1.25em; border: 1px solid #cfe3d6; border-left: 4px solid #2e7d4f; border-radius: 4px; background: #f3faf5; }
+.ts-pickup-where h2 { margin: 0 0 .5em; font-size: 1.1em; }
+.ts-pickup-where ul { margin: 0; padding: 0; list-style: none; }
+.ts-pickup-where li + li { margin-top: .5em; }
+.ts-pickup-where__address { display: block; color: #555; }

@@ -145,7 +145,10 @@ Comprueba el checkout clásico sin GPS (Maracaibo → retiro "en tu municipio", 
 nacional, San Francisco → Delicias), que el cambio de municipio recalcula aunque falten campos de la
 dirección, el pedido (municipio, criterio y tienda de retiro guardados), los modos "sólo radio" y
 "sólo municipio", el botón "Usar mi ubicación", el alcance una tienda / todas con dos tiendas en el
-carrito y el checkout por bloques. Restaura ajustes, municipios y la página de checkout aunque falle.
+carrito, el checkout por bloques, los avisos de elegir el municipio (carrito y checkout), el recuadro
+"Dónde retirar tu pedido" de la página de gracias y del correo, y que un cliente que podía retirar pero
+eligió el envío no quede como retiro. Restaura ajustes, municipios, motor de envío y la página de
+checkout aunque falle.
 
 Las pruebas de retiro con GPS lejos de la tienda (`e2e.js` E4, `e2e-blocks.js` B2, `envio-sin-was.js`)
 usan Cabimas, un municipio sin tienda: con el criterio por defecto, Maracaibo daría retiro por

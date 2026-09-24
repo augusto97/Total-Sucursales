@@ -174,6 +174,7 @@ class TS_Packages {
 					'pickup_reason'   => $p['ts_pickup_reason'],
 					'qualifies'       => $p['ts_pickup_qualifies'],
 					'mixed'           => $p['ts_mixed_locations'],
+					'customer_municipio' => $p['ts_customer_municipio'],
 				);
 			}, $packages ),
 		);
@@ -225,26 +226,93 @@ class TS_Packages {
 			// Cumplía pero el retiro se lo quedó otra tienda del pedido: la distancia no es el motivo.
 			return array( 'label' => '', 'unknown' => false );
 		}
-		if ( 'municipio' === TS_Settings::pickup_criterion() ) {
+		$criterion = TS_Settings::pickup_criterion();
+		if ( 'municipio' === $criterion ) {
 			return array( 'label' => '', 'unknown' => false ); // Sin radio la distancia no pinta nada.
+		}
+		if ( 'radius' !== $criterion && '' === (string) ( $p['customer_municipio'] ?? '' ) ) {
+			return array( 'label' => '', 'unknown' => false ); // Falta el municipio: lo dice el aviso.
 		}
 		return array( 'label' => TS_Texts::get( 'unknown_distance' ), 'unknown' => true );
 	}
 
 	/**
-	 * El aviso "no conocemos tu posición" sólo sirve si compartirla puede darle retiro al cliente:
-	 * no la conocemos, el criterio usa el radio y ahora mismo ninguna tienda le ofrece retiro.
+	 * Aviso bajo la lista de tiendas cuando ninguna ofrece retiro y el cliente puede hacer algo para
+	 * conseguirlo.
+	 *
+	 * - Sin municipio, si el criterio lo usa y alguna tienda del pedido acepta municipios: se le pide
+	 *   que lo elija y se listan los municipios de cada tienda, para que sepa de antemano si le sirve.
+	 *   En el carrito no hay campo de municipio, así que el texto remite al checkout.
+	 * - Con municipio (o sin tiendas con municipios) y sin posición, si el criterio usa el radio: se le
+	 *   pide la posición (sólo en el checkout, que es donde está el botón).
+	 *
+	 * @param array  $summary summary().
+	 * @param string $context checkout | cart.
+	 * @return array{text:string,lines:string[]}
 	 */
-	public static function needs_position_note( array $summary ) {
-		if ( ! empty( $summary['coords'] ) || 'municipio' === TS_Settings::pickup_criterion() ) {
-			return false;
-		}
-		foreach ( (array) ( $summary['packages'] ?? array() ) as $p ) {
+	public static function pickup_note( array $summary, $context = 'checkout' ) {
+		$out      = array( 'text' => '', 'lines' => array() );
+		$packages = (array) ( $summary['packages'] ?? array() );
+		foreach ( $packages as $p ) {
 			if ( ! empty( $p['pickup_eligible'] ) ) {
-				return false;
+				return $out;
 			}
 		}
-		return true;
+		$criterion = TS_Settings::pickup_criterion();
+		$has_muni  = '' !== (string) ( $summary['customer_municipio'] ?? '' );
+
+		if ( 'radius' !== $criterion && ! $has_muni ) {
+			$seen = array();
+			foreach ( $packages as $p ) {
+				if ( empty( $p['location_id'] ) || isset( $seen[ $p['location_id'] ] ) ) {
+					continue;
+				}
+				$seen[ $p['location_id'] ] = true;
+				$keys = TS_Municipios::for_location( $p['location_id'] );
+				if ( $keys ) {
+					$out['lines'][] = strtr( TS_Texts::get( 'pickup_for' ), array(
+						'{tienda}'     => $p['location_name'],
+						'{municipios}' => self::join_names( $keys ),
+					) );
+				}
+			}
+			if ( $out['lines'] ) {
+				if ( 'cart' === $context ) {
+					$out['text'] = TS_Texts::get( 'cart_choose_municipio' );
+				} else {
+					$out['text'] = ( 'municipio' === $criterion || ! empty( $summary['coords'] ) )
+						? TS_Texts::get( 'choose_municipio' )
+						: TS_Texts::get( 'choose_municipio_gps' );
+				}
+				return $out;
+			}
+		}
+		if ( 'checkout' === $context && empty( $summary['coords'] ) && 'municipio' !== $criterion ) {
+			$out['text'] = TS_Texts::get( 'no_position' );
+		}
+		return $out;
+	}
+
+	/**
+	 * "Maracaibo, Cabimas y San Francisco"; con muchos, los primeros y "y N más".
+	 *
+	 * @param string[] $keys Claves de municipio.
+	 */
+	private static function join_names( array $keys, $max = 8 ) {
+		$names = array_map( function ( $k ) {
+			return TS_Municipios::label( $k, false );
+		}, array_values( $keys ) );
+		$extra = count( $names ) - $max;
+		if ( $extra > 0 ) {
+			$names = array_slice( $names, 0, $max );
+			/* translators: %d número de municipios que no se nombran */
+			$names[] = sprintf( _n( '%d más', '%d más', $extra, 'total-sucursales' ), $extra );
+		}
+		if ( count( $names ) < 2 ) {
+			return implode( '', $names );
+		}
+		$last = array_pop( $names );
+		return implode( ', ', $names ) . ' ' . __( 'y', 'total-sucursales' ) . ' ' . $last;
 	}
 
 	/**

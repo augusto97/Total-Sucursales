@@ -116,6 +116,13 @@ const orderMeta = id => JSON.parse(wp(`eval '$o=wc_get_order(${id}); echo json_e
       const ctx = await guestZulia(browser);
       const p = await ctx.newPage();
       await addToCart(p, 'producto-a-delicias-y-chacao', 'Delicias');
+      // El carrito no pide el municipio: se avisa de que se elige al finalizar y de quién puede retirar.
+      await p.goto(BASE + '/cart/', { waitUntil: 'networkidle' });
+      const cartNote = await p.$eval('.cart_totals .ts-distance-note', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+      log('carrito: aviso de elegir el municipio con los municipios de la tienda', /elige tu municipio/i.test(cartNote) && /Delicias.*Maracaibo y San Francisco/.test(cartNote), cartNote);
+      await p.goto(BASE + '/checkout/', { waitUntil: 'networkidle' });
+      const pn0 = await panel(p);
+      log('checkout sin municipio: pide el municipio (o la ubicación), sin "distancia no disponible"', /Elige tu municipio, o comparte tu ubicación/.test(pn0.note) && /Maracaibo y San Francisco/.test(pn0.note) && !pn0.li.some(t => /no disponible/.test(t)) && pn0.geo, JSON.stringify(pn0));
       await checkout(p, 'Maracaibo');
       const sm = await shipping(p); const pn = await panel(p);
       log('sin GPS · municipio Maracaibo → "Retiro en tienda"', sm.some(t => /Retiro en tienda/.test(t)) && !sm.some(t => /Envío nacional/.test(t)), JSON.stringify(sm));
@@ -133,6 +140,10 @@ const orderMeta = id => JSON.parse(wp(`eval '$o=wc_get_order(${id}); echo json_e
       const id = await placeOrder(p);
       const meta = id ? orderMeta(id) : {};
       log('pedido guarda municipio, criterio y motivo del retiro', meta.muni === 'ZU:sanfrancisco' && meta.crit === 'both' && (meta.pk || []).some(x => x.pickup_eligible && x.pickup_reason === 'municipio') && (meta.ship || []).some(t => /Retiro en tienda/.test(t)), JSON.stringify(meta));
+      const where = await p.$eval('.ts-pickup-where', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+      log('página de gracias: dónde retirar, con la dirección de la tienda', /Dónde retirar/.test(where) && /Tienda Delicias/.test(where) && /Maracaibo ·/.test(where), where);
+      const mail = id ? JSON.parse(wp(`eval '$o=wc_get_order(${id}); $e=WC()->mailer()->emails["WC_Email_Customer_Processing_Order"]; $e->object=$o; $h=wp_strip_all_tags($e->get_content_html()); echo json_encode(array("where"=>false!==strpos($h,"Dónde retirar tu pedido"),"addr"=>false!==strpos($h,"Shipping address")||false!==strpos($h,"Dirección de envío"),"needs"=>$o->needs_shipping_address(),"ids"=>$o->get_meta("_ts_pickup_location_ids")));'`).split('\n').pop()) : {};
+      log('correo: dónde retirar y sin dirección de envío (todo se retira)', mail.where && !mail.addr && mail.needs === false && JSON.stringify(mail.ids) === JSON.stringify([LOC['Tienda Delicias']]), JSON.stringify(mail));
       await ctx.close();
     }
 
@@ -216,6 +227,30 @@ const orderMeta = id => JSON.parse(wp(`eval '$o=wc_get_order(${id}); echo json_e
     wp('option update wcmlim_clear_cart on'); wp('option update wcmlim_enable_split_packages ""');
     setting('pickup_scope', 'one');
 
+    // ---- 5b. El cliente puede retirar pero elige el envío: el pedido no debe decir "retiro" ----
+    // Método propio con "Envío también donde se puede retirar"; Advanced Shipping, apagado.
+    wp('plugin deactivate woocommerce-advanced-shipping');
+    wp(`eval-file ${__dirname}/envio-modo.php propio national_for_pickup=yes`);
+    try {
+      const ctx = await guestZulia(browser);
+      const p = await ctx.newPage();
+      await addToCart(p, 'producto-a-delicias-y-chacao', 'Delicias');
+      await checkout(p, 'Maracaibo');
+      const sm = await shipping(p);
+      const nat = await p.$$eval('#shipping_method input', els => (els.find(e => /national/.test(e.value)) || {}).id || '');
+      const done = p.waitForResponse(r => /update_order_review/.test(r.url()), { timeout: 15000 }).catch(() => null);
+      if (nat) await p.click('label[for="' + nat + '"]'); // El tema oculta el radio y dibuja el suyo.
+      await done; await p.waitForLoadState('networkidle'); await p.waitForTimeout(800);
+      const id = await placeOrder(p);
+      const where = await p.$('.ts-pickup-where');
+      const o = id ? JSON.parse(wp(`eval '$o=wc_get_order(${id}); echo json_encode(array("ids"=>$o->get_meta("_ts_pickup_location_ids"),"pk"=>$o->get_meta("_ts_packages"),"needs"=>$o->needs_shipping_address()));'`).split('\n').pop()) : {};
+      log('puede retirar pero elige envío: el pedido no marca retiro ni muestra dónde retirar', sm.length >= 2 && !!nat && JSON.stringify(o.ids) === '[]' && (o.pk || []).some(x => x.pickup_eligible && x.pickup === false) && o.needs === true && !where, JSON.stringify({ sm, nat, o }));
+      await ctx.close();
+    } finally {
+      wp(`eval-file ${__dirname}/envio-modo.php was`);
+      wp('plugin activate woocommerce-advanced-shipping');
+    }
+
     // ---- 6. Checkout por bloques ----
     wp(`eval-file ${__dirname}/pages.php blocks`);
     {
@@ -253,6 +288,7 @@ const orderMeta = id => JSON.parse(wp(`eval '$o=wc_get_order(${id}); echo json_e
     wp(`option update ts_settings '${saved.settings}' --format=json`);
     if (saved.munis) wp(`option update ts_pickup_municipios '${saved.munis}' --format=json`); else wpSoft('option delete ts_pickup_municipios');
     wp('option update wcmlim_clear_cart on'); wp('option update wcmlim_enable_split_packages ""');
+    wpSoft(`eval-file ${__dirname}/envio-modo.php was`); wpSoft('plugin activate woocommerce-advanced-shipping');
     await browser.close();
   }
 
