@@ -120,7 +120,7 @@
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
       <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda según el municipio del cliente o su distancia a la tienda; en las demás, envío nacional. Todo sobre Multi Locations y States and Municipalities of Venezuela, con Advanced Shipping como opción.</p>
-      <div class="meta"><span>plugin 0.7.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <div class="meta"><span>plugin 0.8.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -225,6 +225,8 @@
       </div></div>
       <div class="tablewrap"><table>
         <tr><th>Ajuste</th><th>Por defecto</th><th>Qué hace</th></tr>
+        <tr><td>Tiendas que ve el cliente</td><td>Por estado</td><td><em>Por estado</em>: las del estado del cliente (lo que se describe en el resto de esta tabla). <em>Por ciudad</em>: se pide la ubicación; si la da y hay tiendas a menos del <em>Radio de la ciudad</em> (20 km), ve sólo esas, con la más cercana elegida; si no hay, o no la da, ve sólo la <em>Sucursal por defecto</em>. Ver <a href="#por-ciudad">Tiendas por ciudad</a>.</td></tr>
+        <tr><td>Radio de la ciudad (km)</td><td>20</td><td>Sólo en el modo por ciudad: distancia a la que una tienda cuenta como de la ciudad del cliente.</td></tr>
         <tr><td>Detección del estado</td><td>GPS y, si falla, preguntar</td><td><em>GPS</em>: pide la posición al navegador y toma el estado de la sede más cercana. <em>Preguntar siempre</em>: muestra un selector de estados en la primera visita. <em>No detectar</em>: sólo usa la dirección guardada de la cuenta o el shortcode del header.</td></tr>
         <tr><td>Distancia máxima para inferir el estado</td><td>100 km</td><td>Si la sede más cercana al GPS está más lejos que esto, no se asume el estado y se pregunta. Evita asignar Zulia a alguien que navega desde Mérida.</td></tr>
         <tr><td>Sucursal por defecto</td><td>ninguna</td><td>Sede que se asigna a quien no elige ninguna: los que responden &laquo;ver todas las sucursales&raquo; y los que navegan sin contestar. No pisa la elección del cliente, ni la sede más cercana cuando se conoce su posición, ni el filtro por estado: si la sede elegida aquí no está visible para ese cliente, se usa la primera que sí lo esté. Sin configurar, quien no elige nada se queda sin sede activa.</td></tr>
@@ -243,6 +245,16 @@
         <tr><td>Geocodificar la dirección de envío</td><td>Nominatim</td><td>Qué usar cuando el cliente no comparte el GPS. <em>Nominatim</em> (OpenStreetMap) es gratuito, requiere un correo de contacto y los resultados se guardan 30 días. <em>Google</em> necesita clave; si se deja vacía reutiliza la clave de Multi Locations. <em>No geocodificar</em>: sin GPS no hay retiro.</td></tr>
       </table></div>
       <figure class="tall"><img src="guia/04-ts-settings.png" alt="Pestaña de ajustes Total Sucursales en WooCommerce" loading="lazy"><figcaption>Pestaña completa. El cuadro "Estado de la integración" del final avisa de sedes sin estado o sin coordenadas: aquí marca 1 porque la "Online Store" por defecto no tiene datos.</figcaption></figure>
+      <h3 id="por-ciudad">Tiendas por ciudad</h3>
+      <p>Con <strong>Tiendas que ve el cliente = Por ciudad</strong> el selector de tiendas (el de la cabecera, el popup de Multi Locations y la ficha de producto) sigue estas reglas:</p>
+      <div class="tablewrap"><table>
+        <tr><th>Situación</th><th>Qué tiendas ve</th></tr>
+        <tr><td>Comparte su ubicación y hay tiendas en su ciudad</td><td>Sólo esas, con la más cercana elegida.</td></tr>
+        <tr><td>Comparte su ubicación y no hay tiendas en su ciudad</td><td>Sólo la tienda por defecto.</td></tr>
+        <tr><td>No comparte su ubicación</td><td>Sólo la tienda por defecto. No se le vuelve a preguntar en cada página; puede compartirla después con el botón &laquo;Usar mi ubicación&raquo; del shortcode <code>[ts_selector_estado]</code>.</td></tr>
+      </table></div>
+      <p>El navegador da coordenadas, no el nombre de la ciudad: son &laquo;de su ciudad&raquo; las tiendas a menos del <em>Radio de la ciudad</em>. Con 20 km, un cliente en Maracaibo ve las tiendas de Maracaibo y San Francisco, y uno en Cabimas ve la tienda por defecto. Hay que elegir la <em>Sucursal por defecto</em>: sin ella, quien no comparte su ubicación ve todas (<em>Estado de la integración</em> lo avisa). En este modo no aparece la ventana de estado.</p>
+
       <h3 id="textos">Textos y español</h3>
       <p>Todo lo que ve el cliente se puede cambiar en la misma pestaña, en los bloques <strong>Selector de estado</strong>, <strong>Selector de estado de la cabecera</strong>, <strong>Checkout</strong> y <strong>Multi Locations</strong>. Cada campo muestra en gris el texto por defecto; si lo dejas vacío se vuelve a usar ese. Los textos con llaves llevan partes variables: <code>{actual}</code> y <code>{nueva}</code> son la tienda del carrito y la elegida, y <code>{lista}</code> la lista de productos.</p>
       <figure class="tall"><img src="guia/17-textos.png" alt="Bloques de textos editables en los ajustes de Total Sucursales" loading="lazy"><figcaption>Los textos por defecto ya están en español y hablan de &laquo;tienda&raquo;. El campo &laquo;Cómo se llama una location&raquo; cambia la palabra en todos los textos de Multi Locations a la vez.</figcaption></figure>

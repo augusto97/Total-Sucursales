@@ -1,6 +1,7 @@
 <?php
 /**
- * Restringe las sucursales visibles al estado del cliente.
+ * Restringe las sucursales visibles al estado del cliente o, en el modo "por ciudad", a las de su
+ * ciudad (o sólo a la tienda por defecto).
  *
  * MLI lee `wcmlim_exclude_locations_from_frontend` con get_option() en todos sus flujos de front
  * (switcher, popup, página de producto, carrito, closest-location...). Interceptando esa opción
@@ -137,7 +138,9 @@ class TS_Location_Filter {
 		$state   = TS_Customer::get_state();
 
 		$by_state = array();
-		if ( '' !== $state && ! empty( $all ) ) {
+		if ( 'city' === TS_Settings::visibility_mode() && ! empty( $all ) ) {
+			$by_state = array_diff( $all, self::city_visible_ids( array_diff( $all, $manual ) ) );
+		} elseif ( '' !== $state && ! empty( $all ) ) {
 			// Las sucursales que el administrador ocultó en Multi Locations no cuentan como
 			// "sucursales del estado": si la única del estado está oculta, no se filtra nada.
 			$in_state = array_diff( TS_Locations::ids_by_state( $state ), $manual );
@@ -160,6 +163,39 @@ class TS_Location_Filter {
 
 		self::$computed = array_values( array_unique( array_map( 'intval', (array) $ids ) ) );
 		return self::$computed;
+	}
+
+	/**
+	 * Modo "por ciudad": tiendas que ve el cliente.
+	 *   - Con su ubicación (GPS) y tiendas a menos del radio de la ciudad: esas.
+	 *   - Si no: sólo la tienda por defecto.
+	 *   - Sin tienda por defecto configurada (o si está oculta en Multi Locations): todas, para no dejar
+	 *     la tienda vacía; los ajustes lo avisan.
+	 *
+	 * @param int[] $candidates Tiendas no ocultas en Multi Locations.
+	 * @return int[]
+	 */
+	public static function city_visible_ids( array $candidates ) {
+		$candidates = array_values( array_map( 'intval', $candidates ) );
+		$coords     = TS_Customer::get_coords();
+		if ( $coords && 'gps' === $coords['source'] ) {
+			$radius = TS_Settings::city_radius_km();
+			$near   = array();
+			foreach ( $candidates as $id ) {
+				$d = TS_Locations::distance_km( $id, $coords['lat'], $coords['lng'] );
+				if ( null !== $d && $d <= $radius ) {
+					$near[] = $id;
+				}
+			}
+			if ( $near ) {
+				return $near;
+			}
+		}
+		$default = TS_Settings::default_location_id();
+		if ( $default && in_array( $default, $candidates, true ) ) {
+			return array( $default );
+		}
+		return $candidates;
 	}
 
 	/**

@@ -179,6 +179,18 @@ envío. Restaura ajustes, motor de envío y páginas.
 node envio-oculto.js
 ```
 
+## Tiendas por ciudad
+
+`tiendas-ciudad.js` pone "Tiendas que ve el cliente: por ciudad" (radio 20 km, tienda por defecto
+Valencia) y comprueba el selector de tiendas, el catálogo y la ficha: sin ubicación sólo Valencia (sin
+ventana de estado y sin volver a preguntar); en Maracaibo Delicias y San Francisco con Delicias
+elegida; en Cabimas (a 28 km de la más cercana) sólo Valencia; en Caracas sólo Chacao; y "Usar mi
+ubicación" después de no haberla dado.
+
+```bash
+node tiendas-ciudad.js
+```
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.

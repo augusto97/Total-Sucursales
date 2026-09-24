@@ -26,6 +26,8 @@ class TS_Settings {
 	public static function defaults() {
 		return array(
 			'radius_km'            => 10,
+			'visibility_mode'      => 'state',    // state | city
+			'city_radius_km'       => 20,
 			'pickup_criterion'     => 'both',
 			'pickup_scope'         => 'one',
 			'detect_state'         => 'gps',      // gps | ask | off
@@ -96,6 +98,19 @@ class TS_Settings {
 	}
 
 	/**
+	 * Qué tiendas ve el cliente: las de su estado ("state", por defecto) o las de su ciudad según su
+	 * ubicación, con la tienda por defecto como única opción si no la comparte ("city").
+	 */
+	public static function visibility_mode() {
+		return 'city' === self::get( 'visibility_mode', 'state' ) ? 'city' : 'state';
+	}
+
+	public static function city_radius_km() {
+		$r = (float) self::get( 'city_radius_km', 20 );
+		return $r > 0 ? $r : 20;
+	}
+
+	/**
 	 * Sucursal por defecto para quien no elige ninguna, o 0 si no se ha configurado.
 	 */
 	public static function default_location_id() {
@@ -153,6 +168,26 @@ class TS_Settings {
 				'type'  => 'title',
 				'desc'  => __( 'Determina el estado del cliente y restringe las sucursales de Multi Locations a ese estado. Si el estado no tiene sucursales, se muestran todas.', 'total-sucursales' ),
 				'id'    => 'ts_section_state',
+			),
+			array(
+				'title'   => __( 'Tiendas que ve el cliente', 'total-sucursales' ),
+				'id'      => "{$p}[visibility_mode]",
+				'type'    => 'select',
+				'desc'    => __( 'Por ciudad: se pide la ubicación al cliente. Si la comparte y hay tiendas en su ciudad (a menos del radio de abajo), ve sólo esas, con la más cercana elegida; si no hay, o no la comparte, ve sólo la tienda por defecto. Vale para el selector de la cabecera, el popup de Multi Locations y la ficha de producto. En este modo no se pregunta el estado y los ajustes de detección del estado no se usan.', 'total-sucursales' ),
+				'desc_tip' => false,
+				'options' => array(
+					'state' => __( 'Por estado (las del estado del cliente)', 'total-sucursales' ),
+					'city'  => __( 'Por ciudad según su ubicación; si no, sólo la tienda por defecto', 'total-sucursales' ),
+				),
+				'default' => 'state',
+			),
+			array(
+				'title'             => __( 'Radio de la ciudad (km)', 'total-sucursales' ),
+				'id'                => "{$p}[city_radius_km]",
+				'type'              => 'number',
+				'desc'              => __( 'Sólo en el modo "por ciudad": son de la ciudad del cliente las tiendas a menos de esta distancia de su ubicación.', 'total-sucursales' ),
+				'default'           => 20,
+				'custom_attributes' => array( 'min' => 1, 'step' => 1 ),
 			),
 			array(
 				'title'   => __( 'Detección del estado', 'total-sucursales' ),
@@ -485,6 +520,14 @@ class TS_Settings {
 		echo '<tr><td>' . esc_html__( 'MLI: dividir paquetes por sucursal (wcmlim_enable_split_packages)', 'total-sucursales' ) . '</td><td>' . ( $split ? esc_html__( 'Activo: el pickup se evalúa por paquete/sucursal.', 'total-sucursales' ) : esc_html__( 'Inactivo: el carrito debe contener una sola sucursal para ofrecer pickup.', 'total-sucursales' ) ) . '</td></tr>';
 		if ( 'radius' !== self::pickup_criterion() ) {
 			echo '<tr><td>' . esc_html__( 'Retiro por municipio', 'total-sucursales' ) . '</td><td>' . self::municipio_status() . '</td></tr>';
+		}
+		if ( 'city' === self::visibility_mode() ) {
+			$def = self::default_location_id();
+			echo '<tr><td>' . esc_html__( 'Tiendas por ciudad', 'total-sucursales' ) . '</td><td>'
+				. ( $def && TS_Locations::get( $def )
+					? '<span style="color:green">&#10004;</span> ' . esc_html( sprintf( __( 'Sin ubicación, o sin tiendas en su ciudad, el cliente ve sólo %s.', 'total-sucursales' ), TS_Locations::name( $def ) ) )
+					: '<span style="color:#c00">&#10008;</span> ' . esc_html__( 'Falta elegir la "Sucursal por defecto": sin ella, quien no comparte su ubicación ve todas las tiendas.', 'total-sucursales' ) )
+				. '</td></tr>';
 		}
 		if ( $in_zone && 'on' === get_option( 'wcmlim_enable_shipping_methods' ) ) {
 			echo '<tr><td>' . esc_html__( 'MLI: métodos de envío por tienda (Assign Shipping Methods to each location)', 'total-sucursales' ) . '</td><td>' . self::mli_methods_status() . '</td></tr>';

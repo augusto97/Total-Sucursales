@@ -79,6 +79,34 @@ class TS_Debug {
 		update_option( self::FATALS_OPTION, array_slice( $list, 0, 5 ), false );
 	}
 
+	/**
+	 * Modo de tiendas visibles y, en el modo "por ciudad", por qué ve las que ve.
+	 */
+	private static function visibility_label( $coords ) {
+		if ( 'city' !== TS_Settings::visibility_mode() ) {
+			return __( 'por estado', 'total-sucursales' );
+		}
+		$radius = TS_Settings::city_radius_km();
+		$label  = sprintf( __( 'por ciudad (radio %s km)', 'total-sucursales' ), $radius ) . ' · ';
+		if ( ! $coords || 'gps' !== $coords['source'] ) {
+			$geo = ts_get_cookie( 'ts_geo' );
+			return $label . ( 'denied' === $geo ? __( 'no dio su ubicación: sólo la tienda por defecto', 'total-sucursales' ) : __( 'sin ubicación todavía: sólo la tienda por defecto', 'total-sucursales' ) );
+		}
+		$visible = TS_Location_Filter::visible_ids();
+		$default = TS_Settings::default_location_id();
+		$near    = false;
+		foreach ( $visible as $id ) {
+			$d = TS_Locations::distance_km( $id, $coords['lat'], $coords['lng'] );
+			if ( null !== $d && $d <= $radius ) {
+				$near = true;
+				break;
+			}
+		}
+		return $label . ( $near
+			? __( 'con ubicación: tiendas de su ciudad', 'total-sucursales' )
+			: ( $default ? __( 'con ubicación pero sin tiendas en su ciudad: sólo la tienda por defecto', 'total-sucursales' ) : __( 'sin tienda por defecto configurada: se ven todas', 'total-sucursales' ) ) );
+	}
+
 	private static function pickup_rule_label() {
 		$crit  = array(
 			'both'      => __( 'municipio o radio', 'total-sucursales' ),
@@ -263,6 +291,7 @@ class TS_Debug {
 		$all       = TS_Locations::all();
 
 		$rows = array(
+			__( 'Tiendas que ve el cliente', 'total-sucursales' ) => self::visibility_label( $coords ),
 			__( 'Estado del cliente', 'total-sucursales' ) => ( '' === $state ? __( '(ninguno: se muestran todas)', 'total-sucursales' ) : $state . ' · ' . ts_state_name( $state ) ) . ' [' . ( TS_Customer::get_state_source() ? TS_Customer::get_state_source() : 'sin definir' ) . ']',
 			__( 'Cookie ts_estado', 'total-sucursales' ) => var_export( ts_get_cookie( TS_Customer::COOKIE_STATE ), true ),
 			__( 'Sucursal seleccionada (MLI)', 'total-sucursales' ) => 'termid=' . var_export( ts_get_cookie( 'wcmlim_selected_location_termid' ), true ) . ' · índice=' . var_export( ts_get_cookie( 'wcmlim_selected_location' ), true ),
