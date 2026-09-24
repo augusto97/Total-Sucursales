@@ -340,7 +340,7 @@ class TS_Settings {
 				<?php elseif ( empty( $locations ) ) : ?>
 					<p class="description"><?php esc_html_e( 'Aún no hay tiendas en Multi Locations.', 'total-sucursales' ); ?></p>
 				<?php else : ?>
-					<p class="description" style="margin-bottom:8px"><?php esc_html_e( 'Un cliente de cualquiera de estos municipios puede retirar en la tienda. Incluye los municipios de su área metropolitana (por ejemplo Maracaibo y San Francisco). Si no configuras una tienda, se usa el municipio de la ciudad de su ficha en Multi Locations.', 'total-sucursales' ); ?></p>
+					<p class="description" style="margin-bottom:8px"><?php esc_html_e( 'Un cliente de cualquiera de estos municipios puede retirar en la tienda. Incluye los municipios de su área metropolitana (por ejemplo Maracaibo y San Francisco). Si no configuras una tienda, se usa el municipio elegido en su ficha de Multi Locations.', 'total-sucursales' ); ?></p>
 					<table class="widefat striped ts-municipios" style="max-width:820px">
 						<thead><tr><th style="width:30%"><?php esc_html_e( 'Tienda', 'total-sucursales' ); ?></th><th><?php esc_html_e( 'Municipios', 'total-sucursales' ); ?></th></tr></thead>
 						<tbody>
@@ -373,7 +373,7 @@ class TS_Settings {
 										<?php endforeach; ?>
 									</select>
 									<?php if ( ! $configured ) : ?>
-										<span class="description"><?php echo esc_html( empty( $selected ) ? __( 'Sin configurar y su ciudad no coincide con ningún municipio: elige los municipios a mano.', 'total-sucursales' ) : __( 'Propuesto a partir de la ciudad de la tienda. Se guarda al pulsar "Guardar cambios".', 'total-sucursales' ) ); ?></span>
+										<span class="description"><?php echo esc_html( empty( $selected ) ? __( 'La tienda no tiene municipio: elígelo en su ficha (Productos → Locations, campo Municipio) o elige aquí los municipios a mano.', 'total-sucursales' ) : __( 'Propuesto a partir del municipio de la tienda. Se guarda al pulsar "Guardar cambios".', 'total-sucursales' ) ); ?></span>
 									<?php endif; ?>
 								</td>
 							</tr>
@@ -489,7 +489,7 @@ class TS_Settings {
 		$effect = 'municipio' === self::pickup_criterion()
 			? __( 'Con "sólo por municipio" no ofrecen retiro:', 'total-sucursales' )
 			: __( 'Sólo ofrecen retiro por radio:', 'total-sucursales' );
-		return '<span style="color:#c00">&#10008;</span> ' . esc_html( $effect . ' ' . implode( ', ', $without ) . '. ' . __( 'Elige sus municipios en la tabla «Municipios que pueden retirar en cada tienda».', 'total-sucursales' ) );
+		return '<span style="color:#c00">&#10008;</span> ' . esc_html( $effect . ' ' . implode( ', ', $without ) . '. ' . __( 'Elige su municipio en la ficha de cada tienda (Productos → Locations) o sus municipios en la tabla «Municipios que pueden retirar en cada tienda».', 'total-sucursales' ) );
 	}
 
 	/**

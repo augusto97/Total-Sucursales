@@ -154,6 +154,18 @@ Las pruebas de retiro con GPS lejos de la tienda (`e2e.js` E4, `e2e-blocks.js` B
 usan Cabimas, un municipio sin tienda: con el criterio por defecto, Maracaibo daría retiro por
 municipio aunque no haya posición.
 
+## Municipio en la ficha de la tienda
+
+`ficha-municipio.js` entra al admin (admin / admin) y comprueba el desplegable de municipio que
+sustituye al campo "City" de Multi Locations: abre con el municipio deducido de la ciudad, elegir otro
+rellena la ciudad con su capital, cambiar de estado cambia la lista, "Otra ciudad" deja escribir, al
+guardar la tienda queda con ese municipio (y el retiro lo usa), una ciudad escrita que no es municipio
+se respeta y en el alta pide primero el estado. Restaura las tiendas al terminar.
+
+```bash
+node ficha-municipio.js
+```
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.

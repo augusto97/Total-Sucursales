@@ -3,7 +3,7 @@
 | Archivo | Descripción |
 |---|---|
 | `total-sucursales.zip` | Última versión del plugin, lista para subir en *Plugins → Añadir nuevo → Subir plugin*. |
-| `total-sucursales-0.6.1.zip` | Misma build, con número de versión en el nombre. |
+| `total-sucursales-0.6.2.zip` | Misma build, con número de versión en el nombre. |
 | `guia-total-sucursales.zip` | Guía de implementación en HTML con capturas. Descomprimir y abrir `index.html` en cualquier navegador. |
 | `SHA256SUMS` | Sumas de verificación. |
 

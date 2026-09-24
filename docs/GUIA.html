@@ -120,7 +120,7 @@
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
       <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda según el municipio del cliente o su distancia a la tienda; en las demás, envío nacional. Todo sobre Multi Locations y States and Municipalities of Venezuela, con Advanced Shipping como opción.</p>
-      <div class="meta"><span>plugin 0.6.1</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <div class="meta"><span>plugin 0.6.2</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -168,7 +168,8 @@
       <ul class="check">
         <li><strong>State</strong>: selecciona el estado. Este código es el que se compara con el estado del cliente.</li>
         <li><strong>Location Lat / Lng</strong>: latitud y longitud de la tienda. Sin ellas no se calcula distancia y la sede nunca será elegible para retiro. Se obtienen con clic derecho sobre el local en Google Maps u OpenStreetMap.</li>
-        <li><strong>City, Street address, Phone, horario</strong>: opcionales, se muestran en el checkout y el pedido.</li>
+        <li><strong>Municipio</strong>: con Venezuela y el estado elegidos, el campo <em>City</em> de Multi Locations aparece debajo del estado como un desplegable de municipios (lo añade Total Sucursales). Elige el de la tienda: la ciudad se rellena sola y es lo que usa el <a href="#municipios">retiro por municipio</a>.</li>
+        <li><strong>Street address, Route, Zip code, Phone, horario</strong>: la dirección se muestra en la ficha de producto y en &laquo;Dónde retirar tu pedido&raquo;. Multi Locations no deja guardar la tienda sin código postal.</li>
         <li>Revisa que la sede <strong>no esté marcada</strong> en <em>MULTILOCA → Settings → Location → "Hide Locations From Frontend"</em>: ahí se ocultan sedes a todos los clientes y es la causa más común de que una sucursal no aparezca.</li>
         <li>Elimina o deja sin stock la sede <strong>"Online Store"</strong> que Multi Locations crea al activarse: no tiene estado ni coordenadas y es la sede por defecto cuando el cliente aún no eligió.</li>
       </ul>
@@ -268,9 +269,11 @@
       <p>Las zonas de envío de WooCommerce llegan sólo hasta el estado: no permiten decir &laquo;en Maracaibo se retira en Delicias y en Cabimas va por envío nacional&raquo;. Eso se configura aquí, en <span class="path">WooCommerce → Ajustes → Total Sucursales → Retiro en tienda</span>, y la zona se queda con el estado (o con todo el país).</p>
       <ol class="plain">
         <li><strong>Criterio para ofrecer retiro</strong>: <em>Municipio o radio</em> (recomendado). El cliente que pone su municipio en el checkout ya ve el retiro sin compartir el GPS; el que está cerca de una tienda de otro municipio también, si comparte su posición.</li>
-        <li><strong>Municipios que pueden retirar en cada tienda</strong>: cada tienda viene propuesta con el municipio de su ciudad (el campo City de su ficha en Multi Locations). Añade los del área metropolitana y pulsa <em>Guardar cambios</em>. Una misma tienda puede aceptar varios municipios y un municipio puede estar en varias tiendas.</li>
+        <li><strong>Municipio de cada tienda</strong>: en su ficha de Multi Locations (<span class="path">Productos → Locations</span>) el campo <em>City</em> se convierte en un desplegable <strong>Municipio</strong> con los municipios del estado elegido. Al elegirlo, la ciudad de la tienda se rellena sola (Lagunillas → Ciudad Ojeda). Si una ciudad no está en la lista, la opción <em>Otra ciudad</em> deja escribirla.</li>
+        <li><strong>Municipios que pueden retirar en cada tienda</strong>: cada tienda viene propuesta con su municipio. Añade los del área metropolitana y pulsa <em>Guardar cambios</em>. Una misma tienda puede aceptar varios municipios y un municipio puede estar en varias tiendas.</li>
         <li><strong>Tiendas con retiro por pedido</strong>: <em>Una sola tienda</em> salvo que quieras que, en un pedido con productos de varias tiendas, el cliente pueda retirar en todas las que le quedan cerca.</li>
       </ol>
+      <figure><img src="guia/22-ficha-municipio.png" alt="Ficha de la tienda en Multi Locations con el desplegable de municipio debajo del estado" loading="lazy"><figcaption>Ficha de la tienda: País, Estado y, debajo, el Municipio. El plugin mueve el campo de ciudad detrás del estado y lo convierte en desplegable; fuera de Venezuela sigue siendo texto.</figcaption></figure>
       <figure><img src="guia/20-retiro-municipio-ajustes.png" alt="Ajustes de retiro: criterio, tiendas con retiro por pedido y tabla de municipios por tienda" loading="lazy"><figcaption>Delicias acepta Maracaibo y San Francisco; la tienda San Francisco, sólo su municipio. Las filas con &laquo;Propuesto a partir de la ciudad de la tienda&raquo; aún no se han guardado.</figcaption></figure>
       <div class="grid2">
         <figure class="tall"><img src="guia/21-checkout-municipio.png" alt="Checkout clásico con Retiro en tienda para un cliente de Maracaibo sin GPS" loading="lazy"><figcaption>Cliente sin GPS que elige el municipio Maracaibo: &laquo;Retiro en tienda&raquo; en Delicias, marcado &laquo;en tu municipio&raquo;. Con Cabimas le saldría &laquo;Envío nacional&raquo;.</figcaption></figure>
