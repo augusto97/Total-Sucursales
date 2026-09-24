@@ -50,7 +50,30 @@
 			$('#ts-state-modal').prop('hidden', true).removeClass('is-open');
 		},
 
+		/**
+		 * Modo "por ciudad": se pide la ubicación una vez. Si la da, el servidor deja sólo las tiendas
+		 * de su ciudad (o la tienda por defecto si no hay) y se recarga. Si no, ya está viendo sólo la
+		 * tienda por defecto; se recuerda para no volver a preguntar en cada página.
+		 */
+		autoDetectCity: function () {
+			if (ts_params.has_gps || /(?:^|;\s*)ts_geo=(denied|error)/.test(document.cookie)) {
+				return;
+			}
+			TS.locate(function (lat, lng) {
+				TS.setPosition(lat, lng, 'browse').done(function (res) {
+					if (res && res.success && res.data.reload) { window.location.reload(); }
+				});
+			}, function (code) {
+				var days = code === 'denied' ? 30 : 1;
+				document.cookie = 'ts_geo=' + (code === 'denied' ? 'denied' : 'error') + '; path=/; max-age=' + (days * 86400) + '; SameSite=Lax';
+			});
+		},
+
 		autoDetect: function () {
+			if (ts_params.visibility_mode === 'city') {
+				TS.autoDetectCity();
+				return;
+			}
 			if (ts_params.has_choice || ts_params.detect_state === 'off') {
 				return;
 			}

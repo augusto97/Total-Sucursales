@@ -39,6 +39,8 @@ class TS_Frontend {
 			'has_choice'      => TS_Customer::has_choice(),
 			'state_source'    => TS_Customer::get_state_source(),
 			'has_coords'      => (bool) TS_Customer::get_coords(),
+			'visibility_mode' => TS_Settings::visibility_mode(),
+			'has_gps'         => self::has_gps(),
 			'states'          => $states,
 			'selected_location_id' => TS_Customer::selected_mli_location_id(),
 			'single_location_view' => TS_Settings::is_yes( 'single_location_view' ) && is_product(),
@@ -56,11 +58,20 @@ class TS_Frontend {
 		) );
 	}
 
+	private static function has_gps() {
+		$c = TS_Customer::get_coords();
+		return $c && 'gps' === $c['source'];
+	}
+
 	/**
 	 * [ts_selector_estado] – select de estados con sucursales para el header.
+	 * En el modo "por ciudad" no hay estados que elegir: sólo el botón de ubicación.
 	 */
 	public static function shortcode_selector( $atts = array() ) {
 		$atts   = shortcode_atts( array( 'label' => TS_Texts::get( 'selector_label' ), 'class' => '' ), $atts, 'ts_selector_estado' );
+		if ( 'city' === TS_Settings::visibility_mode() ) {
+			return '<div class="ts-state-selector ts-state-selector--city ' . esc_attr( $atts['class'] ) . '"><button type="button" class="ts-use-gps button">' . esc_html( TS_Texts::get( 'modal_gps' ) ) . '</button></div>';
+		}
 		$states = TS_Locations::states_with_locations();
 		$cur    = TS_Customer::get_state();
 
@@ -86,7 +97,7 @@ class TS_Frontend {
 	 * Modal de primera visita (sin estado). Se muestra por JS según el modo configurado.
 	 */
 	public static function render_modal() {
-		if ( is_admin() || 'off' === TS_Settings::get( 'detect_state' ) ) {
+		if ( is_admin() || 'off' === TS_Settings::get( 'detect_state' ) || 'city' === TS_Settings::visibility_mode() ) {
 			return;
 		}
 		if ( TS_Customer::has_choice() ) {
@@ -163,11 +174,30 @@ class TS_Frontend {
 		}
 		TS_Customer::set_gps_coords( $lat, $lng );
 
+		$context = isset( $_POST['context'] ) ? sanitize_key( wp_unslash( $_POST['context'] ) ) : 'browse';
+
+		// Modo "por ciudad": con la posición cambian las tiendas visibles; se elige la más cercana.
+		if ( 'city' === TS_Settings::visibility_mode() ) {
+			TS_Location_Filter::flush_request_cache();
+			$visible = TS_Location_Filter::visible_ids();
+			$nearest = TS_Locations::nearest( $lat, $lng, $visible );
+			if ( 'checkout' !== $context ) {
+				$target = $nearest ? $nearest['id'] : ( $visible ? $visible[0] : 0 );
+				if ( $target ) {
+					TS_Customer::select_mli_location( $target );
+				}
+			}
+			wp_send_json_success( array(
+				'mode'    => 'city',
+				'visible' => array_map( array( 'TS_Locations', 'name' ), $visible ),
+				'nearest' => $nearest ? array( 'id' => $nearest['id'], 'name' => TS_Locations::name( $nearest['id'] ), 'distance' => round( $nearest['distance'], 2 ) ) : null,
+				'reload'  => 'checkout' !== $context,
+			) );
+		}
+
 		$resolved = TS_Customer::resolve_state_from_coords( $lat, $lng );
 		$changed  = false;
 		$state    = TS_Customer::get_state();
-
-		$context = isset( $_POST['context'] ) ? sanitize_key( wp_unslash( $_POST['context'] ) ) : 'browse';
 
 		if ( $resolved && 'checkout' !== $context && '' !== $resolved['state'] ) {
 			$changed = TS_Customer::set_state( $resolved['state'], 'gps' );
