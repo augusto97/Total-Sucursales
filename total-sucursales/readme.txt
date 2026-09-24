@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.6.0
+Stable tag: 0.6.1
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,12 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.6.1 =
+* Añadido: la página de confirmación, el pedido en "Mi cuenta" y los correos muestran "Dónde retirar tu pedido" con la tienda y su dirección. Cuando todo el pedido se retira, la dirección de envío deja de mostrarse.
+* Añadido: en el carrito, a quien todavía no eligió municipio se le avisa de que lo haga al finalizar la compra y de qué municipios retiran en cada tienda; antes sólo veía "Envío nacional" con su costo. En el checkout el aviso pide el municipio (o la ubicación) y deja de decir "distancia no disponible" mientras falte.
+* Corregido: el pedido marcaba como retiro las tiendas donde el cliente podía retirar aunque hubiera elegido el envío (con "Envío también donde se puede retirar"). Ahora manda lo que eligió, también con las reglas de Advanced Shipping.
+* Añadido: "Estado de la integración" lista las tiendas visibles que no tienen municipios de retiro.
 
 = 0.6.0 =
 * Añadido: retiro por municipio. Las zonas de WooCommerce sólo llegan al estado; ahora cada tienda tiene su lista de municipios desde los que se puede retirar (por defecto, el de su ciudad; se añaden los del área metropolitana). Un cliente que elige su municipio en el checkout ve "Retiro en tienda" sin compartir el GPS; si su municipio no tiene tienda, "Envío nacional".

@@ -14,6 +14,7 @@ class TS_Checkout {
 		add_action( 'woocommerce_checkout_process', array( __CLASS__, 'on_checkout_process' ), 5 );
 		add_action( 'woocommerce_review_order_before_shipping', array( __CLASS__, 'render_geo_button' ) );
 		add_action( 'woocommerce_review_order_after_shipping', array( __CLASS__, 'render_distance_info' ) );
+		add_action( 'woocommerce_cart_totals_after_shipping', array( __CLASS__, 'render_cart_note' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 	}
 
@@ -131,11 +132,41 @@ class TS_Checkout {
 						</li>
 					<?php endforeach; ?>
 				</ul>
-				<?php if ( TS_Packages::needs_position_note( $summary ) ) : ?>
-					<small class="ts-distance-note"><?php echo esc_html( TS_Texts::get( 'no_position' ) ); ?></small>
-				<?php endif; ?>
+				<?php self::print_note( TS_Packages::pickup_note( $summary, 'checkout' ) ); ?>
 			</td>
 		</tr>
 		<?php
+	}
+
+	/**
+	 * Carrito clásico: el cálculo de envío del carrito no pide el municipio, así que un cliente de
+	 * Maracaibo ve "Envío nacional" aunque podría retirar. Se le avisa de que puede elegirlo al
+	 * finalizar la compra y de qué municipios retiran en cada tienda.
+	 */
+	public static function render_cart_note() {
+		if ( ! TS_Settings::is_yes( 'show_distance_info' ) ) {
+			return;
+		}
+		$note = TS_Packages::pickup_note( TS_Packages::summary(), 'cart' );
+		if ( '' === $note['text'] ) {
+			return;
+		}
+		echo '<tr class="ts-cart-pickup-note"><td colspan="2">';
+		self::print_note( $note );
+		echo '</td></tr>';
+	}
+
+	/**
+	 * @param array{text:string,lines:string[]} $note TS_Packages::pickup_note().
+	 */
+	private static function print_note( array $note ) {
+		if ( '' === $note['text'] ) {
+			return;
+		}
+		echo '<small class="ts-distance-note">' . esc_html( $note['text'] );
+		foreach ( $note['lines'] as $line ) {
+			echo '<span class="ts-distance-note__line">' . esc_html( $line ) . '</span>';
+		}
+		echo '</small>';
 	}
 }

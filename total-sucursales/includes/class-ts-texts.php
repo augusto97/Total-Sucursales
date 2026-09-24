@@ -68,6 +68,11 @@ class TS_Texts {
 		$add( 'in_your_municipio', $g_checkout, __( 'Retiro por municipio (en lugar de la distancia)', 'total-sucursales' ), __( 'en tu municipio', 'total-sucursales' ) );
 		$add( 'unknown_distance', $g_checkout, __( 'Distancia desconocida', 'total-sucursales' ), __( 'distancia no disponible', 'total-sucursales' ) );
 		$add( 'no_position', $g_checkout, __( 'Aviso sin posición', 'total-sucursales' ), __( 'No conocemos tu posición: comparte tu ubicación o completa la dirección para evaluar el retiro en tienda.', 'total-sucursales' ), 'textarea' );
+		$add( 'choose_municipio', $g_checkout, __( 'Aviso sin municipio (checkout)', 'total-sucursales' ), __( 'Elige tu municipio para saber si puedes retirar en tienda.', 'total-sucursales' ), 'textarea' );
+		$add( 'choose_municipio_gps', $g_checkout, __( 'Aviso sin municipio ni posición (checkout, criterio "municipio o radio")', 'total-sucursales' ), __( 'Elige tu municipio, o comparte tu ubicación, para saber si puedes retirar en tienda.', 'total-sucursales' ), 'textarea' );
+		$add( 'cart_choose_municipio', $g_checkout, __( 'Aviso sin municipio (carrito)', 'total-sucursales' ), __( 'Al finalizar la compra, elige tu municipio para saber si puedes retirar en tienda.', 'total-sucursales' ), 'textarea' );
+		$add( 'pickup_for', $g_checkout, __( 'Municipios con retiro en cada tienda ({tienda}, {municipios})', 'total-sucursales' ), __( 'Retiro en {tienda} para clientes de {municipios}.', 'total-sucursales' ) );
+		$add( 'pickup_where_title', $g_checkout, __( 'Página de gracias y correos: título del lugar de retiro', 'total-sucursales' ), __( 'Dónde retirar tu pedido', 'total-sucursales' ) );
 
 		$add( 'mli_location', $g_mli, __( 'Cómo se llama una "location"', 'total-sucursales' ), __( 'Tienda', 'total-sucursales' ) );
 		$add( 'mli_pickup_location', $g_mli, __( 'Tienda de retiro (en el pedido)', 'total-sucursales' ), __( 'Tienda de retiro', 'total-sucursales' ) );

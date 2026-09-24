@@ -96,6 +96,8 @@ class TS_Blocks {
 			'radius_km'     => array( 'type' => 'number', 'readonly' => true ),
 			'geo_button'    => array( 'type' => 'boolean', 'readonly' => true ),
 			'show_note'     => array( 'type' => 'boolean', 'readonly' => true ),
+			'note'          => array( 'type' => 'object', 'readonly' => true ),
+			'cart_note'     => array( 'type' => 'object', 'readonly' => true ),
 			'show_info'     => array( 'type' => 'boolean', 'readonly' => true ),
 			'packages'      => array( 'type' => 'array', 'readonly' => true ),
 			'i18n'          => array( 'type' => 'object', 'readonly' => true ),
@@ -121,12 +123,16 @@ class TS_Blocks {
 				'pickup_reason'    => (string) ( $p['pickup_reason'] ?? '' ),
 			);
 		}
+		$note = TS_Packages::pickup_note( $summary, 'checkout' );
 		return array(
 			'has_coords'    => (bool) $coords,
 			'coords_source' => $coords ? $coords['source'] : 'none',
 			'radius_km'     => TS_Settings::radius_km(),
 			'geo_button'    => TS_Packages::geo_button_enabled(),
-			'show_note'     => TS_Packages::needs_position_note( $summary ),
+			'show_note'     => '' !== $note['text'],
+			'note'          => $note,
+			// La Store API no distingue carrito de checkout: el script elige según la página.
+			'cart_note'     => TS_Packages::pickup_note( $summary, 'cart' ),
 			'show_info'     => TS_Settings::is_yes( 'show_distance_info' ),
 			'packages'      => $rows,
 			'i18n'          => array(

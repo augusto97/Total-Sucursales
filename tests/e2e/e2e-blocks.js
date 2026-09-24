@@ -84,9 +84,11 @@ async function panel(page) {
     log('B1 pedido creado desde checkout por bloques', !!m, page.url());
     await page.screenshot({ path: SHOTS + 'b1-thankyou-blocks.png', fullPage: true });
     if (m) {
-        const out = execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$o=wc_get_order(${m[1]}); echo json_encode(["city"=>$o->get_shipping_city(),"bcity"=>$o->get_billing_city(),"pickup"=>$o->get_meta("_ts_pickup_location_name"),"src"=>$o->get_meta("_ts_coords_source"),"pk"=>$o->get_meta("_ts_packages")]);' 2>/dev/null`).toString();
+        const out = execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$o=wc_get_order(${m[1]}); echo json_encode(["city"=>$o->get_shipping_city(),"bcity"=>$o->get_billing_city(),"pickup"=>$o->get_meta("_ts_pickup_location_name"),"src"=>$o->get_meta("_ts_coords_source"),"pk"=>$o->get_meta("_ts_packages"),"modes"=>array_values(array_map(function($i){return $i->get_meta("_ts_mode");}, $o->get_items("shipping")))]);' 2>/dev/null`).toString();
       const o = JSON.parse(out.trim().split('\n').pop());
-      log('B1 pedido: ciudad = municipio elegido, pickup Delicias, coords gps', /Maracaibo/.test(o.city) && /Maracaibo/.test(o.bcity) && o.pickup === 'Tienda Delicias' && o.src === 'gps', out.trim().slice(-300));
+      log('B1 pedido: ciudad = municipio elegido, pickup Delicias, coords gps', /Maracaibo/.test(o.city) && /Maracaibo/.test(o.bcity) && o.pickup === 'Tienda Delicias' && o.src === 'gps' && JSON.stringify(o.modes) === '["pickup"]', out.trim().slice(-300));
+      const where = await page.$eval('.ts-pickup-where', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+      log('B1 confirmación de pedido (bloques): dónde retirar, Tienda Delicias', /Dónde retirar/.test(where) && /Tienda Delicias/.test(where), where);
     }
     await ctx.close();
   }
