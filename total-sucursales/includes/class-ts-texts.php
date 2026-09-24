@@ -65,6 +65,7 @@ class TS_Texts {
 		$add( 'checkout_hint', $g_checkout, __( 'Ayuda bajo el botón', 'total-sucursales' ), __( 'Comparte tu posición para saber si puedes retirar en la tienda más cercana.', 'total-sucursales' ) );
 		$add( 'located', $g_checkout, __( 'Tras compartir la ubicación', 'total-sucursales' ), __( 'Ubicación registrada. Recalculando envíos…', 'total-sucursales' ) );
 		$add( 'checkout_error', $g_checkout, __( 'Si falla la ubicación', 'total-sucursales' ), __( 'No pudimos obtener tu ubicación.', 'total-sucursales' ) );
+		$add( 'in_your_municipio', $g_checkout, __( 'Retiro por municipio (en lugar de la distancia)', 'total-sucursales' ), __( 'en tu municipio', 'total-sucursales' ) );
 		$add( 'unknown_distance', $g_checkout, __( 'Distancia desconocida', 'total-sucursales' ), __( 'distancia no disponible', 'total-sucursales' ) );
 		$add( 'no_position', $g_checkout, __( 'Aviso sin posición', 'total-sucursales' ), __( 'No conocemos tu posición: comparte tu ubicación o completa la dirección para evaluar el retiro en tienda.', 'total-sucursales' ), 'textarea' );
 

@@ -202,7 +202,9 @@ async function distanceInfo(page) {
     log('E4 cambio a Zulia por selector: sede reasignada a una de Zulia', ck2.ts_estado === 'ZU' && [ID('Tienda Delicias'), ID('Tienda San Francisco')].includes(ck2.wcmlim_selected_location_termid), JSON.stringify({ ck: ck2.ts_estado, sel: ck2.wcmlim_selected_location, selid: ck2.wcmlim_selected_location_termid }));
     // checkout sin GPS y sin geocoder → envío nacional
     await addToCart(page, 'producto-a-delicias-y-chacao');
-    await fillCheckout(page, 'ZU', 'Maracaibo');
+    // Municipio sin tienda: sin posición no hay retiro (con el criterio "municipio o radio" Maracaibo
+    // lo tendría por municipio); así se sigue probando que el botón GPS lo habilita por radio.
+    await fillCheckout(page, 'ZU', 'Cabimas');
     const sm = await shippingMethods(page);
     log('E4 checkout sin posición: sólo Envío nacional', sm.some(t => /Envío nacional/.test(t)) && !sm.some(t => /Retiro en tienda/.test(t)), JSON.stringify(sm));
     const di = await distanceInfo(page);
@@ -277,7 +279,7 @@ async function distanceInfo(page) {
     const condOpts = await ap.$$eval('select.wpc-condition option', o => o.map(x => x.textContent.trim()));
     const condVal = await ap.$eval('select.wpc-condition', e => e.value).catch(() => '');
     const valSel = await ap.$eval('select.wpc-value', e => e.options[e.selectedIndex] && e.options[e.selectedIndex].textContent.trim()).catch(() => '');
-    log('Admin WAS: condiciones Total Sucursales en el dropdown y regla guardada', condOpts.some(t => /elegible para pickup/.test(t)) && condVal === 'ts_sede_pickup' && /Sí/.test(valSel), JSON.stringify({ condVal, valSel, has: condOpts.filter(t => /Sucursal|Distancia/.test(t)) }));
+    log('Admin WAS: condiciones Total Sucursales en el dropdown y regla guardada', condOpts.some(t => /elegible para retiro/.test(t)) && condVal === 'ts_sede_pickup' && /Sí/.test(valSel), JSON.stringify({ condVal, valSel, has: condOpts.filter(t => /Sucursal|Distancia/.test(t)) }));
     await ap.screenshot({ path: SHOTS + 'admin-was-rule.png', fullPage: true });
     await ap.goto(BASE + '/wp-admin/admin.php?page=wc-settings&tab=total_sucursales', { waitUntil: 'networkidle' });
     await ap.screenshot({ path: SHOTS + 'admin-settings.png', fullPage: true });

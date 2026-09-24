@@ -3,7 +3,7 @@
 | Archivo | Descripción |
 |---|---|
 | `total-sucursales.zip` | Última versión del plugin, lista para subir en *Plugins → Añadir nuevo → Subir plugin*. |
-| `total-sucursales-0.5.0.zip` | Misma build, con número de versión en el nombre. |
+| `total-sucursales-0.6.0.zip` | Misma build, con número de versión en el nombre. |
 | `guia-total-sucursales.zip` | Guía de implementación en HTML con capturas. Descomprimir y abrir `index.html` en cualquier navegador. |
 | `SHA256SUMS` | Sumas de verificación. |
 
@@ -19,7 +19,9 @@ https://github.com/augusto97/Total-Sucursales/raw/release/dist/guia-total-sucurs
 2. Requiere WooCommerce y **MULTILOCA – Multi Locations Inventory Management** activos, y **States and Municipalities of Venezuela** para
    estados y municipios. **Advanced Shipping ya no es necesario**: el plugin trae su propio método de envío.
 3. En cada sucursal de Multi Locations (Productos → Locations) completa *State* y *Location Lat / Lng*.
-4. WooCommerce → Ajustes → Total Sucursales: radio de retiro (10 km), detección del estado, geocodificador.
+4. WooCommerce → Ajustes → Total Sucursales → *Retiro en tienda*: criterio (municipio o radio), los municipios que pueden
+   retirar en cada tienda (por defecto, el de su ciudad; añade los del área metropolitana) y el radio (10 km). Luego detección
+   del estado y geocodificador.
 5. Envío: WooCommerce → Ajustes → Envío → tu zona → Añadir método → **Total Sucursales: retiro o envío nacional**, con el
    nombre y costo del retiro y del envío. (Si prefieres Advanced Shipping, crea sus dos reglas en su lugar; no uses ambos en la
    misma zona.)

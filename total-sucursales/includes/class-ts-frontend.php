@@ -44,6 +44,7 @@ class TS_Frontend {
 			'single_location_view' => TS_Settings::is_yes( 'single_location_view' ) && is_product(),
 			'location_address'     => ( is_product() && TS_Settings::is_yes( 'show_location_address' ) ) ? TS_Locations::address_lines() : new stdClass(),
 			'is_checkout'     => is_checkout(),
+			'pickup_by_municipio' => 'radius' !== TS_Settings::pickup_criterion(),
 			'i18n'            => array(
 				'all_states'   => TS_Texts::get( 'all_states' ),
 				'locating'     => TS_Texts::get( 'locating' ),

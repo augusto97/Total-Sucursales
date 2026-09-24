@@ -97,10 +97,13 @@ async function panel(page) {
     const page = await ctx.newPage();
     page.on('pageerror', e => console.log('  [pageerror]', String(e).slice(0, 200)));
     await page.goto(BASE + '/', { waitUntil: 'networkidle' }); await page.waitForTimeout(1500);
-    await page.selectOption('#ts-state-modal .ts-modal__select', 'ZU'); await page.click('#ts-state-modal .ts-modal__ok');
-    await page.waitForTimeout(2000); await page.waitForLoadState('networkidle');
+    await page.selectOption('#ts-state-modal .ts-modal__select', 'ZU');
+    // "Continuar" guarda el estado y recarga la página: hay que esperar a esa recarga antes de navegar.
+    await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => {}), page.click('#ts-state-modal .ts-modal__ok')]);
+    await page.waitForLoadState('networkidle');
     await addToCart(page, 'producto-a-delicias-y-chacao', /Delicias/);
-    await fillBlockCheckout(page, 'ZU', /Maracaibo/);
+    // Municipio sin tienda, para que sin posición no haya retiro y el botón GPS lo habilite por radio.
+    await fillBlockCheckout(page, 'ZU', /Cabimas/);
     let sm = await shippingOptions(page); let pn = await panel(page);
     log('B2 sin posición: sólo Envío nacional y botón GPS activo', sm.some(t => /Envío nacional/.test(t)) && !sm.some(t => /Retiro/.test(t)) && pn.btn && !pn.btn.disabled, JSON.stringify({ sm, pn }));
     await page.screenshot({ path: SHOTS + 'b2-checkout-blocks-no-gps.png', fullPage: true });

@@ -18,7 +18,9 @@ total-sucursales/
 │   ├── class-ts-geocoder.php                 # Nominatim / Google con caché (30 días, negativo 1 día)
 │   ├── class-ts-customer.php                 # estado y coordenadas del cliente; sincroniza cookies de MLI
 │   ├── class-ts-location-filter.php          # pre_option_wcmlim_exclude_locations_from_frontend
-│   ├── class-ts-packages.php                 # enriquece paquetes: sucursal, distancia, pickup elegible
+│   ├── class-ts-packages.php                 # enriquece paquetes: sucursal, distancia, municipio, pickup elegible
+│   ├── class-ts-municipios.php               # municipios de SMV con clave ESTADO:nombre; municipios por tienda
+│   ├── class-ts-shipping-method.php          # método de envío propio: retiro / envío nacional (sin WAS)
 │   ├── class-ts-catalog.php                  # catálogo por sede en loop clásico, shortcodes, Product Collection y Store API
 │   ├── class-ts-blocks.php                   # checkout/carrito por bloques: Store API, GPS, municipios por estado
 │   ├── class-ts-frontend.php                 # scripts, modal de estado, [ts_selector_estado], AJAX
@@ -30,7 +32,7 @@ total-sucursales/
 │       └── conditions/
 │           ├── class-wpc-ts-sede-condition.php            # "Sucursal del paquete" (term_id)
 │           ├── class-wpc-ts-distancia-sede-condition.php  # "Distancia a la sucursal (km)" <= / >=
-│           └── class-wpc-ts-sede-pickup-condition.php     # "Sucursal elegible para pickup" Sí/No
+│           └── class-wpc-ts-sede-pickup-condition.php     # "Sucursal elegible para retiro" Sí/No
 └── assets/
     ├── js/ts-frontend.js                     # GPS, modal, selector, vista de producto
     ├── js/ts-checkout.js                     # botón "Usar mi ubicación" → update_checkout (checkout clásico)
@@ -81,24 +83,32 @@ total-sucursales/
      otra dirección", si no billing) con Nominatim/Google y la guarda en `WC()->session['ts_coords']`.
      El municipio "Municipio Maracaibo (Maracaibo)" se reduce a "Maracaibo" para la consulta.
 3. `TS_Packages::enrich_packages()` (filtro `woocommerce_cart_shipping_packages`, prioridad 50, después
-   del split de MLI) añade a cada paquete `ts_location_id`, `ts_distance_km`, `ts_pickup_eligible` y
-   `destination.ts_lat/ts_lng`. Elige **un solo** paquete elegible: el de menor distancia ≤ radio.
+   del split de MLI) añade a cada paquete `ts_location_id`, `ts_distance_km`, `ts_customer_municipio`,
+   `ts_pickup_qualifies`, `ts_pickup_eligible`, `ts_pickup_reason` y `destination.ts_lat/ts_lng`.
+   - **Califica** según `pickup_criterion`: `municipio` (el municipio del cliente, resuelto por
+     `TS_Municipios::from_destination()` a partir de estado + ciudad, está en
+     `TS_Municipios::for_location()`), `radius` (distancia ≤ radio) o `both` (cualquiera; por defecto).
+   - **Elegible** según `pickup_scope`: `one` elige un paquete entre los que califican (menor distancia
+     conocida; si no, la sede elegida en el selector de MLI; si no, el primero; filtro
+     `ts_pickup_eligible_package_key`); `all` marca todos los que califican.
    Como los datos viven en el paquete, entran en el hash de caché de tarifas de WooCommerce.
-4. WAS evalúa cada regla por paquete. Las condiciones `ts_sede_pickup`, `ts_distancia_sede`, `ts_sede`
+4. `TS_Shipping_Method` (o WAS) convierte eso en tarifas. El método propio añade "Retiro en tienda"
+   si el paquete es elegible y "Envío nacional" si no (u opcionalmente también). Con WAS, cada regla
+   se evalúa por paquete. Las condiciones `ts_sede_pickup`, `ts_distancia_sede`, `ts_sede`
    leen esas claves. El administrador configura:
    - **Retiro en tienda** = `ts_sede_pickup == Sí` (costo 0).
    - **Envío nacional** = `ts_sede_pickup == No` (+ tarifa por estado/peso/etc.).
 5. Bajo los métodos de envío se muestra la lista de sucursales del pedido con distancia y etiqueta
    PICKUP / Envío nacional.
-6. Al crear el pedido, `TS_Order::save_meta()` guarda estado, coordenadas (con fuente), radio, sucursal
-   de pickup y el detalle por paquete; se ve en el admin del pedido con enlace a OpenStreetMap.
+6. Al crear el pedido, `TS_Order::save_meta()` guarda estado, municipio, coordenadas (con fuente), radio,
+   criterio y alcance, sucursales de pickup y el detalle por paquete (con el motivo); se ve en el admin del pedido con enlace a OpenStreetMap.
 
 ### Variante A (una sucursal por carrito, MLI "Restrict to One Location")
-Un solo paquete; `ts_location_id` = sucursal única de los items. Pickup si está a ≤ radio.
+Un solo paquete; `ts_location_id` = sucursal única de los items. Pickup si califica (municipio o radio).
 
 ### Variante B (varias sucursales, MLI "Split order Packages by location")
-Un paquete por sucursal (`shipping_term_id`). Sólo el más cercano dentro del radio es elegible;
-los demás caen en la regla de envío nacional. El pedido tiene N líneas de envío.
+Un paquete por sucursal (`shipping_term_id`). Con alcance `one`, sólo uno de los que califican es
+elegible; con `all`, todos. Los demás caen en envío nacional. El pedido tiene N líneas de envío.
 
 Sin split y con items de varias sucursales: `ts_mixed_locations = true`, sin sucursal ni pickup
 (se documenta como configuración no soportada).
@@ -125,7 +135,10 @@ que carga todos los IDs del catálogo en cada petición.
 | Ajuste | Default | Efecto |
 |---|---|---|
 | Detección del estado | gps | gps / ask / off |
-| Radio de retiro (km) | 10 | umbral de pickup |
+| Criterio para ofrecer retiro | both | municipio / radius / both |
+| Tiendas con retiro por pedido | one | one / all |
+| Municipios que pueden retirar en cada tienda | el de la ciudad de la tienda | opción `ts_pickup_municipios`: term_id => [claves ESTADO:nombre] |
+| Radio de retiro (km) | 10 | umbral del criterio por radio |
 | Botón "Usar mi ubicación" en checkout | sí | |
 | Mostrar distancia en checkout | sí | |
 | Geocodificador | nominatim | none / nominatim / google |

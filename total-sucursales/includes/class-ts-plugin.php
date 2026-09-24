@@ -53,6 +53,7 @@ final class TS_Plugin {
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-texts.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-mli-i18n.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-locations.php';
+		require_once TS_PLUGIN_DIR . 'includes/class-ts-municipios.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-geocoder.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-customer.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-location-filter.php';

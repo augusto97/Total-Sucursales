@@ -79,6 +79,40 @@ class TS_Debug {
 		update_option( self::FATALS_OPTION, array_slice( $list, 0, 5 ), false );
 	}
 
+	private static function pickup_rule_label() {
+		$crit  = array(
+			'both'      => __( 'municipio o radio', 'total-sucursales' ),
+			'municipio' => __( 'sólo municipio', 'total-sucursales' ),
+			'radius'    => __( 'sólo radio', 'total-sucursales' ),
+		);
+		$scope = array(
+			'one' => __( 'una tienda por pedido', 'total-sucursales' ),
+			'all' => __( 'todas las que cumplan', 'total-sucursales' ),
+		);
+		return $crit[ TS_Settings::pickup_criterion() ] . ' · ' . $scope[ TS_Settings::pickup_scope() ]
+			. ' · ' . sprintf( __( 'radio %s km', 'total-sucursales' ), TS_Settings::radius_km() );
+	}
+
+	/**
+	 * Municipio de la dirección que el cliente tiene en el carrito (envío o, si no, facturación).
+	 */
+	private static function customer_municipio_label() {
+		if ( ! function_exists( 'WC' ) || ! WC()->customer ) {
+			return __( '(sin sesión)', 'total-sucursales' );
+		}
+		$c     = WC()->customer;
+		$state = $c->get_shipping_state() ? $c->get_shipping_state() : $c->get_billing_state();
+		$city  = $c->get_shipping_city() ? $c->get_shipping_city() : $c->get_billing_city();
+		if ( '' === (string) $city ) {
+			return __( '(aún no lo eligió: se sabe al rellenar la dirección en el checkout)', 'total-sucursales' );
+		}
+		$key = TS_Municipios::resolve( $state, $city );
+		return '' !== $key
+			? TS_Municipios::label( $key )
+			/* translators: %s ciudad tal como la escribió el cliente */
+			: sprintf( __( '"%s" no corresponde a ningún municipio: sólo puede retirar por radio', 'total-sucursales' ), $city );
+	}
+
 	/**
 	 * Sucursal por defecto configurada, avisando si el filtro por estado la deja fuera.
 	 */
@@ -229,6 +263,8 @@ class TS_Debug {
 			__( 'Cookie ts_estado', 'total-sucursales' ) => var_export( ts_get_cookie( TS_Customer::COOKIE_STATE ), true ),
 			__( 'Sucursal seleccionada (MLI)', 'total-sucursales' ) => 'termid=' . var_export( ts_get_cookie( 'wcmlim_selected_location_termid' ), true ) . ' · índice=' . var_export( ts_get_cookie( 'wcmlim_selected_location' ), true ),
 			__( 'Sucursal por defecto (ajustes)', 'total-sucursales' ) => self::default_location_label(),
+			__( 'Retiro: criterio y alcance', 'total-sucursales' ) => self::pickup_rule_label(),
+			__( 'Municipio del cliente', 'total-sucursales' ) => self::customer_municipio_label(),
 			__( 'Posición del cliente', 'total-sucursales' ) => $coords ? $coords['lat'] . ', ' . $coords['lng'] . ' (' . $coords['source'] . ')' : __( '(desconocida)', 'total-sucursales' ),
 			__( 'Filtro por estado', 'total-sucursales' ) => $applies ? __( 'activo', 'total-sucursales' ) : __( 'NO se aplica en esta página', 'total-sucursales' ),
 			__( 'Ocultas en MLI (ajuste del admin)', 'total-sucursales' ) => empty( $manual ) ? __( '(ninguna)', 'total-sucursales' ) : implode( ', ', $manual ),
@@ -295,7 +331,7 @@ class TS_Debug {
 
 			<div class="muted" style="margin-top:10px"><?php printf( esc_html__( 'Sucursales cargadas (%d):', 'total-sucursales' ), count( $all ) ); ?></div>
 			<table style="margin-top:4px">
-				<tr class="muted"><td>ID</td><td>Nombre</td><td><?php esc_html_e( 'Estado guardado', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Se lee', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Coordenadas', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Grupo', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Situación', 'total-sucursales' ); ?></td></tr>
+				<tr class="muted"><td>ID</td><td>Nombre</td><td><?php esc_html_e( 'Estado guardado', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Se lee', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Coordenadas', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Grupo', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Retiro desde', 'total-sucursales' ); ?></td><td><?php esc_html_e( 'Situación', 'total-sucursales' ); ?></td></tr>
 				<?php
 				foreach ( $all as $id => $l ) :
 					$hidden = in_array( (int) $id, $manual, true );
@@ -318,6 +354,8 @@ class TS_Debug {
 						<td class="<?php echo ( '' === $l['state'] ? 'bad' : '' ); ?>"><?php echo esc_html( '' === $l['state'] ? '—' : $l['state'] ); ?></td>
 						<td class="<?php echo ( $l['has_coords'] ? '' : 'bad' ); ?>"><?php echo $l['has_coords'] ? esc_html( $l['lat'] . ', ' . $l['lng'] ) : '—'; ?></td>
 						<td class="<?php echo ( isset( $no_group[ $id ] ) ? 'bad' : '' ); ?>"><?php echo isset( $no_group[ $id ] ) ? '—' : esc_html( (string) get_term_meta( $id, 'wcmlim_locator', true ) ); ?></td>
+						<?php $pm = TS_Municipios::for_location( $id ); ?>
+						<td class="<?php echo empty( $pm ) ? 'warn' : ''; ?>"><?php echo empty( $pm ) ? esc_html__( '— (sólo radio)', 'total-sucursales' ) : esc_html( implode( ', ', array_map( function ( $k ) { return TS_Municipios::label( $k, false ); }, $pm ) ) ); ?></td>
 						<td class="<?php echo esc_attr( $cls ); ?>"><?php echo esc_html( $note ); ?></td>
 					</tr>
 				<?php endforeach; ?>

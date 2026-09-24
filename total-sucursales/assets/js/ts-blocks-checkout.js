@@ -58,14 +58,14 @@
 			children.push(h('ul', { className: 'ts-distance-list ts-blocks', key: 'list' }, data.packages.map(function (p) {
 				return h('li', { key: p.location_id },
 					h('strong', null, p.location_name), ' ',
-					p.distance_km === null
-						? h('span', { className: 'ts-distance ts-distance--unknown' }, i18n.unknown)
-						: h('span', { className: 'ts-distance' }, p.distance_label),
+					p.distance_label
+						? h('span', { className: 'ts-distance' + (p.distance_unknown ? ' ts-distance--unknown' : '') }, p.distance_label)
+						: null,
 					' ',
 					h('span', { className: 'ts-badge ' + (p.pickup_eligible ? 'ts-badge--pickup' : 'ts-badge--national') }, p.pickup_eligible ? i18n.pickup : i18n.national)
 				);
 			})));
-			if (!data.has_coords) {
+			if (data.show_note) {
 				children.push(h('small', { className: 'ts-distance-note', key: 'note' }, i18n.no_position));
 			}
 		}

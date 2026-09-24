@@ -34,7 +34,7 @@ class TS_WAS_Conditions {
 	public static function add_to_dropdown( $conditions ) {
 		$group = __( 'Total Sucursales', 'total-sucursales' );
 		$conditions[ $group ] = array(
-			'ts_sede_pickup'    => __( 'Sucursal elegible para pickup (radio)', 'total-sucursales' ),
+			'ts_sede_pickup'    => __( 'Sucursal elegible para retiro', 'total-sucursales' ),
 			'ts_distancia_sede' => __( 'Distancia del cliente a la sucursal (km)', 'total-sucursales' ),
 			'ts_sede'           => __( 'Sucursal del paquete', 'total-sucursales' ),
 		);

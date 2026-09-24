@@ -12,6 +12,13 @@ php wp-cli.phar --allow-root --path=wordpress eval-file pages.php blocks   # car
 node e2e-blocks.js                           # 11 comprobaciones con tema de bloques + checkout por bloques
 ```
 
+Toda la batería, en el orden correcto (tema clásico primero, bloques al final, stock repuesto antes de
+cada prueba) y dejando el sitio en modo clásico:
+
+```bash
+bash run-all.sh /tmp/ts-wp     # logs en /tmp/ts-wp/logs/; sale con 0 si todo pasa
+```
+
 `pages.php blocks|classic` cambia el contenido de las páginas de carrito y checkout entre bloques y shortcodes.
 
 Datos sembrados por `seed.php`: 4 sedes con coordenadas (Delicias y San Francisco en Zulia, Chacao en
@@ -115,6 +122,34 @@ node envio-sin-was.js
 Comprueba el admin (sin errores, sin pedir Advanced Shipping, y con aviso si no hay método en ninguna
 zona), retiro dentro del radio, envío nacional sin posición, un pedido con dos tiendas (una línea de
 cada tipo), la opción de ofrecer también el envío donde se puede retirar y el checkout por bloques.
+
+## Retiro por municipio
+
+`regla-retiro.php` prueba la regla de retiro sin navegador: construye paquetes a mano y comprueba qué
+tiendas ofrecen retiro y por qué en cada combinación de criterio (radio / municipio / ambos) y alcance
+(una tienda / todas), con y sin GPS, texto libre en la ciudad y una tienda sin municipios. Deja los
+ajustes como estaban:
+
+```bash
+php wp-cli.phar --allow-root --path=wordpress eval-file regla-retiro.php
+```
+
+`retiro-municipio.js` hace lo mismo en el navegador, de punta a punta, con Delicias aceptando
+Maracaibo y San Francisco:
+
+```bash
+node retiro-municipio.js
+```
+
+Comprueba el checkout clásico sin GPS (Maracaibo → retiro "en tu municipio", Cabimas → envío
+nacional, San Francisco → Delicias), que el cambio de municipio recalcula aunque falten campos de la
+dirección, el pedido (municipio, criterio y tienda de retiro guardados), los modos "sólo radio" y
+"sólo municipio", el botón "Usar mi ubicación", el alcance una tienda / todas con dos tiendas en el
+carrito y el checkout por bloques. Restaura ajustes, municipios y la página de checkout aunque falle.
+
+Las pruebas de retiro con GPS lejos de la tienda (`e2e.js` E4, `e2e-blocks.js` B2, `envio-sin-was.js`)
+usan Cabimas, un municipio sin tienda: con el criterio por defecto, Maracaibo daría retiro por
+municipio aunque no haya posición.
 
 Notas del entorno:
 

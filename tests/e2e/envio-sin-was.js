@@ -57,13 +57,13 @@ async function addToCart(page, slug, locMatch) {
   await page.click('button.single_add_to_cart_button');
   await waitFor(async () => (await count()) > before);
 }
-async function fillCheckout(page) {
+async function fillCheckout(page, muni = 'Maracaibo') {
   await page.goto(BASE + '/checkout/', { waitUntil: 'networkidle' });
   await page.fill('#billing_first_name', 'Luis'); await page.fill('#billing_last_name', 'Pérez');
   await page.fill('#billing_address_1', 'Av. 5 de Julio');
   await page.selectOption('#billing_state', 'ZU'); await page.waitForTimeout(800);
   const cities = await page.$$eval('#billing_city option', o => o.map(x => x.value));
-  await page.selectOption('#billing_city', cities.find(v => /Maracaibo/.test(v)) || cities[1]);
+  await page.selectOption('#billing_city', cities.find(v => v.includes(muni)) || cities[1]);
   await page.fill('#billing_postcode', '4001'); await page.fill('#billing_phone', '04140000000'); await page.fill('#billing_email', 'luis@example.com');
   await page.waitForTimeout(1500);
   await page.waitForSelector('#order_review', { state: 'visible' });
@@ -136,9 +136,10 @@ const orderShipping = id => JSON.parse(wp(`eval '$o=wc_get_order(${id}); $out=ar
       const p = await ctx.newPage();
       await home(p, false);
       await addToCart(p, 'producto-a-delicias-y-chacao', 'Delicias');
-      await fillCheckout(p);
+      // Municipio sin tienda: con el criterio "municipio o radio", Maracaibo tendría retiro por municipio.
+      await fillCheckout(p, 'Cabimas');
       const sm = await shipping(p);
-      log('sin posición: sólo "Envío nacional" a $5', sm.some(t => /Envío nacional.*5[.,]00/.test(t)) && !sm.some(t => /Retiro en tienda/.test(t)), JSON.stringify(sm));
+      log('sin posición y municipio sin tienda: sólo "Envío nacional" a $5', sm.some(t => /Envío nacional.*5[.,]00/.test(t)) && !sm.some(t => /Retiro en tienda/.test(t)), JSON.stringify(sm));
       await ctx.close();
     }
 
@@ -152,8 +153,12 @@ const orderShipping = id => JSON.parse(wp(`eval '$o=wc_get_order(${id}); $out=ar
       await addToCart(p, 'producto-a-delicias-y-chacao', 'Delicias');
       await p.goto(BASE + '/', { waitUntil: 'networkidle' });
       const sw = await p.$$eval('#wcmlim-change-lc-select option', o => o.map(x => ({ v: x.value, t: x.textContent.trim() })));
+      // El selector de MLI envía su formulario solo al cambiar (si su JS arrancó); si no, se envía a mano.
+      const nav = p.waitForNavigation({ waitUntil: 'networkidle', timeout: 8000 }).then(() => true).catch(() => false);
       await p.selectOption('#wcmlim-change-lc-select', sw.find(x => /Chacao/.test(x.t)).v);
-      await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }), p.evaluate(() => document.getElementById('lc-switch-form').submit())]);
+      if (!(await nav)) {
+        await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }), p.evaluate(() => document.getElementById('lc-switch-form').submit())]);
+      }
       await addToCart(p, 'producto-c-chacao', 'Chacao');
       await fillCheckout(p);
       const sm = await shipping(p);
