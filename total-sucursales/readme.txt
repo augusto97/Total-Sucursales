@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.8.3
+Stable tag: 0.8.4
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.8.4 =
+* Corregido: un producto con stock sólo en tiendas que el cliente no ve (de otra ciudad o estado) mostraba "N disponibles" y un botón "Añadir al carrito" que no hacía nada. Ahora, para ese cliente, se muestra como no disponible: sin botón de compra y con el aviso "No disponible en <sus tiendas>" (texto editable). Tampoco se puede añadir por otras vías.
 
 = 0.8.3 =
 * Corregido: en Productos del admin, la columna "Stock at Locations" de Multi Locations (que se carga por AJAX) sólo mostraba las tiendas del estado o la ciudad con que el administrador navegaba la tienda. El filtro de tiendas visibles ya no se aplica a las peticiones AJAX del admin.
