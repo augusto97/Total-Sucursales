@@ -98,6 +98,12 @@ class TS_Location_Filter {
 		if ( is_admin() && ! wp_doing_ajax() ) {
 			return false;
 		}
+		// AJAX lanzado desde el admin (por ejemplo la columna "Stock at Locations" del listado de
+		// productos, que Multi Locations carga así): es trabajo de administración, no el catálogo del
+		// visitante. Sin esto se filtraba por el estado o la ciudad con que el admin navega la tienda.
+		if ( wp_doing_ajax() && self::ajax_from_admin() ) {
+			return false;
+		}
 		// Nunca filtrar fuera del front: WP-CLI, cron e importadores deben ver todas las sucursales.
 		if ( ( defined( 'WP_CLI' ) && WP_CLI ) || wp_doing_cron() ) {
 			return false;
@@ -118,6 +124,18 @@ class TS_Location_Filter {
 		}
 
 		return (bool) apply_filters( 'ts_location_filter_applies', true );
+	}
+
+	/**
+	 * ¿La petición AJAX viene de una pantalla del admin? (Las del front llegan desde páginas de la tienda.)
+	 */
+	private static function ajax_from_admin() {
+		$ref = wp_get_raw_referer();
+		if ( ! $ref ) {
+			return false;
+		}
+		$path = (string) wp_parse_url( $ref, PHP_URL_PATH );
+		return false !== strpos( $path, '/wp-admin/' ) && false === strpos( $path, 'admin-ajax.php' );
 	}
 
 	/**

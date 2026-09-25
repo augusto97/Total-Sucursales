@@ -104,6 +104,17 @@ const log = (name, ok, detail) => { results.push(ok); console.log((ok ? 'PASS ' 
     u = await ui();
     const needState = u.has && (u.disabled === true || u.options > 1);
     log('alta de tienda: el desplegable está (pide el estado o lista los municipios)', needState, JSON.stringify(u));
+    // ---- 8. Listado de productos del admin: todas las tiendas, aunque el admin navegue la tienda con
+    // un estado elegido (la columna de stock de Multi Locations se carga por AJAX).
+    await page.context().addCookies([{ name: 'ts_estado', value: 'ZU', url: BASE }, { name: 'ts_estado_src', value: 'manual', url: BASE }]);
+    await page.goto(`${BASE}/wp-admin/edit.php?post_type=product`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => ![...document.querySelectorAll('.wcmlim-locations-placeholder')].some(e => /Loading/.test(e.textContent)), null, { timeout: 20000 }).catch(() => {});
+    const col = await page.$$eval('tr', rows => {
+      const r = rows.find(x => /Producto A \(Delicias y Chacao\)/.test(x.textContent));
+      const c = r && r.querySelector('td.column-stock_at_locations, .wcmlim-locations-placeholder');
+      return c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
+    });
+    log('listado de productos (admin con estado Zulia): la columna de stock muestra todas las tiendas', /Tienda Delicias/.test(col) && /Tienda Chacao/.test(col), col.slice(0, 200));
   } catch (e) {
     log('ERROR ' + e.message.split('\n')[0], false);
   } finally {
