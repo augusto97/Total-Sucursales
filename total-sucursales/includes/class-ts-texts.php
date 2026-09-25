@@ -75,6 +75,7 @@ class TS_Texts {
 		$add( 'pickup_where_title', $g_checkout, __( 'Página de gracias y correos: título del lugar de retiro', 'total-sucursales' ), __( 'Dónde retirar tu pedido', 'total-sucursales' ) );
 		$add( 'payment_label', $g_checkout, __( 'Página de gracias, pedido y correos: título del método de pago (vacío = el de WooCommerce, "Pago" / "Método de pago")', 'total-sucursales' ), '' );
 
+		$add( 'not_available_here', $g_mli, __( 'Producto sin stock en las tiendas del cliente (hay en otras) ({tiendas})', 'total-sucursales' ), __( 'No disponible en {tiendas}', 'total-sucursales' ) );
 		$add( 'mli_location', $g_mli, __( 'Cómo se llama una "location"', 'total-sucursales' ), __( 'Tienda', 'total-sucursales' ) );
 		$add( 'mli_pickup_location', $g_mli, __( 'Tienda de retiro (en el pedido)', 'total-sucursales' ), __( 'Tienda de retiro', 'total-sucursales' ) );
 		$add( 'mli_select', $g_mli, __( 'Desplegable sin tienda elegida', 'total-sucursales' ), __( 'Selecciona una tienda', 'total-sucursales' ) );

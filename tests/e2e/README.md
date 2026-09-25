@@ -191,6 +191,16 @@ ubicación" después de no haberla dado.
 node tiendas-ciudad.js
 ```
 
+## Producto sin stock en las tiendas del cliente
+
+`disponibilidad.js`: un cliente de Zulia abre Producto D (sólo hay en Valencia) y debe verlo como no
+disponible ("No disponible en Tienda Delicias ni Tienda San Francisco", sin botón), sin poder añadirlo
+ni forzando la URL; Producto A sigue comprable y un cliente de Carabobo sí puede comprar Producto D.
+
+```bash
+node disponibilidad.js
+```
+
 Notas del entorno:
 
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.
