@@ -115,10 +115,18 @@ const ENGLISH = /\b(Location|Locations|In Stock|Sold Out|Stock Information|Selec
     await p.fill('#billing_postcode', '4001'); await p.fill('#billing_phone', '04140000000'); await p.fill('#billing_email', 'ana@example.com');
     await p.waitForTimeout(1500);
     await p.check('#payment_method_cod').catch(() => {});
+    // Título del método de pago editable ("Solicitud" en lugar de "Método de pago").
+    wp(`eval '$s=(array)get_option("ts_settings"); $s["txt_payment_label"]="Solicitud"; update_option("ts_settings",$s);'`);
     await p.click('#place_order');
     await p.waitForURL(/order-received/, { timeout: 30000 }).catch(() => {});
     const meta = await p.$$eval('.wc-item-meta li, .woocommerce-table--order-details .wc-item-meta', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim())).catch(() => []);
     log('pedido: la línea dice "Tienda:", no "Location:"', /order-received/.test(p.url()) && meta.some(t => /^Tienda: Tienda/.test(t)) && !meta.some(t => /Location/.test(t)), JSON.stringify(meta));
+    const overview = await p.$eval('.woocommerce-order-overview__payment-method', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+    const totals = await p.$$eval('.woocommerce-table--order-details tfoot th', els => els.map(e => e.textContent.trim())).catch(() => []);
+    const oid = (p.url().match(/order-received\/(\d+)/) || [])[1];
+    const mail = oid ? wp(`eval '$e=WC()->mailer()->emails["WC_Email_Customer_Processing_Order"]; $e->object=wc_get_order(${oid}); echo (false!==strpos(wp_strip_all_tags($e->get_content_html()),"Solicitud:"))?"si":"no";'`) : '';
+    wp(`eval '$s=(array)get_option("ts_settings"); unset($s["txt_payment_label"]); update_option("ts_settings",$s);'`);
+    log('página de gracias y correo: "Solicitud:" en lugar de "Método de pago:"', /^Solicitud:/.test(overview) && totals.includes('Solicitud:') && !totals.some(t => /Payment|pago/i.test(t)) && /si$/.test(mail), JSON.stringify({ overview, totals, mail }));
     await ctx.close();
   }
 
