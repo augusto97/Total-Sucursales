@@ -120,7 +120,7 @@
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
       <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda según el municipio del cliente o su distancia a la tienda; en las demás, envío nacional. Todo sobre Multi Locations y States and Municipalities of Venezuela, con Advanced Shipping como opción.</p>
-      <div class="meta"><span>plugin 0.8.1</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <div class="meta"><span>plugin 0.8.2</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -307,7 +307,7 @@
         <figure class="tall"><img src="guia/23-envio-oculto-bloques.png" alt="Checkout por bloques sin el bloque de opciones de envío ni la línea de envío del resumen" loading="lazy"><figcaption>Pedido de una tienda no autorizada: sin opciones de envío ni línea de envío en el resumen. Por debajo, este pedido lleva &laquo;Retiro en tienda&raquo;.</figcaption></figure>
         <div>
           <p>En los pedidos de las demás tiendas el cliente no ve las opciones de envío ni la línea de envío del resumen, ni en el carrito ni en el checkout (clásico o por bloques). Es sólo visual: el pedido sigue recibiendo <strong>Retiro en tienda</strong> si el cliente puede retirar (queda elegido solo y se descarta el envío nacional) o <strong>Envío nacional</strong> si no. Así queda en el pedido, en el correo y en &laquo;Dónde retirar tu pedido&raquo;.</p>
-          <p>El costo del envío se sigue sumando al total aunque no se vea: con las opciones ocultas, deja el envío en costo 0. Si el pedido tiene productos de varias tiendas, las opciones se ven si alguna está autorizada.</p>
+          <p>Tampoco se ve después: la página de gracias, el pedido en <em>Mi cuenta</em> y los correos no llevan la línea de envío ni el recuadro &laquo;Dónde retirar tu pedido&raquo;. En el admin el pedido sí muestra el envío. El costo del envío se sigue sumando al total aunque no se vea: con las opciones ocultas, deja el envío en costo 0. Si el pedido tiene productos de varias tiendas, las opciones se ven si alguna está autorizada.</p>
           <p>En todos los casos, cuando al cliente le aparece la opción de retiro (por ejemplo, al elegir su municipio), queda elegida por defecto.</p>
         </div>
       </div>

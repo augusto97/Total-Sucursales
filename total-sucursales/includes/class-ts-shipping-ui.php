@@ -33,6 +33,48 @@ class TS_Shipping_UI {
 
 		// Carrito y checkout por bloques: una clase en <body> que ts-blocks-checkout.js mantiene al día.
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
+
+		// Después de comprar: sin línea de envío en la página de gracias (clásica y por bloques), "Mi cuenta"
+		// y los correos, si el checkout no la mostró.
+		add_filter( 'woocommerce_get_order_item_totals', array( __CLASS__, 'order_totals' ), 20, 2 );
+	}
+
+	/**
+	 * ¿Se le ocultaron las opciones de envío a este pedido en el checkout?
+	 *
+	 * Se guarda al crear el pedido (_ts_shipping_hidden). Los pedidos anteriores no lo tienen: se deduce
+	 * de los ajustes actuales y de las tiendas del pedido.
+	 *
+	 * @param WC_Order $order
+	 */
+	public static function order_hidden( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return false;
+		}
+		$saved = (string) $order->get_meta( '_ts_shipping_hidden' );
+		if ( '' !== $saved ) {
+			return 'yes' === $saved;
+		}
+		if ( ! self::enabled() ) {
+			return false;
+		}
+		$rows = $order->get_meta( '_ts_packages' );
+		if ( empty( $rows ) || ! is_array( $rows ) ) {
+			return false;
+		}
+		foreach ( $rows as $r ) {
+			if ( self::location_visible( $r['location_id'] ?? 0 ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public static function order_totals( $rows, $order = null ) {
+		if ( isset( $rows['shipping'] ) && self::order_hidden( $order ) ) {
+			unset( $rows['shipping'] );
+		}
+		return $rows;
 	}
 
 	public static function enabled() {
