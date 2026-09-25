@@ -18,11 +18,27 @@ class TS_Locations {
 		foreach ( array( 'created_locations', 'edited_locations', 'delete_locations' ) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'flush_cache' ) );
 		}
+		add_action( 'init', array( __CLASS__, 'flush_on_update' ) );
 	}
 
 	public static function flush_cache() {
 		self::$index = null;
 		delete_transient( self::TRANSIENT );
+		// Lista de tiendas que Multi Locations guarda una hora para la columna "Stock at Locations" del
+		// listado de productos: no la renueva al crear o editar tiendas, y hasta 0.8.3 podía quedar
+		// recortada por el filtro de tiendas visibles de este plugin.
+		delete_transient( 'wcmlim_product_locations' );
+	}
+
+	/**
+	 * Tras actualizar el plugin, vaciar las cachés de tiendas (propias y la de Multi Locations).
+	 */
+	public static function flush_on_update() {
+		if ( get_option( 'ts_cache_version' ) === TS_VERSION ) {
+			return;
+		}
+		self::flush_cache();
+		update_option( 'ts_cache_version', TS_VERSION, false );
 	}
 
 	/**
