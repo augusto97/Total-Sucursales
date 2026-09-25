@@ -29,6 +29,10 @@ class TS_Blocks {
 		// ts-blocks-checkout.js la rellena con el municipio y la oculta.
 		add_filter( 'woocommerce_get_country_locale', array( __CLASS__, 'hide_city_in_blocks' ), 999 );
 		add_action( 'woocommerce_store_api_cart_update_customer_from_request', array( __CLASS__, 'on_update_customer' ), 10, 2 );
+		// Al pagar, la Store API vuelve a copiar la dirección del formulario en el cliente, con la ciudad
+		// vacía (oculta), y recalcula el envío: sin volver a poner el municipio, el pedido perdía el
+		// retiro por municipio y pasaba a envío nacional.
+		add_action( 'woocommerce_store_api_checkout_update_customer_from_request', array( __CLASS__, 'on_checkout_update_customer' ), 10, 2 );
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( __CLASS__, 'on_update_order' ), 10, 2 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 	}
@@ -171,6 +175,10 @@ class TS_Blocks {
 	/**
 	 * Al actualizar la dirección desde el bloque: municipio → ciudad y geocodificación de respaldo.
 	 */
+	public static function on_checkout_update_customer( $customer, $request ) {
+		self::apply_municipio_to_customer( $customer, $request );
+	}
+
 	public static function on_update_customer( $customer, $request ) {
 		self::apply_municipio_to_customer( $customer, $request );
 

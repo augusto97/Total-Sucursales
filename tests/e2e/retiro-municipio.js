@@ -281,6 +281,14 @@ const orderMeta = id => JSON.parse(wp(`eval '$o=wc_get_order(${id}); echo json_e
       log('bloques · sin GPS · municipio Maracaibo → "Retiro en tienda"', a.some(t => /Retiro en tienda/.test(t)) && !a.some(t => /Envío nacional/.test(t)), JSON.stringify(a));
       const b = await pickBlocks('Cabimas');
       log('bloques · cambiar a Cabimas recalcula → "Envío nacional"', b.some(t => /Envío nacional/.test(t)) && !b.some(t => /Retiro en tienda/.test(t)), JSON.stringify(b));
+      // El pedido por bloques, sin GPS, conserva el retiro por municipio al pagar.
+      await pickBlocks('Maracaibo');
+      await p.fill('#shipping-phone', '04140000000').catch(() => {});
+      await p.click('.wc-block-components-checkout-place-order-button');
+      await p.waitForURL(/order-received/, { timeout: 40000 }).catch(() => {});
+      const oid = (p.url().match(/order-received\/(\d+)/) || [])[1];
+      const om = oid ? orderMeta(oid) : {};
+      log('bloques · pedido sin GPS: al pagar se mantiene el retiro por municipio', (om.ship || []).some(t => /Retiro en tienda/.test(t)) && om.muni === 'ZU:maracaibo' && (om.pk || []).some(x => x.pickup && x.pickup_reason === 'municipio'), JSON.stringify(om));
       await ctx.close();
     }
   } finally {

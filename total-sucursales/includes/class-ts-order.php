@@ -117,6 +117,8 @@ class TS_Order {
 		$order->update_meta_data( '_ts_pickup_criterion', TS_Settings::pickup_criterion() );
 		$order->update_meta_data( '_ts_pickup_scope', TS_Settings::pickup_scope() );
 		$order->update_meta_data( '_ts_customer_municipio', (string) ( $summary['customer_municipio'] ?? '' ) );
+		// Si el checkout no mostró las opciones de envío, tampoco se muestran después (gracias, correos).
+		$order->update_meta_data( '_ts_shipping_hidden', TS_Shipping_UI::hidden() ? 'yes' : 'no' );
 
 		// Lo que eligió el cliente manda: con "Envío también donde se puede retirar" puede haber
 		// preferido el envío en una tienda donde podía retirar.
@@ -221,7 +223,7 @@ class TS_Order {
 	 */
 	public static function render_pickup_where( $order_id ) {
 		$order = $order_id instanceof WC_Order ? $order_id : wc_get_order( $order_id );
-		if ( ! $order ) {
+		if ( ! $order || TS_Shipping_UI::order_hidden( $order ) ) {
 			return;
 		}
 		$places = self::pickup_places( $order );
@@ -243,7 +245,7 @@ class TS_Order {
 	 * Correos: mismo bloque, con estilos en línea (los clientes de correo ignoran las hojas de estilo).
 	 */
 	public static function email_pickup_where( $order, $sent_to_admin = false, $plain_text = false, $email = null ) {
-		if ( ! $order instanceof WC_Order ) {
+		if ( ! $order instanceof WC_Order || TS_Shipping_UI::order_hidden( $order ) ) {
 			return;
 		}
 		$places = self::pickup_places( $order );

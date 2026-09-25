@@ -113,6 +113,14 @@ const chosenText = p => p.evaluate(() => {
   return (l ? l.textContent : '').replace(/\s+/g, ' ').trim();
 });
 
+// Tras comprar: filas de totales de la página de gracias, recuadro "Dónde retirar" y si el correo lleva envío.
+async function thankyouAndMail(p, id) {
+  const rows = await p.$$eval('.woocommerce-table--order-details tfoot th', els => els.map(e => e.textContent.trim())).catch(() => []);
+  const where = await p.$eval('.ts-pickup-where', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+  const mail = id ? wp(`eval '$e=WC()->mailer()->emails["WC_Email_Customer_Processing_Order"]; $e->object=wc_get_order(${id}); $h=wp_strip_all_tags($e->get_content_html()); echo (false!==stripos($h,"Shipping:")||false!==stripos($h,"Envío:"))?"con-envio":"sin-envio";'`).split('\n').pop() : '';
+  return { rows, where, mail };
+}
+
 (async () => {
   wp(`eval-file ${__dirname}/reset-stock.php`);
   const saved = { settings: wp('option get ts_settings --format=json'), munis: wpSoft('option get ts_pickup_municipios --format=json') };
@@ -147,8 +155,9 @@ const chosenText = p => p.evaluate(() => {
       log('volver a Maracaibo: vuelve el retiro, elegido solo', /Retiro en tienda/.test(chosen), chosen);
       const id = await placeOrder(p);
       const meta = id ? orderMeta(id) : {};
-      const where = await p.$eval('.ts-pickup-where', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
-      log('pedido con el envío oculto: queda "Retiro en tienda" y la confirmación dice dónde retirar', (meta.ship || []).some(t => /Retiro en tienda/.test(t)) && /Tienda Delicias/.test(where), JSON.stringify({ ship: meta.ship, where }));
+      log('pedido con el envío oculto: por debajo queda "Retiro en tienda"', (meta.ship || []).some(t => /Retiro en tienda/.test(t)), JSON.stringify({ ship: meta.ship }));
+      const after = await thankyouAndMail(p, id);
+      log('página de gracias y correo: tampoco muestran el envío (ni "Dónde retirar")', after.rows.length > 0 && !after.rows.some(t => /Shipping|Envío/i.test(t)) && !after.where && after.mail === 'sin-envio', JSON.stringify(after));
       await ctx.close();
     }
 
@@ -161,6 +170,9 @@ const chosenText = p => p.evaluate(() => {
       await checkout(p, 'Maracaibo');
       const rows = await shipRows(p);
       log('tienda autorizada: las opciones de envío se ven', rows.some(r => /woocommerce-shipping-totals/.test(r.cls) && r.visible && /Retiro en tienda/.test(r.text)), JSON.stringify(rows));
+      const id = await placeOrder(p);
+      const after = await thankyouAndMail(p, id);
+      log('tienda autorizada: la página de gracias y el correo sí muestran el envío', after.rows.some(t => /Shipping|Envío/i.test(t)) && /Tienda Delicias/.test(after.where) && after.mail === 'con-envio', JSON.stringify(after));
       await ctx.close();
     }
 
@@ -229,6 +241,15 @@ const chosenText = p => p.evaluate(() => {
         };
       });
       log('bloques · no autorizada: bloque de opciones y línea de envío del resumen ocultos', st.bodyClass && st.methods === false && st.totalsShipping !== true, JSON.stringify(st));
+      await p.fill('#shipping-phone', '04140000000').catch(() => {});
+      await p.click('.wc-block-components-checkout-place-order-button');
+      await p.waitForURL(/order-received/, { timeout: 40000 }).catch(() => {});
+      const totals = await p.$eval('.wc-block-order-confirmation-totals, .woocommerce-table--order-details', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+      const where = await p.$('.ts-pickup-where');
+      log('bloques · confirmación del pedido: sin línea de envío ni "Dónde retirar"', /order-received/.test(p.url()) && totals !== '' && !/Shipping|Envío/i.test(totals) && !where, JSON.stringify({ url: p.url(), totals: totals.slice(0, 200) }));
+      const oid = (p.url().match(/order-received\/(\d+)/) || [])[1];
+      const om = oid ? orderMeta(oid) : {};
+      log('bloques · por debajo el pedido lleva "Retiro en tienda" (sin cobrar envío)', (om.ship || []).some(t => /Retiro en tienda/.test(t)) && om.muni === 'ZU:maracaibo', JSON.stringify({ ship: om.ship, muni: om.muni }));
       await ctx.close();
     }
   } finally {
