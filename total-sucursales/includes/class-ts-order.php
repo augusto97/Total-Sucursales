@@ -19,6 +19,49 @@ class TS_Order {
 		add_action( 'woocommerce_email_after_order_table', array( __CLASS__, 'email_pickup_where' ), 10, 4 );
 		// Si todo se retira en tienda, la dirección de envío no pinta nada (como con "Recogida local").
 		add_filter( 'woocommerce_order_hide_shipping_address', array( __CLASS__, 'hide_shipping_address' ), 10, 2 );
+
+		// Título del método de pago en la página de gracias, el pedido y los correos (texto editable).
+		add_filter( 'gettext_woocommerce', array( __CLASS__, 'payment_label_gettext' ), 10, 3 );
+		add_filter( 'woocommerce_get_order_item_totals', array( __CLASS__, 'payment_label_totals' ), 10, 3 );
+	}
+
+	/**
+	 * Texto de "Textos → Página de gracias, pedido y correos: título del método de pago", con dos puntos.
+	 * Vacío: se deja el de WooCommerce.
+	 */
+	private static function payment_label() {
+		$t = trim( (string) TS_Texts::get( 'payment_label' ) );
+		if ( '' === $t ) {
+			return '';
+		}
+		return ':' === substr( $t, -1 ) ? $t : $t . ':';
+	}
+
+	/**
+	 * "Pago:" del resumen de la página de gracias por bloques y "Método de pago:" de la clásica. Sólo en
+	 * el front: el editor de pedidos del admin conserva el de WooCommerce.
+	 */
+	public static function payment_label_gettext( $translation, $text, $domain = 'woocommerce' ) {
+		if ( 'Payment:' !== $text && 'Payment method:' !== $text ) {
+			return $translation;
+		}
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			return $translation;
+		}
+		$label = self::payment_label();
+		return '' !== $label ? $label : $translation;
+	}
+
+	/**
+	 * Fila "Método de pago" de la tabla de totales del pedido (página de gracias, "Mi cuenta" y correos,
+	 * también los que se envían desde el admin).
+	 */
+	public static function payment_label_totals( $rows, $order = null, $tax_display = '' ) {
+		$label = self::payment_label();
+		if ( '' !== $label && isset( $rows['payment_method']['label'] ) ) {
+			$rows['payment_method']['label'] = $label;
+		}
+		return $rows;
 	}
 
 	/**

@@ -91,8 +91,12 @@ async function panel(page) {
     log('B1 checkout bloques: Retiro en tienda ofrecido (GPS previo)', sm.some(t => /Retiro en tienda/.test(t)), JSON.stringify(sm));
     log('B1 panel Total Sucursales en bloques: Delicias 3,1 km pickup, botón "registrada"', pn.li.some(t => /Delicias.*3[,.]1 km.*Retiro/.test(t)) && pn.btn && pn.btn.disabled, JSON.stringify(pn));
     await page.screenshot({ path: SHOTS + 'b1-checkout-blocks.png', fullPage: true });
+    execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$s=(array)get_option("ts_settings"); $s["txt_payment_label"]="Solicitud"; update_option("ts_settings",$s);' 2>/dev/null`);
     await page.click('.wc-block-components-checkout-place-order-button');
     await page.waitForURL(/order-received/, { timeout: 40000 }).catch(() => {});
+    const summary = await page.$eval('.wc-block-order-confirmation-summary', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+    execSync(`php ${__dirname}/wp-cli.phar --allow-root --path=${__dirname}/wordpress eval '$s=(array)get_option("ts_settings"); unset($s["txt_payment_label"]); update_option("ts_settings",$s);' 2>/dev/null`);
+    log('B1 confirmación (bloques): "Solicitud:" en lugar de "Payment:"', /Solicitud:/.test(summary) && !/Payment:/.test(summary), summary.slice(0, 200));
     const m = page.url().match(/order-received\/(\d+)/);
     log('B1 pedido creado desde checkout por bloques', !!m, page.url());
     await page.screenshot({ path: SHOTS + 'b1-thankyou-blocks.png', fullPage: true });
