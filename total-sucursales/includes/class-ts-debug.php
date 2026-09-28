@@ -89,6 +89,9 @@ class TS_Debug {
 		$radius = TS_Settings::city_radius_km();
 		$label  = sprintf( __( 'por ciudad (radio %s km)', 'total-sucursales' ), $radius ) . ' · ';
 		if ( ! $coords || 'gps' !== $coords['source'] ) {
+			$coords = class_exists( 'TS_IP_Location' ) ? TS_IP_Location::get_coords() : null;
+		}
+		if ( ! $coords ) {
 			$geo = ts_get_cookie( 'ts_geo' );
 			return $label . ( 'denied' === $geo ? __( 'no dio su ubicación: sólo la tienda por defecto', 'total-sucursales' ) : __( 'sin ubicación todavía: sólo la tienda por defecto', 'total-sucursales' ) );
 		}
@@ -103,8 +106,22 @@ class TS_Debug {
 			}
 		}
 		return $label . ( $near
-			? __( 'con ubicación: tiendas de su ciudad', 'total-sucursales' )
+			? ( 'ip' === $coords['source'] ? __( 'con ubicación por IP: tiendas de su ciudad', 'total-sucursales' ) : __( 'con ubicación: tiendas de su ciudad', 'total-sucursales' ) )
 			: ( $default ? __( 'con ubicación pero sin tiendas en su ciudad: sólo la tienda por defecto', 'total-sucursales' ) : __( 'sin tienda por defecto configurada: se ven todas', 'total-sucursales' ) ) );
+	}
+
+	private static function ip_label() {
+		if ( ! class_exists( 'TS_IP_Location' ) || ! TS_IP_Location::enabled() ) {
+			return __( '(desactivada)', 'total-sucursales' );
+		}
+		$ip = TS_IP_Location::get_coords();
+		if ( $ip ) {
+			return $ip['lat'] . ', ' . $ip['lng'] . ( '' !== $ip['city'] ? ' · ' . $ip['city'] : '' ) . ' · IP ' . TS_IP_Location::client_ip();
+		}
+		if ( TS_IP_Location::tried_without_result() ) {
+			return __( 'consultada sin resultado', 'total-sucursales' ) . ' · IP ' . ( TS_IP_Location::client_ip() ? TS_IP_Location::client_ip() : __( '(privada o desconocida)', 'total-sucursales' ) );
+		}
+		return __( 'todavía no consultada (se consulta si el cliente no da su ubicación)', 'total-sucursales' );
 	}
 
 	private static function pickup_rule_label() {
@@ -299,6 +316,7 @@ class TS_Debug {
 			__( 'Retiro: criterio y alcance', 'total-sucursales' ) => self::pickup_rule_label(),
 			__( 'Municipio del cliente', 'total-sucursales' ) => self::customer_municipio_label(),
 			__( 'Posición del cliente', 'total-sucursales' ) => $coords ? $coords['lat'] . ', ' . $coords['lng'] . ' (' . $coords['source'] . ')' : __( '(desconocida)', 'total-sucursales' ),
+			__( 'Ubicación por IP', 'total-sucursales' ) => self::ip_label(),
 			__( 'Filtro por estado', 'total-sucursales' ) => $applies ? __( 'activo', 'total-sucursales' ) : __( 'NO se aplica en esta página', 'total-sucursales' ),
 			__( 'Ocultas en MLI (ajuste del admin)', 'total-sucursales' ) => empty( $manual ) ? __( '(ninguna)', 'total-sucursales' ) : implode( ', ', $manual ),
 			__( 'Opción de MLI (valor real guardado)', 'total-sucursales' ) => is_scalar( $raw_opt ) ? (string) $raw_opt : wp_json_encode( $raw_opt ),

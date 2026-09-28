@@ -191,6 +191,21 @@ ubicación" después de no haberla dado.
 node tiendas-ciudad.js
 ```
 
+## Ubicación por IP (IPinfo)
+
+`ip-ubicacion.js` instala un mu-plugin que simula IPinfo (`pre_http_request`) y toma la IP del
+visitante de la cookie `ts_test_ip` (filtro `ts_client_ip`); lo borra al terminar. Comprueba, en el
+modo por ciudad, el GPS negado (IP de Maracaibo: Delicias y San Francisco; Cabimas: la tienda por
+defecto), el aviso sin contestar (a los 8 s se usa la IP), la cookie de "GPS negado" anterior, que el
+GPS manda sobre la IP y la sustituye después, y que la IP no se guarda en las cookies del GPS. Además
+comprueba la caché por IP, el resultado vacío, el tope por hora, el nonce, la opción desactivada, que
+el script de IPinfo de Multi Locations no se carga ni aparece su token, y el modo por estado (asigna
+Zulia sin ventana y, si no hay resultado, pregunta).
+
+```bash
+node ip-ubicacion.js
+```
+
 ## Producto sin stock en las tiendas del cliente
 
 `disponibilidad.js`: un cliente de Zulia abre Producto D (sólo hay en Valencia) y debe verlo como no

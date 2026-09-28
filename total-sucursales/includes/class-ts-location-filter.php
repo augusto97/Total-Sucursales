@@ -185,7 +185,8 @@ class TS_Location_Filter {
 
 	/**
 	 * Modo "por ciudad": tiendas que ve el cliente.
-	 *   - Con su ubicación (GPS) y tiendas a menos del radio de la ciudad: esas.
+	 *   - Con su ubicación (GPS o, si no la dio, la aproximada por IP) y tiendas a menos del radio de
+	 *     la ciudad: esas.
 	 *   - Si no: sólo la tienda por defecto.
 	 *   - Sin tienda por defecto configurada (o si está oculta en Multi Locations): todas, para no dejar
 	 *     la tienda vacía; los ajustes lo avisan.
@@ -196,7 +197,11 @@ class TS_Location_Filter {
 	public static function city_visible_ids( array $candidates ) {
 		$candidates = array_values( array_map( 'intval', $candidates ) );
 		$coords     = TS_Customer::get_coords();
-		if ( $coords && 'gps' === $coords['source'] ) {
+		if ( ! $coords || 'gps' !== $coords['source'] ) {
+			// Sin ubicación del navegador: la aproximada por IP, si está activada.
+			$coords = class_exists( 'TS_IP_Location' ) ? TS_IP_Location::get_coords() : null;
+		}
+		if ( $coords ) {
 			$radius = TS_Settings::city_radius_km();
 			$near   = array();
 			foreach ( $candidates as $id ) {

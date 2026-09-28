@@ -41,6 +41,8 @@ class TS_Frontend {
 			'has_coords'      => (bool) TS_Customer::get_coords(),
 			'visibility_mode' => TS_Settings::visibility_mode(),
 			'has_gps'         => self::has_gps(),
+			'ip_fallback'     => TS_IP_Location::enabled(),
+			'has_ip'          => (bool) TS_IP_Location::get_coords() || TS_IP_Location::tried_without_result(),
 			'states'          => $states,
 			'selected_location_id' => TS_Customer::selected_mli_location_id(),
 			'single_location_view' => TS_Settings::is_yes( 'single_location_view' ) && is_product(),

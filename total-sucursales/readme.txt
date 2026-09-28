@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.8.4
+Stable tag: 0.9.0
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,12 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.9.0 =
+* Añadido: "Ubicación aproximada por IP (IPinfo)" y "Token de IPinfo" (WooCommerce > Ajustes > Total Sucursales). Si el cliente no comparte su ubicación (la niega, falla o no contesta el aviso en 8 segundos), se le ubica por su IP: en el modo por ciudad ve las tiendas de la ciudad de su IP; en el modo por estado (con "Detección del estado" en GPS) se le asigna el estado sin preguntarle. La ubicación del navegador siempre tiene prioridad.
+* Seguridad: la consulta a IPinfo la hace el servidor, así que el token no llega al navegador (Multi Locations lo publica en la página). Con la opción activada, el script de IPinfo de Multi Locations no se carga.
+* La posición por IP se guarda aparte de la del GPS y nunca cuenta para el retiro en tienda. Cada IP se consulta una vez cada 7 días y hay un tope de 200 consultas nuevas por hora (filtro ts_ipinfo_hourly_limit) contra IP falsificadas.
+* Añadido: fila "Ubicación por IP" en el panel de diagnóstico y estado de IPinfo en "Estado de la integración", que también avisa si sigue activa la detección por IPinfo de Multi Locations.
 
 = 0.8.4 =
 * Corregido: un producto con stock sólo en tiendas que el cliente no ve (de otra ciudad o estado) mostraba "N disponibles" y un botón "Añadir al carrito" que no hacía nada. Ahora, para ese cliente, se muestra como no disponible: sin botón de compra y con el aviso "No disponible en <sus tiendas>" (texto editable). Tampoco se puede añadir por otras vías.
