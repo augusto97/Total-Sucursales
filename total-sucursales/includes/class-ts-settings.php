@@ -28,6 +28,8 @@ class TS_Settings {
 			'radius_km'            => 10,
 			'visibility_mode'      => 'state',    // state | city
 			'city_radius_km'       => 20,
+			'ip_fallback'          => 'no',
+			'ipinfo_token'         => '',
 			'pickup_criterion'     => 'both',
 			'pickup_scope'         => 'one',
 			'detect_state'         => 'gps',      // gps | ask | off
@@ -103,6 +105,14 @@ class TS_Settings {
 	 */
 	public static function visibility_mode() {
 		return 'city' === self::get( 'visibility_mode', 'state' ) ? 'city' : 'state';
+	}
+
+	/**
+	 * Token de IPinfo: el de estos ajustes o, si está vacío, el que se configuró en Multi Locations.
+	 */
+	public static function ipinfo_token() {
+		$t = trim( (string) self::get( 'ipinfo_token', '' ) );
+		return '' !== $t ? $t : trim( (string) get_option( 'wcmlim_ipinfo_api_token', '' ) );
 	}
 
 	public static function city_radius_km() {
@@ -188,6 +198,20 @@ class TS_Settings {
 				'desc'              => __( 'Sólo en el modo "por ciudad": son de la ciudad del cliente las tiendas a menos de esta distancia de su ubicación.', 'total-sucursales' ),
 				'default'           => 20,
 				'custom_attributes' => array( 'min' => 1, 'step' => 1 ),
+			),
+			array(
+				'title'   => __( 'Ubicación aproximada por IP (IPinfo)', 'total-sucursales' ),
+				'id'      => "{$p}[ip_fallback]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'Si el cliente no comparte su ubicación (la niega o no contesta), usar la aproximada de su IP: en el modo por ciudad, para mostrarle las tiendas de su ciudad; en el modo por estado (con "Detección del estado" en GPS), para elegir su estado sin preguntarle. Nunca cuenta para el retiro por distancia y la ubicación del navegador siempre tiene prioridad. La consulta la hace el servidor (el token no llega al navegador) y cada IP se consulta una vez cada 7 días. Se envía la IP del visitante a ipinfo.io: menciónalo en tu política de privacidad.', 'total-sucursales' ),
+				'default' => 'no',
+			),
+			array(
+				'title'   => __( 'Token de IPinfo', 'total-sucursales' ),
+				'id'      => "{$p}[ipinfo_token]",
+				'type'    => 'password',
+				'desc'    => __( 'De tu cuenta en ipinfo.io. Vacío: se usa el que tengas en Multi Locations. Sin token IPinfo sólo admite unas pocas consultas al día.', 'total-sucursales' ),
+				'default' => '',
 			),
 			array(
 				'title'   => __( 'Detección del estado', 'total-sucursales' ),
@@ -529,6 +553,10 @@ class TS_Settings {
 					: '<span style="color:#c00">&#10008;</span> ' . esc_html__( 'Falta elegir la "Sucursal por defecto": sin ella, quien no comparte su ubicación ve todas las tiendas.', 'total-sucursales' ) )
 				. '</td></tr>';
 		}
+		$mli_ip = 'on' === get_option( 'wcmlim_enable_autodetect_location_with_ipinfo' );
+		if ( self::is_yes( 'ip_fallback' ) || $mli_ip ) {
+			echo '<tr><td>' . esc_html__( 'Ubicación por IP (IPinfo)', 'total-sucursales' ) . '</td><td>' . self::ip_status( $mli_ip ) . '</td></tr>';
+		}
 		if ( $in_zone && 'on' === get_option( 'wcmlim_enable_shipping_methods' ) ) {
 			echo '<tr><td>' . esc_html__( 'MLI: métodos de envío por tienda (Assign Shipping Methods to each location)', 'total-sucursales' ) . '</td><td>' . self::mli_methods_status() . '</td></tr>';
 		}
@@ -554,6 +582,28 @@ class TS_Settings {
 		}
 
 		self::render_locations_diagnostic();
+	}
+
+	/**
+	 * Detección por IP: la nuestra (consulta desde el servidor) o la de Multi Locations (desde el
+	 * navegador, con el token a la vista y guardando la posición como si fuera la del GPS).
+	 *
+	 * @return string HTML ya escapado.
+	 */
+	private static function ip_status( $mli_ip ) {
+		if ( ! self::is_yes( 'ip_fallback' ) ) {
+			return '<span style="color:#c00">&#10008;</span> ' . esc_html__( 'La detección por IPinfo de Multi Locations está activa: publica el token en el código de la página (cualquiera puede copiarlo y gastar tu cuota) y guarda la posición aproximada como si fuera la del navegador, así que puede ofrecer el retiro en tienda por una ubicación que no es la real. Desactiva "Autodetect User Location With IPinfo" en MULTILOCA → Settings y activa aquí "Ubicación aproximada por IP (IPinfo)".', 'total-sucursales' );
+		}
+		$own   = '' !== trim( (string) self::get( 'ipinfo_token', '' ) );
+		$token = '' !== self::ipinfo_token();
+		$out   = '<span style="color:green">&#10004;</span> ' . esc_html__( 'Activa: consulta desde el servidor, con caché por IP.', 'total-sucursales' ) . ' '
+			. ( $token
+				? esc_html( $own ? __( 'Token configurado.', 'total-sucursales' ) : __( 'Token: el de Multi Locations.', 'total-sucursales' ) )
+				: '<span style="color:#b26200">' . esc_html__( 'Sin token: IPinfo limita mucho las consultas; pon el de tu cuenta.', 'total-sucursales' ) . '</span>' );
+		if ( $mli_ip ) {
+			$out .= ' ' . esc_html__( 'La de Multi Locations queda anulada (su script no se carga); puedes desactivarla allí.', 'total-sucursales' );
+		}
+		return $out;
 	}
 
 	/**

@@ -55,7 +55,7 @@ class TS_Customer {
 	 * Fija el estado del cliente y resincroniza las cookies de MLI.
 	 *
 	 * @param string $state  Código ('ZU') o '' para "todos".
-	 * @param string $source gps|manual|account
+	 * @param string $source gps|manual|account|ip
 	 * @return bool true si cambió.
 	 */
 	public static function set_state( $state, $source = 'manual' ) {

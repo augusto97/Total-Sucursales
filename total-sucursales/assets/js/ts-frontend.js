@@ -51,21 +51,70 @@
 		},
 
 		/**
-		 * Modo "por ciudad": se pide la ubicación una vez. Si la da, el servidor deja sólo las tiendas
-		 * de su ciudad (o la tienda por defecto si no hay) y se recarga. Si no, ya está viendo sólo la
-		 * tienda por defecto; se recuerda para no volver a preguntar en cada página.
+		 * Respaldo por IP (IPinfo, consultado por el servidor): sólo si está activado y no se probó ya
+		 * con este visitante. done(reloading) se llama si no hace falta recargar.
 		 */
-		autoDetectCity: function () {
-			if (ts_params.has_gps || /(?:^|;\s*)ts_geo=(denied|error)/.test(document.cookie)) {
+		ipLocate: function (done) {
+			done = done || function () {};
+			if (!ts_params.ip_fallback || ts_params.has_ip || TS._ipAsked) {
+				done(false);
 				return;
 			}
+			TS._ipAsked = true;
+			TS.post('ts_ip_locate').done(function (res) {
+				if (res && res.success && res.data.reload) {
+					window.location.reload();
+					return;
+				}
+				done(false);
+			}).fail(function () { done(false); });
+		},
+
+		/**
+		 * Pide la ubicación al navegador y, si el cliente la niega, falla o no contesta en unos
+		 * segundos, prueba con la IP. onGps(lat, lng) / onNoGps(code) como TS.locate.
+		 */
+		locateWithFallback: function (onGps, onNoGps) {
+			var settled = false;
+			var timer = ts_params.ip_fallback && !ts_params.has_ip ? setTimeout(function () {
+				// El aviso del navegador sigue sin respuesta: la IP mientras tanto.
+				TS.ipLocate();
+			}, 8000) : null;
 			TS.locate(function (lat, lng) {
+				if (settled) { return; }
+				settled = true;
+				clearTimeout(timer);
+				onGps(lat, lng);
+			}, function (code) {
+				if (settled) { return; }
+				settled = true;
+				clearTimeout(timer);
+				onNoGps(code);
+			});
+		},
+
+		/**
+		 * Modo "por ciudad": se pide la ubicación una vez. Si la da, el servidor deja sólo las tiendas
+		 * de su ciudad (o la tienda por defecto si no hay) y se recarga. Si no, se prueba con la IP (si
+		 * está activado) y, si tampoco, sigue viendo sólo la tienda por defecto; se recuerda para no
+		 * volver a preguntar en cada página.
+		 */
+		autoDetectCity: function () {
+			if (ts_params.has_gps) {
+				return;
+			}
+			if (/(?:^|;\s*)ts_geo=(denied|error)/.test(document.cookie)) {
+				TS.ipLocate(); // Ya dijo que no al GPS: la IP, una vez.
+				return;
+			}
+			TS.locateWithFallback(function (lat, lng) {
 				TS.setPosition(lat, lng, 'browse').done(function (res) {
 					if (res && res.success && res.data.reload) { window.location.reload(); }
 				});
 			}, function (code) {
 				var days = code === 'denied' ? 30 : 1;
 				document.cookie = 'ts_geo=' + (code === 'denied' ? 'denied' : 'error') + '; path=/; max-age=' + (days * 86400) + '; SameSite=Lax';
+				TS.ipLocate();
 			});
 		},
 
@@ -81,8 +130,8 @@
 				TS.showModal();
 				return;
 			}
-			// gps
-			TS.locate(function (lat, lng) {
+			// gps (y, si no la da, la IP antes de preguntarle)
+			TS.locateWithFallback(function (lat, lng) {
 				TS.setPosition(lat, lng, 'browse').done(function (res) {
 					if (res && res.success && (res.data.reload || res.data.changed)) {
 						window.location.reload();
@@ -93,9 +142,11 @@
 					if (ts_params.ask_if_gps_fails) { TS.showModal(ts_params.i18n.geo_error); }
 				});
 			}, function (code) {
-				if (ts_params.ask_if_gps_fails) {
-					TS.showModal(code === 'denied' ? ts_params.i18n.geo_denied : ts_params.i18n.geo_error);
-				}
+				TS.ipLocate(function () {
+					if (ts_params.ask_if_gps_fails) {
+						TS.showModal(code === 'denied' ? ts_params.i18n.geo_denied : ts_params.i18n.geo_error);
+					}
+				});
 			});
 		},
 
