@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.9.0
+Stable tag: 0.9.1
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.9.1 =
+* Corregido: en el modo por estado, a un cliente ubicado por IP en una ciudad sin tiendas a menos de la "Distancia máxima para inferir el estado" (100 km) se le seguía mostrando la ventana de estado. Ahora se usa el estado que da IPinfo si en él hay tiendas y, si no (o si está fuera de Venezuela), el de la sucursal por defecto, que queda elegida. Sólo sin sucursal por defecto se le pregunta.
 
 = 0.9.0 =
 * Añadido: "Ubicación aproximada por IP (IPinfo)" y "Token de IPinfo" (WooCommerce > Ajustes > Total Sucursales). Si el cliente no comparte su ubicación (la niega, falla o no contesta el aviso en 8 segundos), se le ubica por su IP: en el modo por ciudad ve las tiendas de la ciudad de su IP; en el modo por estado (con "Detección del estado" en GPS) se le asigna el estado sin preguntarle. La ubicación del navegador siempre tiene prioridad.

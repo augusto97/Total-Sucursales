@@ -38,6 +38,9 @@ add_filter( 'pre_http_request', function ( $pre, $args, $url ) {
 		'200.44.1.1' => array( 'loc' => '10.6427,-71.6125', 'city' => 'Maracaibo', 'region' => 'Zulia' ),
 		'200.44.2.2' => array( 'loc' => '10.4010,-71.4460', 'city' => 'Cabimas', 'region' => 'Zulia' ),
 		'200.44.3.3' => array( 'loc' => '10.4806,-66.9036', 'city' => 'Caracas', 'region' => 'Distrito Capital' ),
+		'200.44.4.4' => array( 'loc' => '8.5897,-71.1561', 'city' => 'Mérida', 'region' => 'Mérida' ),
+		'200.44.5.5' => array( 'loc' => '10.0600,-72.5500', 'city' => 'Machiques', 'region' => 'Zulia' ),
+		'200.44.6.6' => array( 'loc' => '4.7110,-74.0721', 'city' => 'Bogotá', 'region' => 'Bogota D.C.', 'country' => 'CO' ),
 	);
 	preg_match( '#ipinfo\\.io/([^/?]+)/json#', $url, $m );
 	$ip = isset( $m[1] ) ? rawurldecode( $m[1] ) : '';
@@ -221,6 +224,19 @@ async function visit(browser, ip, geo, opts) {
       log('estado · con token propio, se usa ése', /token=PROPIO-456/.test(wpSoft('option get ts_test_ipinfo_url')));
       const sw = await switcher(p);
       log('estado · el selector ofrece las tiendas de Zulia', sw.length > 0 && sw.every(t => /Delicias|San Francisco/.test(t)), JSON.stringify(sw));
+      await ctx.close();
+    }
+    // Ciudades sin tiendas cerca (más de 100 km): antes salía la ventana de estado.
+    for (const [ip, label, estado, tiendas] of [
+      ['200.44.4.4', 'Mérida (estado sin tiendas)', 'CA', /Valencia/],
+      ['200.44.5.5', 'Machiques (lejos de las tiendas, pero en Zulia)', 'ZU', /Delicias|San Francisco/],
+      ['200.44.6.6', 'Bogotá (fuera de Venezuela)', 'CA', /Valencia/],
+    ]) {
+      const { ctx, p } = await visit(browser, ip, null);
+      const c = await cookies(ctx);
+      const modal = await p.$eval('#ts-state-modal', e => !e.hidden).catch(() => false);
+      const sw = await switcher(p);
+      log(`estado · IP de ${label}: sin ventana, estado ${estado} y sus tiendas`, c.ts_estado === estado && c.ts_estado_src === 'ip' && !modal && sw.length > 0 && sw.every(t => tiendas.test(t)), JSON.stringify({ estado: c.ts_estado, modal, sw, sel: nameOf(c.wcmlim_selected_location_termid) }));
       await ctx.close();
     }
     {
