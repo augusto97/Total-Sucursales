@@ -13,7 +13,7 @@
  *     cuenta para el retiro por distancia (una IP da, como mucho, la ciudad) y la ubicación del
  *     navegador siempre tiene prioridad.
  *   - Sólo se usa si el cliente no da su ubicación: en el modo "por ciudad" decide qué tiendas ve; en
- *     el modo "por estado" elige su estado en lugar de preguntarle.
+ *     el modo "por estado" elige su estado en lugar de preguntarle (ver state_for()).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -163,9 +163,8 @@ class TS_IP_Location {
 			}
 			$reload = true;
 		} elseif ( ! TS_Customer::has_choice() || 'ip' === TS_Customer::get_state_source() ) {
-			$resolved = TS_Customer::resolve_state_from_coords( $found['lat'], $found['lng'] );
-			if ( $resolved && '' !== $resolved['state'] ) {
-				$state = $resolved['state'];
+			list( $state, $how ) = self::state_for( $found );
+			if ( '' !== $state ) {
 				TS_Customer::set_state( $state, 'ip' );
 				$reload = true;
 			}
@@ -175,6 +174,56 @@ class TS_IP_Location {
 			'city'   => $found['city'],
 			'region' => $found['region'],
 			'state'  => $state,
+			'how'    => isset( $how ) ? $how : '',
 		) );
+	}
+
+	/**
+	 * Modo por estado: qué estado asignar a una ubicación por IP.
+	 *   1. El de la tienda más cercana, si está a menos de la "Distancia máxima para inferir el estado"
+	 *      (como con el GPS: así un cliente de Los Teques ve las tiendas de Caracas).
+	 *   2. Si no, el estado que da IPinfo (region), si en él hay tiendas.
+	 *   3. Si tampoco (una ciudad sin tiendas cerca, o fuera de Venezuela): el de la tienda por
+	 *      defecto, para enseñarle ésa en lugar de preguntarle. Sin tienda por defecto, se le pregunta.
+	 *
+	 * @return array{0:string,1:string} Código de estado ('' si no se decide) y cómo se decidió.
+	 */
+	public static function state_for( array $found ) {
+		$resolved = TS_Customer::resolve_state_from_coords( $found['lat'], $found['lng'] );
+		if ( $resolved && '' !== $resolved['state'] ) {
+			return array( $resolved['state'], 'nearest' );
+		}
+		$with = TS_Locations::states_with_locations();
+		if ( 'VE' === strtoupper( $found['country'] ) && '' !== $found['region'] ) {
+			$region = self::region_to_state( $found['region'] );
+			if ( '' !== $region && isset( $with[ $region ] ) ) {
+				return array( $region, 'region' );
+			}
+		}
+		$default = TS_Locations::get( TS_Settings::default_location_id() );
+		if ( $default && '' !== $default['state'] ) {
+			return array( $default['state'], 'default' );
+		}
+		return array( '', '' );
+	}
+
+	/**
+	 * Nombre de estado de IPinfo ("Zulia", "Mérida", "Capital"...) a código de WooCommerce.
+	 */
+	public static function region_to_state( $region ) {
+		$aliases = array(
+			'capital'         => 'DC',
+			'capitaldistrict' => 'DC',
+			'distritofederal' => 'DC',
+			'distritocapital' => 'DC',
+			'vargas'          => 'LG',
+		);
+		$key = ts_key( $region );
+		if ( isset( $aliases[ $key ] ) ) {
+			return $aliases[ $key ];
+		}
+		$code   = ts_normalize_state( $region );
+		$states = ts_get_ve_states();
+		return isset( $states[ $code ] ) ? $code : '';
 	}
 }

@@ -120,7 +120,7 @@
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
       <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda según el municipio del cliente o su distancia a la tienda; en las demás, envío nacional. Todo sobre Multi Locations y States and Municipalities of Venezuela, con Advanced Shipping como opción.</p>
-      <div class="meta"><span>plugin 0.9.0</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <div class="meta"><span>plugin 0.9.1</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -262,7 +262,7 @@
       <div class="tablewrap"><table>
         <tr><th>Situación</th><th>Qué pasa</th></tr>
         <tr><td>Comparte su ubicación</td><td>Se usa ésa, como siempre. La IP ni se consulta.</td></tr>
-        <tr><td>La niega, falla, o no contesta el aviso en 8 segundos</td><td>Se consulta su IP. En el modo por ciudad ve las tiendas de la ciudad de su IP (o la tienda por defecto si no hay); en el modo por estado (con <em>Detección del estado</em> = GPS) se le asigna el estado de la IP sin mostrar la ventana de estado.</td></tr>
+        <tr><td>La niega, falla, o no contesta el aviso en 8 segundos</td><td>Se consulta su IP. En el modo por ciudad ve las tiendas de la ciudad de su IP (o la tienda por defecto si no hay); en el modo por estado (con <em>Detección del estado</em> = GPS) se le asigna un estado sin mostrar la ventana: el de la tienda más cercana si hay una a menos de la <em>Distancia máxima para inferir el estado</em>; si no, el estado que da IPinfo si tiene tiendas; si tampoco (una ciudad sin tiendas cerca, o fuera de Venezuela), el de la <em>Sucursal por defecto</em>, que queda elegida. Sólo sin sucursal por defecto se le pregunta.</td></tr>
         <tr><td>IPinfo no da resultado (IP de otro país, móvil sin ciudad&hellip;)</td><td>Lo mismo que sin IP: tienda por defecto o ventana de estado. No se vuelve a consultar en un día.</td></tr>
         <tr><td>Después comparte su ubicación (&laquo;Usar mi ubicación&raquo;)</td><td>La ubicación real sustituye a la de la IP.</td></tr>
       </table></div>

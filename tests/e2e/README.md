@@ -200,7 +200,8 @@ defecto), el aviso sin contestar (a los 8 s se usa la IP), la cookie de "GPS neg
 GPS manda sobre la IP y la sustituye después, y que la IP no se guarda en las cookies del GPS. Además
 comprueba la caché por IP, el resultado vacío, el tope por hora, el nonce, la opción desactivada, que
 el script de IPinfo de Multi Locations no se carga ni aparece su token, y el modo por estado (asigna
-Zulia sin ventana y, si no hay resultado, pregunta).
+Zulia sin ventana; en Mérida, Machiques y Bogotá, sin tiendas a menos de 100 km, usa el estado de
+IPinfo si tiene tiendas o el de la tienda por defecto; si no hay resultado, pregunta).
 
 ```bash
 node ip-ubicacion.js
