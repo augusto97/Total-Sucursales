@@ -35,9 +35,39 @@ class TS_Compat {
 		}
 		add_action( 'template_redirect', array( __CLASS__, 'dedupe_notices' ), 1 );
 
+		// Precio por tienda en el carrito sin formato (decimales de más, sin moneda).
+		add_filter( 'woocommerce_cart_item_price', array( __CLASS__, 'format_cart_item_price' ), 11, 3 );
+
 		// Selector de tiendas de la ficha dibujado fuera de la ficha (vistas rápidas, bloques).
 		add_action( 'woocommerce_before_add_to_cart_button', array( __CLASS__, 'display_location_start' ), 1 );
 		add_action( 'woocommerce_before_add_to_cart_button', array( __CLASS__, 'display_location_end' ), 11 );
+	}
+
+	/**
+	 * Con el precio por tienda activado, Multi Locations (wcmlim_cart_item_price) devuelve el precio
+	 * de cada línea del carrito tal cual está guardado, sin pasar por wc_price(): un precio de
+	 * 156.3912 sale con sus 4 decimales y sin símbolo de moneda, aunque WooCommerce esté configurado
+	 * con 2. Aquí se le vuelve a dar el formato de WooCommerce (decimales, moneda, separadores y
+	 * con o sin impuestos según los ajustes del carrito). Si ya viene formateado, no se toca.
+	 */
+	public static function format_cart_item_price( $price, $cart_item = array(), $cart_item_key = '' ) {
+		if ( ! isset( $cart_item['select_location'], $cart_item['data'] ) || ! $cart_item['data'] instanceof WC_Product ) {
+			return $price;
+		}
+		if ( is_string( $price ) && false !== strpos( $price, '<' ) ) {
+			return $price; // Ya es HTML (wc_price): nada que corregir.
+		}
+		$product = $cart_item['data'];
+		$raw     = trim( wp_strip_all_tags( (string) $price ) );
+		if ( is_numeric( $raw ) ) {
+			$args = array( 'price' => (float) $raw );
+			$show = WC()->cart && WC()->cart->display_prices_including_tax()
+				? wc_get_price_including_tax( $product, $args )
+				: wc_get_price_excluding_tax( $product, $args );
+			return wc_price( $show );
+		}
+		// Texto sin formato ("$156.39" sin su HTML): el precio de la línea con el formato normal.
+		return WC()->cart ? WC()->cart->get_product_price( $product ) : $price;
 	}
 
 	/** @var array|null Estado guardado por display_location_start(). */
@@ -348,6 +378,7 @@ class TS_Compat {
 				? __( 'Activo: se suple la función que falta en Multi Locations, así que su "closest location" deja de dar error 500.', 'total-sucursales' )
 				: __( 'No aplicado.', 'total-sucursales' ),
 			'wcmlim_get_quantity_attributes' => __( 'Activo: se responde a las peticiones de stock con un producto inexistente antes de que Multi Locations falle, y con el formato que espera su JavaScript.', 'total-sucursales' ),
+			'wcmlim_cart_item_price' => __( 'Activo: con el precio por tienda, el precio de cada línea del carrito sale con el formato de WooCommerce (sus decimales y moneda) en lugar del número tal cual.', 'total-sucursales' ),
 			'wcmlim_display_location' => __( 'Activo: el selector de tiendas de la ficha también funciona en vistas rápidas de producto dentro de otras páginas (antes daba error fatal, también en el editor).', 'total-sucursales' ),
 			'wcmlim_ajax_add_to_cart' => __( 'Activo: si "Añadir al carrito" no puede añadir el producto por falta de stock en la tienda, se lleva al cliente a la ficha con el aviso, una sola vez (Multi Locations no lo mostraba y lo iba acumulando).', 'total-sucursales' ),
 			'wcmlim_ajax_cart_count' => __( 'Activo: se descartan las consultas del selector de sucursal que no suponen ningún cambio, que son las que dejaban la página recargándose en bucle y sacaban el diálogo "¿Cambiar de tienda?" con la misma sucursal a los dos lados.', 'total-sucursales' ),
