@@ -223,6 +223,16 @@ el segundo, con cantidad 2, añade ese producto, 2 unidades, con la tienda de la
 node vista-rapida.js
 ```
 
+## Precio por tienda con los decimales de WooCommerce
+
+`precio-decimales.js` activa el precio por tienda de Multi Locations, da a Producto C un precio de
+39.6712 en Tienda Chacao, lo añade al carrito y comprueba que la columna de precio dice $39.67 (con 2
+decimales configurados) y no 39.6712. Deja las opciones y el precio como estaban.
+
+```bash
+node precio-decimales.js
+```
+
 ## Producto sin stock en las tiendas del cliente
 
 `disponibilidad.js`: un cliente de Zulia abre Producto D (sólo hay en Valencia) y debe verlo como no
