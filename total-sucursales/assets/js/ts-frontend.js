@@ -274,7 +274,32 @@
 		}
 	};
 
+	/**
+	 * "Añadir al carrito" de Multi Locations: toma la cantidad del primer campo de cantidad de la
+	 * página, no del producto pulsado, así que en un listado con "- 1 +" en cada tarjeta se añadía la
+	 * cantidad de otro producto. Se manda la del formulario del botón pulsado.
+	 */
+	TS.loopQuantity = function () {
+		var last = null;
+		document.addEventListener('click', function (e) {
+			var b = e.target && e.target.closest ? e.target.closest('.single_add_to_cart_button, .wcmlim_ajax_add_to_cart') : null;
+			if (b) { last = b; }
+		}, true);
+		$.ajaxPrefilter(function (opts) {
+			if (!last || typeof opts.data !== 'string' || opts.data.indexOf('action=wcmlim_ajax_add_to_cart') === -1 || typeof URLSearchParams === 'undefined') {
+				return;
+			}
+			var form = last.closest('form.cart');
+			var qty = form ? form.querySelector('input.qty, input[name="quantity"]') : null;
+			if (!qty || !qty.value) { return; }
+			var params = new URLSearchParams(opts.data);
+			params.set('quantity', qty.value);
+			opts.data = params.toString();
+		});
+	};
+
 	$(function () {
+		TS.loopQuantity();
 		TS.bindModal();
 		TS.bindSelector();
 		TS.singleLocationView();

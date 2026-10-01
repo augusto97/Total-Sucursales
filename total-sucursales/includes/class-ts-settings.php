@@ -41,6 +41,7 @@ class TS_Settings {
 			'checkout_geo_button'  => 'yes',
 			'show_distance_info'   => 'yes',
 			'single_location_view' => 'no',
+			'selector_only_single' => 'yes',
 			'show_location_address' => 'yes',
 			'catalog_filter'       => 'yes',
 			'default_location'     => 0,
@@ -267,6 +268,13 @@ class TS_Settings {
 				'type'    => 'checkbox',
 				'desc'    => __( 'Oculta en la página de producto las demás sucursales cuando ya hay una seleccionada.', 'total-sucursales' ),
 				'default' => 'no',
+			),
+			array(
+				'title'   => __( 'Selector de tiendas sólo en la ficha del producto', 'total-sucursales' ),
+				'id'      => "{$p}[selector_only_single]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'No mostrar la "Disponibilidad por tienda" de Multi Locations en listados de productos, vistas rápidas ni productos relacionados (donde no cabe). Al añadir al carrito desde ahí se usa la tienda elegida en la cabecera.', 'total-sucursales' ),
+				'default' => 'yes',
 			),
 			array( 'type' => 'sectionend', 'id' => 'ts_section_state' ),
 
