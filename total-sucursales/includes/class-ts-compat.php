@@ -321,14 +321,29 @@ class TS_Compat {
 	 * de sucursal de verdad sigue pasando entero a Multi Locations, con su diálogo y su recarga.
 	 */
 	public static function guard_cart_count() {
-		if ( ! isset( $_POST['e_value'] ) ) {
-			return;
-		}
-
 		// El nonce lo comprueba Multi Locations; si no es válido, que conteste su propio error.
 		$nonce = isset( $_POST['security'] ) ? sanitize_text_field( wp_unslash( $_POST['security'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'wcmlim_locations_nonce' ) ) {
 			return;
+		}
+
+		// Sin tienda: su clear-cart.js lo pide así al pulsar una tienda en la vista de lista (botones
+		// de radio), sólo para saber si el carrito tiene productos. Con "Restrict to One Location"
+		// Multi Locations toma igualmente e_value (vacío): borra la posición guardada y deja elegida
+		// la primera tienda de la lista, así que la tienda pulsada no queda y la cabecera pasa a
+		// "Seleccionar". Se contesta lo mismo (número de productos con stock gestionado) sin tocar
+		// la tienda elegida; la elección la hace su otra petición, la que sí lleva la tienda.
+		if ( ! isset( $_POST['e_value'] ) ) {
+			$count = 0;
+			if ( function_exists( 'WC' ) && WC()->cart ) {
+				foreach ( WC()->cart->get_cart() as $item ) {
+					$pid = ! empty( $item['variation_id'] ) ? $item['variation_id'] : $item['product_id'];
+					if ( 'yes' === get_post_meta( $pid, '_manage_stock', true ) ) {
+						$count++;
+					}
+				}
+			}
+			wp_send_json_success( $count );
 		}
 
 		$value = sanitize_text_field( wp_unslash( $_POST['e_value'] ) );
@@ -381,7 +396,7 @@ class TS_Compat {
 			'wcmlim_cart_item_price' => __( 'Activo: con el precio por tienda, el precio de cada línea del carrito sale con el formato de WooCommerce (sus decimales y moneda) en lugar del número tal cual.', 'total-sucursales' ),
 			'wcmlim_display_location' => __( 'Activo: el selector de tiendas de la ficha también funciona en vistas rápidas de producto dentro de otras páginas (antes daba error fatal, también en el editor).', 'total-sucursales' ),
 			'wcmlim_ajax_add_to_cart' => __( 'Activo: si "Añadir al carrito" no puede añadir el producto por falta de stock en la tienda, se lleva al cliente a la ficha con el aviso, una sola vez (Multi Locations no lo mostraba y lo iba acumulando).', 'total-sucursales' ),
-			'wcmlim_ajax_cart_count' => __( 'Activo: se descartan las consultas del selector de sucursal que no suponen ningún cambio, que son las que dejaban la página recargándose en bucle y sacaban el diálogo "¿Cambiar de tienda?" con la misma sucursal a los dos lados.', 'total-sucursales' ),
+			'wcmlim_ajax_cart_count' => __( 'Activo: se descartan las consultas del selector de sucursal que no suponen ningún cambio, que son las que dejaban la página recargándose en bucle y sacaban el diálogo "¿Cambiar de tienda?" con la misma sucursal a los dos lados; y la que hace la vista de lista al pulsar una tienda ya no borra la tienda elegida.', 'total-sucursales' ),
 		);
 	}
 }

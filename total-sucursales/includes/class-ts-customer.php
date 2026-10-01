@@ -269,18 +269,22 @@ class TS_Customer {
 		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return;
 		}
-		if ( ! TS_Settings::default_location_id() ) {
-			return;
-		}
 		$current = self::selected_mli_location_id();
 		if ( $current ) {
-			$visible_ids = array_map(
-				function ( $t ) { return (int) $t->term_id; },
-				TS_Locations::mli_term_list()
-			);
-			if ( in_array( (int) $current, $visible_ids, true ) ) {
-				return; // Ya hay una sucursal válida: no se pisa.
+			$index = TS_Locations::mli_index_of( $current );
+			if ( null !== $index ) {
+				// Ya hay una sucursal válida: no se pisa. Pero Multi Locations marca la tienda en la
+				// cabecera y en la ficha por su posición en la lista (wcmlim_selected_location), y esa
+				// posición queda vieja cuando cambia la lista de tiendas visibles o cuando alguno de
+				// sus flujos la borra: la tienda sigue elegida pero sale "Seleccionar". Se rehace.
+				if ( (string) $index !== (string) ts_get_cookie( 'wcmlim_selected_location' ) ) {
+					self::select_mli_location( $current );
+				}
+				return;
 			}
+		}
+		if ( ! TS_Settings::default_location_id() ) {
+			return;
 		}
 		self::resync_mli_selection();
 	}

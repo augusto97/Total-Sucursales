@@ -223,6 +223,17 @@ el segundo, con cantidad 2, añade ese producto, 2 unidades, con la tienda de la
 node vista-rapida.js
 ```
 
+## Vista de lista: elegir tienda en la ficha
+
+`vista-lista.js` pone la vista de lista de Multi Locations (botones de radio) y comprueba que al pulsar
+una tienda queda esa (y no la primera de la lista), que con el carrito de otra tienda el cambio deja
+la nueva elegida, en la cabecera y en el carrito, y que una posición guardada vieja se corrige al
+cargar la página (la cabecera muestra la tienda, no "Seleccionar").
+
+```bash
+node vista-lista.js
+```
+
 ## Precio por tienda con los decimales de WooCommerce
 
 `precio-decimales.js` activa el precio por tienda de Multi Locations, da a Producto C un precio de
