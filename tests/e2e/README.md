@@ -215,7 +215,9 @@ node ip-ubicacion.js
 de compra de un producto dentro de una página, como el bloque "Product Quick View" de GreenShift.
 Comprueba que ni la página ni la API REST que precarga el editor dan el error fatal de Multi
 Locations (`get_price_html() on false`), que el selector sale con las tiendas del producto mostrado
-y el stock en español, y que sin producto la página no se rompe.
+y el stock en español, y que sin producto la página no se rompe. Con "Selector de tiendas sólo en la ficha"
+(por defecto) comprueba además que un listado de dos productos no muestra el selector y que "Añadir" en
+el segundo, con cantidad 2, añade ese producto, 2 unidades, con la tienda de la cabecera.
 
 ```bash
 node vista-rapida.js

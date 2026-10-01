@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.9.2
+Stable tag: 0.9.3
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,10 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.9.3 =
+* Añadido: "Selector de tiendas sólo en la ficha del producto" (activado por defecto). La "Disponibilidad por tienda" de Multi Locations ya no sale en listados de productos, vistas rápidas ni productos relacionados; al añadir al carrito desde ahí se usa la tienda elegida en la cabecera.
+* Corregido: en un listado con cantidad ("- 1 +") en cada producto, el "Añadir al carrito" de Multi Locations añadía la cantidad del primer producto de la página en lugar de la del producto pulsado.
 
 = 0.9.2 =
 * Corregido: error fatal "Call to a member function get_price_html() on false" (wcmlim-display-location.php) al editar o abrir una página con una vista rápida de producto (por ejemplo el bloque Product Quick View de GreenShift). Multi Locations dibuja su selector de tiendas con el producto de la entrada actual, que ahí es la página; ahora se dibuja con el producto que se muestra (parte de "Corregir fallos conocidos de Multi Locations").
