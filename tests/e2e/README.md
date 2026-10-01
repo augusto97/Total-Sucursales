@@ -98,7 +98,9 @@ una carga de página no debe asignar ninguna por su cuenta.
 
 ## Textos en español y dirección de cada tienda
 
-`textos-tienda.js` recorre lo que ve el cliente con la traducción de Multi Locations activa:
+`textos-tienda.js` recorre lo que ve el cliente con la traducción de Multi Locations activa. Al final
+comprueba que, sin stock suficiente en la tienda (cantidad mayor que su stock, o tres clics con la
+validación de Multi Locations fallando), sale un solo aviso en español en la ficha:
 
 ```bash
 node textos-tienda.js

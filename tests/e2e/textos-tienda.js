@@ -200,6 +200,33 @@ const ENGLISH = /\b(Location|Locations|In Stock|Sold Out|Stock Information|Selec
   log('texto de fábrica de MLI: sale en español', back === 'Agotado', back);
   wp(`option update wcmlim_soldout_button_text "${prev}"`);
 
+  // ---- 8. Sin stock suficiente en la tienda: aviso en español, en el momento y una sola vez ----
+  // Multi Locations contestaba vacío (o "4") y el aviso no salía, o se acumulaba en la sesión y
+  // aparecía repetido en la siguiente página.
+  {
+    const LOC = JSON.parse(wp(`eval '$o=array(); foreach(get_terms(array("taxonomy"=>"locations","hide_empty"=>false)) as $t){$o[$t->name]=$t->term_id;} echo json_encode($o);'`).split('\n').pop());
+    const ES = 'No hay stock suficiente en esta tienda para la cantidad que pides.';
+    for (const mode of ['cantidad', 'validación']) {
+      const ctx = await newCtx([{ name: 'ts_estado', value: '__ALL__' }]);
+      const p = await ctx.newPage();
+      await p.goto(BASE + '/product/producto-a-delicias-y-chacao/', { waitUntil: 'networkidle' });
+      await pickLocation(p, { label: 'Tienda Delicias - Disponible' });
+      const clicks = mode === 'cantidad' ? 1 : 3;
+      if (mode === 'cantidad') {
+        await p.$eval('input.qty', e => { e.removeAttribute('max'); e.value = '999'; });
+      } else {
+        // La tienda activa (cookie) no tiene el producto: la validación de Multi Locations falla.
+        await ctx.addCookies([{ name: 'wcmlim_selected_location_termid', value: String(LOC['Tienda Valencia']), url: BASE }]);
+      }
+      for (let i = 0; i < clicks; i++) {
+        await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => {}), p.click('button.single_add_to_cart_button')]);
+      }
+      const err = await p.$$eval('.woocommerce-error li', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim())).catch(() => []);
+      log(`sin stock suficiente (${mode}${clicks > 1 ? ', 3 clics' : ''}): un aviso en español en la ficha`, err.length === 1 && err[0] === ES, JSON.stringify(err));
+      await ctx.close();
+    }
+  }
+
   await browser.close();
   wp(`option update wcmlim_backend_display_stock_view ${view || 'select_view'}`);
   const ok = results.filter(Boolean).length;

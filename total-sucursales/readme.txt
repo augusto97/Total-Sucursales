@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.9.1
+Stable tag: 0.9.2
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,10 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.9.2 =
+* Corregido: el "Añadir al carrito" de Multi Locations no avisaba cuando la tienda no tenía stock suficiente: el botón parecía no hacer nada y el aviso ("We don't have enough stock to fulfill your request") se acumulaba con cada clic y salía repetido en la siguiente página (por ejemplo al cambiar de tienda). Si la cantidad superaba el stock de la tienda, no avisaba nada. Ahora se lleva al cliente a la ficha con el aviso una sola vez, y se quitan los avisos repetidos (parte de "Corregir fallos conocidos de Multi Locations").
+* Traducidos más textos de Multi Locations: "No hay stock suficiente en esta tienda para la cantidad que pides." (editable en el bloque Multi Locations), el aviso de stock insuficiente al pagar, "Precio calculado (con impuestos)", "Región", los buscadores del mapa de tiendas y el aviso de navegador sin geolocalización.
 
 = 0.9.1 =
 * Corregido: en el modo por estado, a un cliente ubicado por IP en una ciudad sin tiendas a menos de la "Distancia máxima para inferir el estado" (100 km) se le seguía mostrando la ventana de estado. Ahora se usa el estado que da IPinfo si en él hay tiendas y, si no (o si está fuera de Venezuela), el de la sucursal por defecto, que queda elegida. Sólo sin sucursal por defecto se le pregunta.

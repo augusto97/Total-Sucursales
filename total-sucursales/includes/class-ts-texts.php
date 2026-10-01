@@ -87,6 +87,7 @@ class TS_Texts {
 		$add( 'mli_updated_text', $g_mli, __( 'Tienda cambiada: texto ({nueva})', 'total-sucursales' ), __( 'Tu carrito ahora es de la tienda {nueva}. Producto añadido.', 'total-sucursales' ) );
 		$add( 'mli_not_available_title', $g_mli, __( 'Producto no disponible: título', 'total-sucursales' ), __( 'No disponible', 'total-sucursales' ) );
 		$add( 'mli_not_available_text', $g_mli, __( 'Producto no disponible: texto', 'total-sucursales' ), __( 'Este producto no está disponible en esta tienda.', 'total-sucursales' ) );
+		$add( 'mli_not_enough_stock', $g_mli, __( 'Aviso de stock insuficiente en la tienda al añadir al carrito', 'total-sucursales' ), __( 'No hay stock suficiente en esta tienda para la cantidad que pides.', 'total-sucursales' ) );
 		$add( 'mli_unavailable_move', $g_mli, __( 'Productos que no hay en la nueva tienda ({nueva}, {lista})', 'total-sucursales' ), __( "Estos productos no están disponibles en {nueva}:\n\n{lista}\n\n¿Quieres quitarlos y pasar el resto a {nueva}?", 'total-sucursales' ), 'textarea' );
 
 		/**
