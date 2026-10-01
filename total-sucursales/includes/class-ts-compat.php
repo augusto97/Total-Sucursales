@@ -34,6 +34,79 @@ class TS_Compat {
 			add_action( $hook, array( __CLASS__, 'guard_add_to_cart' ), 1 );
 		}
 		add_action( 'template_redirect', array( __CLASS__, 'dedupe_notices' ), 1 );
+
+		// Selector de tiendas de la ficha dibujado fuera de la ficha (vistas rápidas, bloques).
+		add_action( 'woocommerce_before_add_to_cart_button', array( __CLASS__, 'display_location_start' ), 1 );
+		add_action( 'woocommerce_before_add_to_cart_button', array( __CLASS__, 'display_location_end' ), 11 );
+	}
+
+	/** @var array|null Estado guardado por display_location_start(). */
+	private static $display_location = null;
+
+	/**
+	 * Multi Locations dibuja su selector de tiendas (wcmlim_display_location, prioridad 10) con
+	 * wc_get_product( $post->ID ), es decir, el producto de la entrada actual y no el que se está
+	 * mostrando. En una vista rápida de producto dentro de una página (por ejemplo el bloque
+	 * "Product Quick View" de GreenShift, también al abrir la página en el editor), $post es la
+	 * página, wc_get_product() devuelve false y salta "Call to a member function get_price_html()
+	 * on false": error fatal.
+	 *
+	 * Mientras se dibuja, $post pasa a ser el producto que se muestra (el global $product), así que
+	 * el selector sale con las tiendas del producto correcto; justo después se restaura. Si no hay
+	 * producto que mostrar, ese selector se omite en lugar de romper la página.
+	 */
+	public static function display_location_start() {
+		$post    = isset( $GLOBALS['post'] ) ? $GLOBALS['post'] : null;
+		$product = isset( $GLOBALS['product'] ) ? $GLOBALS['product'] : null;
+		if ( $product instanceof WC_Product ) {
+			if ( $post instanceof WP_Post && (int) $post->ID === (int) $product->get_id() ) {
+				return;
+			}
+			$target = get_post( $product->get_id() );
+			if ( $target ) {
+				self::$display_location = array( 'post' => $post );
+				$GLOBALS['post']        = $target; // phpcs:ignore WordPress.WP.GlobalVariablesOverride
+			}
+			return;
+		}
+		if ( $post instanceof WP_Post && wc_get_product( $post->ID ) ) {
+			return;
+		}
+		$cb = self::mli_display_callback();
+		if ( $cb ) {
+			remove_action( 'woocommerce_before_add_to_cart_button', $cb, 10 );
+			self::$display_location = array( 'removed' => $cb );
+		}
+	}
+
+	public static function display_location_end() {
+		if ( null === self::$display_location ) {
+			return;
+		}
+		if ( array_key_exists( 'post', self::$display_location ) ) {
+			$GLOBALS['post'] = self::$display_location['post']; // phpcs:ignore WordPress.WP.GlobalVariablesOverride
+		}
+		if ( isset( self::$display_location['removed'] ) ) {
+			add_action( 'woocommerce_before_add_to_cart_button', self::$display_location['removed'], 10 );
+		}
+		self::$display_location = null;
+	}
+
+	/**
+	 * El callback de Multi Locations (Wcmlim_Public::wcmlim_display_location) tal como está enganchado.
+	 */
+	private static function mli_display_callback() {
+		global $wp_filter;
+		if ( empty( $wp_filter['woocommerce_before_add_to_cart_button']->callbacks[10] ) ) {
+			return null;
+		}
+		foreach ( $wp_filter['woocommerce_before_add_to_cart_button']->callbacks[10] as $hook ) {
+			$fn = $hook['function'];
+			if ( is_array( $fn ) && is_object( $fn[0] ) && 'wcmlim_display_location' === $fn[1] ) {
+				return $fn;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -275,6 +348,7 @@ class TS_Compat {
 				? __( 'Activo: se suple la función que falta en Multi Locations, así que su "closest location" deja de dar error 500.', 'total-sucursales' )
 				: __( 'No aplicado.', 'total-sucursales' ),
 			'wcmlim_get_quantity_attributes' => __( 'Activo: se responde a las peticiones de stock con un producto inexistente antes de que Multi Locations falle, y con el formato que espera su JavaScript.', 'total-sucursales' ),
+			'wcmlim_display_location' => __( 'Activo: el selector de tiendas de la ficha también funciona en vistas rápidas de producto dentro de otras páginas (antes daba error fatal, también en el editor).', 'total-sucursales' ),
 			'wcmlim_ajax_add_to_cart' => __( 'Activo: si "Añadir al carrito" no puede añadir el producto por falta de stock en la tienda, se lleva al cliente a la ficha con el aviso, una sola vez (Multi Locations no lo mostraba y lo iba acumulando).', 'total-sucursales' ),
 			'wcmlim_ajax_cart_count' => __( 'Activo: se descartan las consultas del selector de sucursal que no suponen ningún cambio, que son las que dejaban la página recargándose en bucle y sacaban el diálogo "¿Cambiar de tienda?" con la misma sucursal a los dos lados.', 'total-sucursales' ),
 		);
