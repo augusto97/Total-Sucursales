@@ -28,6 +28,181 @@ class TS_Compat {
 		foreach ( array( 'wp_ajax_wcmlim_ajax_cart_count', 'wp_ajax_nopriv_wcmlim_ajax_cart_count' ) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'guard_cart_count' ), 1 );
 		}
+
+		// "Añadir al carrito" sin stock suficiente en la tienda: avisar en el momento, una vez.
+		foreach ( array( 'wp_ajax_wcmlim_ajax_add_to_cart', 'wp_ajax_nopriv_wcmlim_ajax_add_to_cart' ) as $hook ) {
+			add_action( $hook, array( __CLASS__, 'guard_add_to_cart' ), 1 );
+		}
+		add_action( 'template_redirect', array( __CLASS__, 'dedupe_notices' ), 1 );
+
+		// Selector de tiendas de la ficha dibujado fuera de la ficha (vistas rápidas, bloques).
+		add_action( 'woocommerce_before_add_to_cart_button', array( __CLASS__, 'display_location_start' ), 1 );
+		add_action( 'woocommerce_before_add_to_cart_button', array( __CLASS__, 'display_location_end' ), 11 );
+	}
+
+	/** @var array|null Estado guardado por display_location_start(). */
+	private static $display_location = null;
+
+	/**
+	 * Multi Locations dibuja su selector de tiendas (wcmlim_display_location, prioridad 10) con
+	 * wc_get_product( $post->ID ), es decir, el producto de la entrada actual y no el que se está
+	 * mostrando. En una vista rápida de producto dentro de una página (por ejemplo el bloque
+	 * "Product Quick View" de GreenShift, también al abrir la página en el editor), $post es la
+	 * página, wc_get_product() devuelve false y salta "Call to a member function get_price_html()
+	 * on false": error fatal.
+	 *
+	 * Mientras se dibuja, $post pasa a ser el producto que se muestra (el global $product), así que
+	 * el selector sale con las tiendas del producto correcto; justo después se restaura. Si no hay
+	 * producto que mostrar, ese selector se omite en lugar de romper la página.
+	 */
+	public static function display_location_start() {
+		$post    = isset( $GLOBALS['post'] ) ? $GLOBALS['post'] : null;
+		$product = isset( $GLOBALS['product'] ) ? $GLOBALS['product'] : null;
+		if ( $product instanceof WC_Product ) {
+			if ( $post instanceof WP_Post && (int) $post->ID === (int) $product->get_id() ) {
+				return;
+			}
+			$target = get_post( $product->get_id() );
+			if ( $target ) {
+				self::$display_location = array( 'post' => $post );
+				$GLOBALS['post']        = $target; // phpcs:ignore WordPress.WP.GlobalVariablesOverride
+			}
+			return;
+		}
+		if ( $post instanceof WP_Post && wc_get_product( $post->ID ) ) {
+			return;
+		}
+		$cb = self::mli_display_callback();
+		if ( $cb ) {
+			remove_action( 'woocommerce_before_add_to_cart_button', $cb, 10 );
+			self::$display_location = array( 'removed' => $cb );
+		}
+	}
+
+	public static function display_location_end() {
+		if ( null === self::$display_location ) {
+			return;
+		}
+		if ( array_key_exists( 'post', self::$display_location ) ) {
+			$GLOBALS['post'] = self::$display_location['post']; // phpcs:ignore WordPress.WP.GlobalVariablesOverride
+		}
+		if ( isset( self::$display_location['removed'] ) ) {
+			add_action( 'woocommerce_before_add_to_cart_button', self::$display_location['removed'], 10 );
+		}
+		self::$display_location = null;
+	}
+
+	/**
+	 * El callback de Multi Locations (Wcmlim_Public::wcmlim_display_location) tal como está enganchado.
+	 */
+	private static function mli_display_callback() {
+		global $wp_filter;
+		if ( empty( $wp_filter['woocommerce_before_add_to_cart_button']->callbacks[10] ) ) {
+			return null;
+		}
+		foreach ( $wp_filter['woocommerce_before_add_to_cart_button']->callbacks[10] as $hook ) {
+			$fn = $hook['function'];
+			if ( is_array( $fn ) && is_object( $fn[0] ) && 'wcmlim_display_location' === $fn[1] ) {
+				return $fn;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * El "Añadir al carrito" por AJAX de Multi Locations no avisa cuando la tienda no tiene stock
+	 * suficiente:
+	 * - Si su validación falla (por ejemplo "We don't have enough stock to fulfill your request"),
+	 *   deja el aviso en la sesión y contesta vacío: el botón parece no hacer nada y, con cada clic,
+	 *   se acumula otro aviso que sale junto a los demás en la siguiente página que se cargue (al
+	 *   cambiar de tienda, por ejemplo).
+	 * - Si la cantidad supera el stock de la tienda contesta "4", que su JavaScript no trata, y no se
+	 *   ve nada.
+	 *
+	 * En los dos casos se contesta como lo hace WooCommerce cuando no puede añadir un producto
+	 * ({error, product_url}), que su JavaScript ya entiende: lleva a la ficha del producto y ahí sale
+	 * el aviso, una sola vez. El resto de respuestas pasan tal cual.
+	 */
+	public static function guard_add_to_cart() {
+		ob_start();
+		self::$add_to_cart_level = ob_get_level();
+		add_filter( 'wp_die_ajax_handler', array( __CLASS__, 'add_to_cart_die_handler_name' ), PHP_INT_MAX );
+	}
+
+	/** @var int Nivel del búfer abierto en guard_add_to_cart(). */
+	private static $add_to_cart_level = 0;
+
+	public static function add_to_cart_die_handler_name() {
+		return array( __CLASS__, 'add_to_cart_die_handler' );
+	}
+
+	public static function add_to_cart_die_handler( $message, $title = '', $args = array() ) {
+		remove_filter( 'wp_die_ajax_handler', array( __CLASS__, 'add_to_cart_die_handler_name' ), PHP_INT_MAX );
+		$out = '';
+		if ( self::$add_to_cart_level && ob_get_level() >= self::$add_to_cart_level ) {
+			while ( ob_get_level() > self::$add_to_cart_level ) {
+				ob_end_flush();
+			}
+			$out = (string) ob_get_clean();
+		}
+		$code = trim( $out );
+		if ( '4' === $code ) {
+			self::add_notice_once( TS_Texts::get( 'mli_not_enough_stock' ) );
+		}
+		if ( '4' === $code || ( '' === $code && function_exists( 'wc_notice_count' ) && wc_notice_count( 'error' ) > 0 ) ) {
+			// Un visitante con el carrito vacío aún no tiene sesión: sin ella el aviso no llegaría a la ficha.
+			if ( WC()->session && ! WC()->session->has_session() ) {
+				WC()->session->set_customer_session_cookie( true );
+			}
+			$pid = isset( $_POST['product_id'] ) ? absint( wp_unslash( $_POST['product_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+			wp_send_json( array(
+				'error'       => true,
+				'product_url' => apply_filters( 'woocommerce_cart_redirect_after_error', $pid ? get_permalink( $pid ) : wc_get_cart_url(), $pid ),
+			) );
+		}
+		echo $out; // phpcs:ignore WordPress.Security.EscapeOutput -- respuesta original de Multi Locations.
+		_ajax_wp_die_handler( $message, $title, $args );
+	}
+
+	private static function add_notice_once( $text ) {
+		foreach ( wc_get_notices( 'error' ) as $n ) {
+			if ( ( is_array( $n ) ? $n['notice'] : $n ) === $text ) {
+				return;
+			}
+		}
+		wc_add_notice( $text, 'error' );
+	}
+
+	/**
+	 * Quita los avisos repetidos (mismo tipo y texto) antes de mostrarlos: algunos flujos de Multi
+	 * Locations validan el mismo producto varias veces y apilan el mismo aviso.
+	 */
+	public static function dedupe_notices() {
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+		$all = WC()->session->get( 'wc_notices', array() );
+		if ( ! is_array( $all ) || ! $all ) {
+			return;
+		}
+		$changed = false;
+		foreach ( $all as $type => $list ) {
+			$seen = array();
+			$keep = array();
+			foreach ( (array) $list as $n ) {
+				$key = is_array( $n ) && isset( $n['notice'] ) ? (string) $n['notice'] : (string) $n;
+				if ( isset( $seen[ $key ] ) ) {
+					$changed = true;
+					continue;
+				}
+				$seen[ $key ] = true;
+				$keep[]       = $n;
+			}
+			$all[ $type ] = $keep;
+		}
+		if ( $changed ) {
+			WC()->session->set( 'wc_notices', $all );
+		}
 	}
 
 	/**
@@ -173,6 +348,8 @@ class TS_Compat {
 				? __( 'Activo: se suple la función que falta en Multi Locations, así que su "closest location" deja de dar error 500.', 'total-sucursales' )
 				: __( 'No aplicado.', 'total-sucursales' ),
 			'wcmlim_get_quantity_attributes' => __( 'Activo: se responde a las peticiones de stock con un producto inexistente antes de que Multi Locations falle, y con el formato que espera su JavaScript.', 'total-sucursales' ),
+			'wcmlim_display_location' => __( 'Activo: el selector de tiendas de la ficha también funciona en vistas rápidas de producto dentro de otras páginas (antes daba error fatal, también en el editor).', 'total-sucursales' ),
+			'wcmlim_ajax_add_to_cart' => __( 'Activo: si "Añadir al carrito" no puede añadir el producto por falta de stock en la tienda, se lleva al cliente a la ficha con el aviso, una sola vez (Multi Locations no lo mostraba y lo iba acumulando).', 'total-sucursales' ),
 			'wcmlim_ajax_cart_count' => __( 'Activo: se descartan las consultas del selector de sucursal que no suponen ningún cambio, que son las que dejaban la página recargándose en bucle y sacaban el diálogo "¿Cambiar de tienda?" con la misma sucursal a los dos lados.', 'total-sucursales' ),
 		);
 	}

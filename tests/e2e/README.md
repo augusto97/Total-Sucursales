@@ -98,7 +98,9 @@ una carga de página no debe asignar ninguna por su cuenta.
 
 ## Textos en español y dirección de cada tienda
 
-`textos-tienda.js` recorre lo que ve el cliente con la traducción de Multi Locations activa:
+`textos-tienda.js` recorre lo que ve el cliente con la traducción de Multi Locations activa. Al final
+comprueba que, sin stock suficiente en la tienda (cantidad mayor que su stock, o tres clics con la
+validación de Multi Locations fallando), sale un solo aviso en español en la ficha:
 
 ```bash
 node textos-tienda.js
@@ -205,6 +207,18 @@ IPinfo si tiene tiendas o el de la tienda por defecto; si no hay resultado, preg
 
 ```bash
 node ip-ubicacion.js
+```
+
+## Vista rápida de producto dentro de una página
+
+`vista-rapida.js` añade (con un mu-plugin que borra al terminar) un shortcode que pinta el formulario
+de compra de un producto dentro de una página, como el bloque "Product Quick View" de GreenShift.
+Comprueba que ni la página ni la API REST que precarga el editor dan el error fatal de Multi
+Locations (`get_price_html() on false`), que el selector sale con las tiendas del producto mostrado
+y el stock en español, y que sin producto la página no se rompe.
+
+```bash
+node vista-rapida.js
 ```
 
 ## Producto sin stock en las tiendas del cliente

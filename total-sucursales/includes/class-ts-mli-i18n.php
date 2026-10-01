@@ -39,6 +39,10 @@ class TS_MLI_I18n {
 			add_filter( 'gettext_wcmlim', array( __CLASS__, 'filter_gettext' ), 20, 2 );
 		}
 
+		// Multi Locations escribe a mano "N In Stock." / "Out of Stock." en el stock de la ficha.
+		if ( ! is_admin() || wp_doing_ajax() ) {
+			add_filter( 'woocommerce_get_stock_html', array( __CLASS__, 'filter_stock_html' ), 15 );
+		}
 		add_filter( 'woocommerce_order_item_display_meta_key', array( __CLASS__, 'filter_order_meta_key' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ), 100 );
 	}
@@ -135,6 +139,18 @@ class TS_MLI_I18n {
 			'Select Location Group:'      => 'Selecciona una zona:',
 			'-- Select a Location Group --' => '-- Selecciona una zona --',
 			'Please select a location before adding to cart' => TS_Texts::get( 'mli_select_msg' ),
+			"We don't have enough stock to fulfill your request." => TS_Texts::get( 'mli_not_enough_stock' ),
+			"We don't have enough stock to fulfill your request" => TS_Texts::get( 'mli_not_enough_stock' ),
+			// Mismos %s/%d y en el mismo orden: MLI lo pasa por sprintf().
+			'Sorry, we do not have enough "%s" in stock to fulfill your order (%d available) for location %s. We apologize for any inconvenience caused.' => 'Lo sentimos, no hay suficiente stock de "%s" para tu pedido (%d disponibles) en la tienda %s. Disculpa las molestias.',
+			'Calculated Price (with Tax):' => 'Precio calculado (con impuestos):',
+			'Region: '                    => 'Región: ',
+			'No group found'              => 'No se encontró ninguna zona',
+			'Search By Product Category'  => 'Buscar por categoría de producto',
+			'Search By Product'           => 'Buscar por producto',
+			'Search By Category'          => 'Buscar por categoría',
+			'Search Products'             => 'Buscar productos',
+			'Start typing to search products...' => 'Escribe para buscar productos...',
 			'Please select a valid location.' => 'Selecciona una tienda válida.',
 			'Please select a Location Group to view stock details.' => 'Selecciona una zona para ver la disponibilidad.',
 			'Please select a variation to view stock details.' => 'Selecciona una variación para ver la disponibilidad.',
@@ -210,6 +226,20 @@ class TS_MLI_I18n {
 		return isset( $map[ $text ] ) ? $map[ $text ] : $translation;
 	}
 
+	public static function filter_stock_html( $html ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'Stock.' ) ) {
+			return $html;
+		}
+		$html = preg_replace_callback(
+			'/>\s*(\d+)\s+In Stock\.\s*</',
+			function ( $m ) {
+				return '>' . sprintf( _n( '%s disponible', '%s disponibles', (int) $m[1], 'total-sucursales' ), $m[1] ) . '<';
+			},
+			$html
+		);
+		return str_replace( '>Out of Stock.<', '>' . esc_html( self::spanish_for_option( 'wcmlim_soldout_button_text' ) ) . '<', $html );
+	}
+
 	/* ---------------------------------------------------------------------
 	 * 3. Clave de la tienda en las líneas del pedido
 	 * ------------------------------------------------------------------ */
@@ -265,6 +295,7 @@ class TS_MLI_I18n {
 			"The network is down or the positioning service can't be reached.You've decided not to share your position, but it's OK. We won't ask you again." => 'No se pudo contactar con el servicio de ubicación.',
 			'Location information is unavailable.' => 'Tu ubicación no está disponible.',
 			'Geolocation failed due to unknown error.' => 'No pudimos obtener tu ubicación.',
+			'Geolocation is not supported by this browser.' => 'Tu navegador no permite obtener la ubicación.',
 			'An unknown error occurred.' => 'No pudimos obtener tu ubicación.',
 			"Product doesn't have a stock!" => 'Este producto no tiene stock.',
 			'Please Enter Location!' => 'Ingresa tu ubicación.',
