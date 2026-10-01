@@ -39,6 +39,8 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 == Changelog ==
 
 = 0.9.2 =
+* Corregido: error fatal "Call to a member function get_price_html() on false" (wcmlim-display-location.php) al editar o abrir una página con una vista rápida de producto (por ejemplo el bloque Product Quick View de GreenShift). Multi Locations dibuja su selector de tiendas con el producto de la entrada actual, que ahí es la página; ahora se dibuja con el producto que se muestra (parte de "Corregir fallos conocidos de Multi Locations").
+* Traducido: Multi Locations escribía a mano "N In Stock." / "Out of Stock." en el stock de la ficha; ahora "N disponibles" / "Agotado".
 * Corregido: el "Añadir al carrito" de Multi Locations no avisaba cuando la tienda no tenía stock suficiente: el botón parecía no hacer nada y el aviso ("We don't have enough stock to fulfill your request") se acumulaba con cada clic y salía repetido en la siguiente página (por ejemplo al cambiar de tienda). Si la cantidad superaba el stock de la tienda, no avisaba nada. Ahora se lleva al cliente a la ficha con el aviso una sola vez, y se quitan los avisos repetidos (parte de "Corregir fallos conocidos de Multi Locations").
 * Traducidos más textos de Multi Locations: "No hay stock suficiente en esta tienda para la cantidad que pides." (editable en el bloque Multi Locations), el aviso de stock insuficiente al pagar, "Precio calculado (con impuestos)", "Región", los buscadores del mapa de tiendas y el aviso de navegador sin geolocalización.
 

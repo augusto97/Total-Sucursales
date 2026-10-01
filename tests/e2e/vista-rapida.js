@@ -54,6 +54,8 @@ const fatal = b => /Fatal error|Uncaught Error|critical error|error crítico/i.t
     log('página con vista rápida: carga sin error fatal', front.status === 200 && !fatal(front.body), 'HTTP ' + front.status);
     const qv = (front.body.match(/<div class="ts-test-qv">([\s\S]*?)<\/form>/) || [])[1] || '';
     log('el selector de tiendas sale con las del producto mostrado', /Tienda Delicias/.test(qv) && /Tienda Chacao/.test(qv), qv.replace(/\s+/g, ' ').slice(0, 160));
+    const stock = (front.body.match(/<p class="stock[^"]*">([^<]*)<\/p>/) || [])[1] || '';
+    log('el stock de Multi Locations sale en español ("N disponibles", no "N In Stock.")', /^\d+ disponibles?$/.test(stock.trim()), stock);
 
     const rest = await get(`${BASE}/?rest_route=/wp/v2/pages/${page}`);
     log('API REST de la página (lo que precarga el editor): sin error fatal', rest.status === 200 && !fatal(rest.body), 'HTTP ' + rest.status);

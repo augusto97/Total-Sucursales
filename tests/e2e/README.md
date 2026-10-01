@@ -209,6 +209,18 @@ IPinfo si tiene tiendas o el de la tienda por defecto; si no hay resultado, preg
 node ip-ubicacion.js
 ```
 
+## Vista rápida de producto dentro de una página
+
+`vista-rapida.js` añade (con un mu-plugin que borra al terminar) un shortcode que pinta el formulario
+de compra de un producto dentro de una página, como el bloque "Product Quick View" de GreenShift.
+Comprueba que ni la página ni la API REST que precarga el editor dan el error fatal de Multi
+Locations (`get_price_html() on false`), que el selector sale con las tiendas del producto mostrado
+y el stock en español, y que sin producto la página no se rompe.
+
+```bash
+node vista-rapida.js
+```
+
 ## Producto sin stock en las tiendas del cliente
 
 `disponibilidad.js`: un cliente de Zulia abre Producto D (sólo hay en Valencia) y debe verlo como no

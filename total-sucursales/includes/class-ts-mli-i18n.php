@@ -39,6 +39,10 @@ class TS_MLI_I18n {
 			add_filter( 'gettext_wcmlim', array( __CLASS__, 'filter_gettext' ), 20, 2 );
 		}
 
+		// Multi Locations escribe a mano "N In Stock." / "Out of Stock." en el stock de la ficha.
+		if ( ! is_admin() || wp_doing_ajax() ) {
+			add_filter( 'woocommerce_get_stock_html', array( __CLASS__, 'filter_stock_html' ), 15 );
+		}
 		add_filter( 'woocommerce_order_item_display_meta_key', array( __CLASS__, 'filter_order_meta_key' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ), 100 );
 	}
@@ -220,6 +224,20 @@ class TS_MLI_I18n {
 			$map = self::gettext_map();
 		}
 		return isset( $map[ $text ] ) ? $map[ $text ] : $translation;
+	}
+
+	public static function filter_stock_html( $html ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'Stock.' ) ) {
+			return $html;
+		}
+		$html = preg_replace_callback(
+			'/>\s*(\d+)\s+In Stock\.\s*</',
+			function ( $m ) {
+				return '>' . sprintf( _n( '%s disponible', '%s disponibles', (int) $m[1], 'total-sucursales' ), $m[1] ) . '<';
+			},
+			$html
+		);
+		return str_replace( '>Out of Stock.<', '>' . esc_html( self::spanish_for_option( 'wcmlim_soldout_button_text' ) ) . '<', $html );
 	}
 
 	/* ---------------------------------------------------------------------
