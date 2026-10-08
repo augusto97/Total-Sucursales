@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.9.5
+Stable tag: 0.9.6
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -37,6 +37,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_selector_estado label="Estado"]` – select de estados con sucursales + botón GPS.
 
 == Changelog ==
+
+= 0.9.6 =
+* Corregido: Multi Locations reemplazaba el botón "Añadir al carrito" de los listados sin cantidad (por ejemplo el carrusel swiper de GreenShift) por un botón de texto suyo, con lo que se perdía el icono y los estilos del bloque y su aria-label mal cerrado descuadraba la tarjeta. Ahora se conserva el botón original y sólo se le añade la tienda elegida; al pulsarlo se añade una vez, con esa tienda (parte de "Corregir fallos conocidos de Multi Locations").
 
 = 0.9.5 =
 * Corregido: con la vista de lista de Multi Locations (botones de radio) y "Restrict to One Location", al pulsar una tienda en la ficha no quedaba elegida: Multi Locations borraba la tienda guardada y dejaba la primera de la lista, y la cabecera mostraba "Seleccionar". Al pasar a otra tienda con productos en el carrito, ahora queda la nueva (parte de "Corregir fallos conocidos de Multi Locations").

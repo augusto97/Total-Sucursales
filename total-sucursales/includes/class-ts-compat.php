@@ -35,6 +35,10 @@ class TS_Compat {
 		}
 		add_action( 'template_redirect', array( __CLASS__, 'dedupe_notices' ), 1 );
 
+		// Botón de compra de los listados: Multi Locations lo rehace y pierde el del tema/bloque.
+		add_filter( 'woocommerce_loop_add_to_cart_link', array( __CLASS__, 'loop_button_keep' ), 9, 2 );
+		add_filter( 'woocommerce_loop_add_to_cart_link', array( __CLASS__, 'loop_button_merge' ), 11, 2 );
+
 		// Precio por tienda en el carrito sin formato (decimales de más, sin moneda).
 		add_filter( 'woocommerce_cart_item_price', array( __CLASS__, 'format_cart_item_price' ), 11, 3 );
 
@@ -68,6 +72,89 @@ class TS_Compat {
 		}
 		// Texto sin formato ("$156.39" sin su HTML): el precio de la línea con el formato normal.
 		return WC()->cart ? WC()->cart->get_product_price( $product ) : $price;
+	}
+
+	/** @var array<int,string> Botón de compra original de cada producto, antes de Multi Locations. */
+	private static $loop_buttons = array();
+
+	public static function loop_button_keep( $html, $product = null ) {
+		if ( $product instanceof WC_Product ) {
+			self::$loop_buttons[ $product->get_id() ] = (string) $html;
+		}
+		return $html;
+	}
+
+	/**
+	 * Multi Locations (wcmlim_replacing_add_to_cart_button) sustituye el botón "Añadir al carrito"
+	 * de los listados por uno suyo hecho desde cero: se pierde el del tema o del bloque (por ejemplo
+	 * el de GreenShift, con su icono SVG y sus clases), el botón pasa a ser un texto y la tarjeta se
+	 * descuadra. Además su aria-label lleva comillas sin escapar.
+	 *
+	 * Se vuelve al botón original y sólo se le añade lo que Multi Locations necesita para comprar con
+	 * la tienda elegida: sus atributos data-* y su clase (wcmlim_ajax_add_to_cart) o, en la variante
+	 * sin AJAX, su enlace con la tienda. Con su clase AJAX se quita ajax_add_to_cart, para que el
+	 * clic no lo añada también WooCommerce.
+	 */
+	public static function loop_button_merge( $html, $product = null ) {
+		if ( ! $product instanceof WC_Product || ! isset( self::$loop_buttons[ $product->get_id() ] ) ) {
+			return $html;
+		}
+		$orig = self::$loop_buttons[ $product->get_id() ];
+		unset( self::$loop_buttons[ $product->get_id() ] );
+		$html = (string) $html;
+		if ( $html === $orig || false === strpos( $html, 'wcmlim_' ) ) {
+			return $html; // Multi Locations no lo tocó (o devolvió otra cosa, como "Ver producto").
+		}
+		if ( ! preg_match( '/<a\b[^>]*>/i', $orig, $om ) || ! preg_match( '/<a\b[^>]*>/i', $html, $mm ) ) {
+			return $html;
+		}
+		$oattrs = self::tag_attrs( $om[0] );
+		$mattrs = self::tag_attrs( $mm[0] );
+
+		$mcls    = preg_split( '/\s+/', isset( $mattrs['class'] ) ? $mattrs['class'] : '', -1, PREG_SPLIT_NO_EMPTY );
+		$ocls    = preg_split( '/\s+/', isset( $oattrs['class'] ) ? $oattrs['class'] : '', -1, PREG_SPLIT_NO_EMPTY );
+		$is_ajax = in_array( 'wcmlim_ajax_add_to_cart', $mcls, true );
+		if ( $is_ajax ) {
+			$ocls = array_diff( $ocls, array( 'ajax_add_to_cart' ) );
+		}
+		foreach ( $mcls as $c ) {
+			if ( 0 === strpos( $c, 'wcmlim_' ) ) {
+				$ocls[] = $c;
+			}
+		}
+		$oattrs['class'] = implode( ' ', array_unique( $ocls ) );
+		foreach ( $mattrs as $name => $value ) {
+			if ( 0 === strpos( $name, 'data-' ) ) {
+				$oattrs[ $name ] = $value;
+			}
+		}
+		if ( ! $is_ajax && ! empty( $mattrs['href'] ) ) {
+			$oattrs['href'] = $mattrs['href']; // Variante sin AJAX: la tienda va en el enlace.
+		}
+		$tag = '<a';
+		foreach ( $oattrs as $name => $value ) {
+			$tag .= ' ' . $name . '="' . esc_attr( wp_specialchars_decode( (string) $value, ENT_QUOTES ) ) . '"';
+		}
+		$tag .= '>';
+		return preg_replace_callback( '/<a\b[^>]*>/i', function () use ( $tag ) { return $tag; }, $orig, 1 );
+	}
+
+	/**
+	 * Atributos nombre="valor" de una etiqueta HTML (los mal formados se ignoran).
+	 *
+	 * @return array<string,string>
+	 */
+	private static function tag_attrs( $tag ) {
+		$out = array();
+		if ( preg_match_all( '/([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*(?:"([^"]*)"|\'([^\']*)\')/', $tag, $m, PREG_SET_ORDER ) ) {
+			foreach ( $m as $a ) {
+				$name = strtolower( $a[1] );
+				if ( ! isset( $out[ $name ] ) ) {
+					$out[ $name ] = isset( $a[3] ) && '' !== $a[3] ? $a[3] : $a[2];
+				}
+			}
+		}
+		return $out;
 	}
 
 	/** @var array|null Estado guardado por display_location_start(). */
@@ -393,6 +480,7 @@ class TS_Compat {
 				? __( 'Activo: se suple la función que falta en Multi Locations, así que su "closest location" deja de dar error 500.', 'total-sucursales' )
 				: __( 'No aplicado.', 'total-sucursales' ),
 			'wcmlim_get_quantity_attributes' => __( 'Activo: se responde a las peticiones de stock con un producto inexistente antes de que Multi Locations falle, y con el formato que espera su JavaScript.', 'total-sucursales' ),
+			'wcmlim_replacing_add_to_cart_button' => __( 'Activo: en los listados se conserva el botón "Añadir al carrito" del tema o del bloque (con su icono y sus estilos) y sólo se le añade la tienda elegida; Multi Locations lo cambiaba por un botón de texto.', 'total-sucursales' ),
 			'wcmlim_cart_item_price' => __( 'Activo: con el precio por tienda, el precio de cada línea del carrito sale con el formato de WooCommerce (sus decimales y moneda) en lugar del número tal cual.', 'total-sucursales' ),
 			'wcmlim_display_location' => __( 'Activo: el selector de tiendas de la ficha también funciona en vistas rápidas de producto dentro de otras páginas (antes daba error fatal, también en el editor).', 'total-sucursales' ),
 			'wcmlim_ajax_add_to_cart' => __( 'Activo: si "Añadir al carrito" no puede añadir el producto por falta de stock en la tienda, se lleva al cliente a la ficha con el aviso, una sola vez (Multi Locations no lo mostraba y lo iba acumulando).', 'total-sucursales' ),
