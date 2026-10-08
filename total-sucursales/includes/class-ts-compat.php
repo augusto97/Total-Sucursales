@@ -35,6 +35,10 @@ class TS_Compat {
 		}
 		add_action( 'template_redirect', array( __CLASS__, 'dedupe_notices' ), 1 );
 
+		// Shortcodes de Multi Locations que imprimen en lugar de devolver (salen antes del <!DOCTYPE>).
+		add_action( 'init', array( __CLASS__, 'wrap_mli_shortcodes' ), 999 );
+		add_action( 'wp', array( __CLASS__, 'wrap_mli_shortcodes' ), 0 );
+
 		// Botón de compra de los listados: Multi Locations lo rehace y pierde el del tema/bloque.
 		add_filter( 'woocommerce_loop_add_to_cart_link', array( __CLASS__, 'loop_button_keep' ), 9, 2 );
 		add_filter( 'woocommerce_loop_add_to_cart_link', array( __CLASS__, 'loop_button_merge' ), 11, 2 );
@@ -72,6 +76,38 @@ class TS_Compat {
 		}
 		// Texto sin formato ("$156.39" sin su HTML): el precio de la línea con el formato normal.
 		return WC()->cart ? WC()->cart->get_product_price( $product ) : $price;
+	}
+
+	/** @var array<string,callable> Shortcodes de Multi Locations ya envueltos (callback original). */
+	private static $wrapped = array();
+
+	/**
+	 * Los shortcodes de Multi Locations ([wcmlim_locations_switch], el selector de tiendas de la
+	 * cabecera, y los demás [wcmlim_*]) imprimen su HTML con echo en lugar de devolverlo. Con un tema
+	 * de bloques la cabecera se genera antes de escribir el <head>, así que ese HTML sale al principio
+	 * de la página, antes del <!DOCTYPE html>: el selector aparece primero, sin estilos y sobre
+	 * blanco, y el navegador pasa a "modo de compatibilidad" (quirks), que puede descuadrar el resto.
+	 *
+	 * Se envuelven para recoger lo que imprimen y devolverlo, que es lo que espera WordPress: el
+	 * selector sale donde está colocado.
+	 */
+	public static function wrap_mli_shortcodes() {
+		global $shortcode_tags;
+		if ( empty( $shortcode_tags ) || ! is_array( $shortcode_tags ) ) {
+			return;
+		}
+		foreach ( $shortcode_tags as $tag => $cb ) {
+			if ( 0 !== stripos( $tag, 'wcmlim' ) || isset( self::$wrapped[ $tag ] ) || ! is_callable( $cb ) ) {
+				continue;
+			}
+			self::$wrapped[ $tag ] = $cb;
+			$shortcode_tags[ $tag ] = function ( $atts = array(), $content = null, $shortcode = '' ) use ( $cb, $tag ) {
+				ob_start();
+				$ret = call_user_func( $cb, $atts, $content, '' !== $shortcode ? $shortcode : $tag );
+				$echoed = (string) ob_get_clean();
+				return $echoed . ( is_scalar( $ret ) ? (string) $ret : '' );
+			};
+		}
 	}
 
 	/** @var array<int,string> Botón de compra original de cada producto, antes de Multi Locations. */
@@ -480,6 +516,7 @@ class TS_Compat {
 				? __( 'Activo: se suple la función que falta en Multi Locations, así que su "closest location" deja de dar error 500.', 'total-sucursales' )
 				: __( 'No aplicado.', 'total-sucursales' ),
 			'wcmlim_get_quantity_attributes' => __( 'Activo: se responde a las peticiones de stock con un producto inexistente antes de que Multi Locations falle, y con el formato que espera su JavaScript.', 'total-sucursales' ),
+			'shortcodes_wcmlim' => __( 'Activo: los shortcodes de Multi Locations (como el selector de tiendas de la cabecera) salen donde están colocados; con un tema de bloques se imprimían antes del <!DOCTYPE>, arriba de la página y sin estilos.', 'total-sucursales' ),
 			'wcmlim_replacing_add_to_cart_button' => __( 'Activo: en los listados se conserva el botón "Añadir al carrito" del tema o del bloque (con su icono y sus estilos) y sólo se le añade la tienda elegida; Multi Locations lo cambiaba por un botón de texto.', 'total-sucursales' ),
 			'wcmlim_cart_item_price' => __( 'Activo: con el precio por tienda, el precio de cada línea del carrito sale con el formato de WooCommerce (sus decimales y moneda) en lugar del número tal cual.', 'total-sucursales' ),
 			'wcmlim_display_location' => __( 'Activo: el selector de tiendas de la ficha también funciona en vistas rápidas de producto dentro de otras páginas (antes daba error fatal, también en el editor).', 'total-sucursales' ),

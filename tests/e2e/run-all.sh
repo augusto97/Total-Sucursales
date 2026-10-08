@@ -41,6 +41,7 @@ for t in e2e retiro-municipio ficha-municipio envio-oculto tiendas-ciudad ip-ubi
 done
 mode blocks
 run e2e-blocks
+run shortcode-cabecera
 mode classic
 
 echo

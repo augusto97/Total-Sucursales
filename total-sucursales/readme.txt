@@ -39,6 +39,7 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 == Changelog ==
 
 = 0.9.6 =
+* Corregido: con un tema de bloques, el selector de tiendas de Multi Locations ([wcmlim_locations_switch] en la cabecera) salía antes del <!DOCTYPE html>, arriba de la página, sin estilos y antes que el sitio, y el navegador pasaba a modo de compatibilidad. Sus shortcodes imprimían el HTML en lugar de devolverlo; ahora lo devuelven y el selector sale en su sitio (parte de "Corregir fallos conocidos de Multi Locations").
 * Corregido: Multi Locations reemplazaba el botón "Añadir al carrito" de los listados sin cantidad (por ejemplo el carrusel swiper de GreenShift) por un botón de texto suyo, con lo que se perdía el icono y los estilos del bloque y su aria-label mal cerrado descuadraba la tarjeta. Ahora se conserva el botón original y sólo se le añade la tienda elegida; al pulsarlo se añade una vez, con esa tienda (parte de "Corregir fallos conocidos de Multi Locations").
 
 = 0.9.5 =

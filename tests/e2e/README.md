@@ -246,6 +246,16 @@ tienda de la cabecera.
 node boton-listado.js
 ```
 
+## Selector de tiendas con un tema de bloques
+
+`shortcode-cabecera.js` activa twentytwentyfive, crea una página con `[wcmlim_locations_switch]` en un
+bloque Shortcode y comprueba que la página empieza por `<!DOCTYPE html>` y que el selector está dentro
+del `<body>`, una sola vez (Multi Locations lo imprimía antes del doctype). Deja el tema como estaba.
+
+```bash
+node shortcode-cabecera.js
+```
+
 ## Precio por tienda con los decimales de WooCommerce
 
 `precio-decimales.js` activa el precio por tienda de Multi Locations, da a Producto C un precio de
