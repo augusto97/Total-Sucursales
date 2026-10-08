@@ -24,17 +24,28 @@ const log = (name, ok, detail) => { results.push(ok); console.log((ok ? 'PASS ' 
   const theme = wp('theme list --status=active --field=name');
   wp('theme activate twentytwentyfive');
   const page = wp(`post create --post_type=page --post_status=publish --post_title="Selector" --post_content='<!-- wp:shortcode -->[wcmlim_locations_switch]<!-- /wp:shortcode -->' --porcelain`);
+  // Como en una cabecera: el bloque Shortcode dentro de una parte de plantilla.
+  const part = wp(`post create --post_type=wp_template_part --post_status=publish --post_name=ts-test-sc --post_title="TS test" --post_content='<!-- wp:shortcode -->[wcmlim_locations_switch]<!-- /wp:shortcode -->' --porcelain`);
+  wp(`post term set ${part} wp_theme twentytwentyfive`);
+  const page2 = wp(`post create --post_type=page --post_status=publish --post_title="Selector en parte" --post_content='<!-- wp:template-part {"slug":"ts-test-sc","theme":"twentytwentyfive"} /-->' --porcelain`);
   try {
-    const r = await fetch(`${BASE}/?page_id=${page}`, { headers: { Cookie: 'ts_estado=__ALL__' } });
-    const html = await r.text();
-    const start = html.replace(/^\s+/, '').slice(0, 15);
-    log('la página empieza por <!DOCTYPE html> (nada de Multi Locations antes)', /^<!DOCTYPE html>/i.test(start), JSON.stringify(start));
-    const body = html.indexOf('<body');
-    const sw = html.indexOf('id="lc-switch-form"');
-    const n = (html.match(/id="lc-switch-form"/g) || []).length;
-    log('el selector de tiendas está dentro del <body>, una vez', body > 0 && sw > body && n === 1, JSON.stringify({ body, selector: sw, veces: n }));
+    for (const [label, id] of [['bloque Shortcode en la página', page], ['bloque Shortcode en una parte de plantilla (cabecera)', page2]]) {
+      const r = await fetch(`${BASE}/?page_id=${id}`, { headers: { Cookie: 'ts_estado=__ALL__' } });
+      const html = await r.text();
+      const start = html.replace(/^\s+/, '').slice(0, 15);
+      log(`${label}: la página empieza por <!DOCTYPE html>`, /^<!DOCTYPE html>/i.test(start), JSON.stringify(start));
+      const body = html.indexOf('<body');
+      const sw = html.indexOf('id="lc-switch-form"');
+      const n = (html.match(/id="lc-switch-form"/g) || []).length;
+      log(`${label}: el selector está dentro del <body>, una vez`, body > 0 && sw > body && n === 1, JSON.stringify({ body, selector: sw, veces: n }));
+      const from = html.lastIndexOf('<div class="main-cont">', sw);
+      const to = html.indexOf('</form>', sw);
+      const box = from > 0 && to > 0 ? html.slice(from, to) : '';
+      const before = html.slice(Math.max(0, from - 40), from);
+      log(`${label}: sin <p> ni <br> añadidos dentro o alrededor del selector`, box !== '' && !/<p[\s>]|<\/p>|<br\s*\/?>/.test(box) && !/<p[^>]*>\s*$/.test(before), JSON.stringify({ p: (box.match(/<p[\s>]/g) || []).length, antes: before.replace(/\s+/g, ' ').slice(-25) }));
+    }
   } finally {
-    wp(`post delete ${page} --force`);
+    wp(`post delete ${page} ${page2} ${part} --force`);
     wp(`theme activate ${theme || 'twentytwentyone'}`);
   }
   const ok = results.filter(Boolean).length;

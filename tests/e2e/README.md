@@ -248,9 +248,10 @@ node boton-listado.js
 
 ## Selector de tiendas con un tema de bloques
 
-`shortcode-cabecera.js` activa twentytwentyfive, crea una página con `[wcmlim_locations_switch]` en un
-bloque Shortcode y comprueba que la página empieza por `<!DOCTYPE html>` y que el selector está dentro
-del `<body>`, una sola vez (Multi Locations lo imprimía antes del doctype). Deja el tema como estaba.
+`shortcode-cabecera.js` activa twentytwentyfive y pone `[wcmlim_locations_switch]` en un bloque Shortcode,
+en una página y en una parte de plantilla (como una cabecera). Comprueba que la página empieza por
+`<!DOCTYPE html>` (Multi Locations lo imprimía antes del doctype), que el selector está dentro del
+`<body>` una sola vez y que no tiene `<p>` ni `<br>` añadidos por wpautop. Deja el tema como estaba.
 
 ```bash
 node shortcode-cabecera.js

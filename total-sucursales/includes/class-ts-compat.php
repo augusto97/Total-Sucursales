@@ -38,6 +38,7 @@ class TS_Compat {
 		// Shortcodes de Multi Locations que imprimen en lugar de devolver (salen antes del <!DOCTYPE>).
 		add_action( 'init', array( __CLASS__, 'wrap_mli_shortcodes' ), 999 );
 		add_action( 'wp', array( __CLASS__, 'wrap_mli_shortcodes' ), 0 );
+		add_filter( 'render_block_core/shortcode', array( __CLASS__, 'shortcode_block_no_autop' ), 20, 2 );
 
 		// Botón de compra de los listados: Multi Locations lo rehace y pierde el del tema/bloque.
 		add_filter( 'woocommerce_loop_add_to_cart_link', array( __CLASS__, 'loop_button_keep' ), 9, 2 );
@@ -105,9 +106,28 @@ class TS_Compat {
 				ob_start();
 				$ret = call_user_func( $cb, $atts, $content, '' !== $shortcode ? $shortcode : $tag );
 				$echoed = (string) ob_get_clean();
-				return $echoed . ( is_scalar( $ret ) ? (string) $ret : '' );
+				return self::MLI_MARK . $echoed . ( is_scalar( $ret ) ? (string) $ret : '' );
 			};
 		}
+	}
+
+	/** Marca (comentario HTML) delante de lo que devuelve un shortcode de Multi Locations. */
+	const MLI_MARK = '<!-- ts:wcmlim -->';
+
+	/**
+	 * El bloque "Shortcode" pasa su contenido por wpautop(). Dentro de una parte de plantilla (la
+	 * cabecera de un tema de bloques) los shortcodes ya están expandidos cuando eso ocurre, así que
+	 * wpautop() llena de <p> y espacios el HTML del selector de Multi Locations, que viene con muchos
+	 * saltos de línea. En una página, en cambio, envuelve el shortcode en un <p> que acaba conteniendo
+	 * un <div>. Si el bloque sólo contiene shortcodes de Multi Locations, se devuelve su contenido tal
+	 * cual, sin wpautop().
+	 */
+	public static function shortcode_block_no_autop( $content, $block = array() ) {
+		$inner = isset( $block['innerHTML'] ) ? (string) $block['innerHTML'] : '';
+		if ( false !== strpos( $inner, self::MLI_MARK ) || preg_match( '/^\s*(\[wcmlim[^\]]*\]\s*)+$/i', $inner ) ) {
+			return trim( $inner );
+		}
+		return $content;
 	}
 
 	/** @var array<int,string> Botón de compra original de cada producto, antes de Multi Locations. */
