@@ -36,11 +36,12 @@ echo -n "regla-retiro: "; $W eval-file regla-retiro.php 2>/dev/null | tee logs/r
 grep -q '^FAIL' logs/regla-retiro.log && total_fail=$((total_fail + 1))
 
 mode classic
-for t in e2e retiro-municipio ficha-municipio envio-oculto tiendas-ciudad ip-ubicacion disponibilidad envio-sin-was textos-tienda vista-rapida vista-lista precio-decimales sucursal-por-defecto repro-backorder repro-switcher-loop; do
+for t in e2e retiro-municipio ficha-municipio envio-oculto tiendas-ciudad ip-ubicacion disponibilidad envio-sin-was textos-tienda vista-rapida vista-lista boton-listado precio-decimales sucursal-por-defecto repro-backorder repro-switcher-loop; do
 	run "$t"
 done
 mode blocks
 run e2e-blocks
+run shortcode-cabecera
 mode classic
 
 echo

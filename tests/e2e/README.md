@@ -234,6 +234,28 @@ cargar la página (la cabecera muestra la tienda, no "Seleccionar").
 node vista-lista.js
 ```
 
+## Botón de compra de los listados
+
+`boton-listado.js` pinta (con un mu-plugin que borra al terminar) un botón de listado como el de
+GreenShift, con icono SVG, pasado por `woocommerce_loop_add_to_cart_link`. Comprueba que conserva el
+icono y sus clases, que lleva la clase y la tienda de Multi Locations (sin `ajax_add_to_cart`, para
+no añadirlo dos veces) con un aria-label bien formado, y que al pulsarlo se añade una unidad con la
+tienda de la cabecera.
+
+```bash
+node boton-listado.js
+```
+
+## Selector de tiendas con un tema de bloques
+
+`shortcode-cabecera.js` activa twentytwentyfive, crea una página con `[wcmlim_locations_switch]` en un
+bloque Shortcode y comprueba que la página empieza por `<!DOCTYPE html>` y que el selector está dentro
+del `<body>`, una sola vez (Multi Locations lo imprimía antes del doctype). Deja el tema como estaba.
+
+```bash
+node shortcode-cabecera.js
+```
+
 ## Precio por tienda con los decimales de WooCommerce
 
 `precio-decimales.js` activa el precio por tienda de Multi Locations, da a Producto C un precio de
