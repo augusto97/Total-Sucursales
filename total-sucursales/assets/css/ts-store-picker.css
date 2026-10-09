@@ -14,7 +14,8 @@
 }
 
 /* Botón de la cabecera */
-.ts-sp { position: relative; display: inline-block; }
+/* Puede encogerse dentro de la fila de la cabecera: el nombre se corta con "…" en vez de desbordar. */
+.ts-sp { position: relative; display: inline-flex; max-width: 100%; min-width: 0; vertical-align: middle; }
 .ts-sp__trigger {
 	display: inline-flex; align-items: center; gap: 8px;
 	margin: 0; padding: 6px 10px; border: 0; border-radius: 10px;
@@ -24,9 +25,9 @@
 .ts-sp__trigger:hover, .ts-sp__trigger:focus-visible { background: rgba(0, 0, 0, .05); }
 .ts-sp__trigger:focus-visible { outline: 2px solid var(--ts-sp-accent); outline-offset: 2px; }
 .ts-sp__pin { flex: 0 0 auto; color: var(--ts-sp-accent); }
-.ts-sp__text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.ts-sp__label { font-size: 12px; opacity: .7; }
-.ts-sp__name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.ts-sp__text { display: flex; flex-direction: column; flex: 0 1 auto; min-width: 0; overflow: hidden; line-height: 1.2; }
+.ts-sp__label { font-size: 12px; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ts-sp__name { display: block; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .ts-sp__chevron { flex: 0 0 auto; opacity: .6; }
 
 /* Aviso "Tienda guardada" bajo el botón */
@@ -136,7 +137,10 @@ html.ts-sp-open { overflow: hidden; }
 	.ts-sp-modal__box { max-width: none; max-height: 92vh; padding: 22px 18px 24px; border-radius: 14px 14px 0 0; }
 	.ts-sp-modal__title { font-size: 19px; }
 	.ts-sp-modal__save { flex: 1 1 100%; min-width: 0; }
-	.ts-sp__name { max-width: 120px; }
+	.ts-sp__name { max-width: min(32vw, 150px); font-size: 13px; }
+	.ts-sp__label { font-size: 11px; }
+	.ts-sp__pin { width: 18px; height: 18px; }
+	.ts-sp__chevron { display: none; }
 	.ts-sp__toast { left: auto; right: 0; }
 	.ts-sp__toast::before { left: auto; right: 28px; }
 }
@@ -151,6 +155,7 @@ html.ts-sp-open { overflow: hidden; }
 	text-decoration: none !important; text-shadow: none !important; min-width: 0; width: auto;
 }
 .ts-sp .ts-sp__trigger {
+	max-width: 100%; min-width: 0;
 	background: transparent !important; color: inherit !important; border: 0 !important;
 	padding: 6px 10px !important; font-size: inherit !important; font-weight: inherit !important; line-height: 1.2 !important;
 	border-radius: 10px !important;
@@ -187,6 +192,7 @@ html.ts-sp-open { overflow: hidden; }
 .ts-sp-modal select.ts-sp-field__control { border: 1px solid var(--ts-sp-border) !important; border-radius: 6px !important; height: 50px !important; font-size: 16px !important; }
 .ts-sp-modal .ts-sp-modal__title { font-size: 21px !important; font-weight: 400 !important; letter-spacing: normal !important; }
 @media (max-width: 560px) {
+	.ts-sp .ts-sp__trigger { padding: 4px 6px !important; gap: 6px; }
 	.ts-sp-modal .ts-sp-modal__title { font-size: 19px !important; }
 	.ts-sp-modal .ts-sp-modal__save { min-width: 0; }
 }

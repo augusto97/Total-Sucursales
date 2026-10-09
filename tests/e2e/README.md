@@ -263,7 +263,9 @@ node shortcode-cabecera.js
 actual), la ventana (estados con tiendas, las del estado actual con ciudad y dirección, la actual
 marcada, Escape cierra), cambiar a una tienda de otro estado (queda elegida con su estado y sale
 "Tienda guardada"), el aviso de carrito de otra tienda (un producto que hay en la nueva pasa a ella;
-uno que no, se lista y se quita) y que con el ajuste `[wcmlim_locations_switch]` muestra el botón.
+uno que no, se lista y se quita), que en el móvil (390 px, fila con buscador) el botón no se sale de la
+pantalla y la ventana sale desde abajo a todo el ancho, y que con el ajuste `[wcmlim_locations_switch]`
+muestra el botón.
 Deja capturas en `logs/selector-*.png`.
 
 ```bash

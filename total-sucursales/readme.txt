@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.9.8
+Stable tag: 0.9.9
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -38,6 +38,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_tienda]` – botón "Tu tienda: …" con ventana para elegir la tienda.
 
 == Changelog ==
+
+= 0.9.9 =
+* Corregido: en el móvil, el botón "Tu tienda" de la cabecera se salía de la pantalla con nombres de tienda largos (por ejemplo "PARQUE VALENCIA"). Ahora se encoge dentro de la fila de la cabecera y el nombre se corta con "…" si no cabe.
 
 = 0.9.8 =
 * Añadido: selector de tienda de la cabecera con ventana, shortcode [ts_tienda]. Un botón "Tu tienda: …" abre una ventana con el estado, las tiendas (con ciudad y dirección), "Usar mi ubicación" y "Guardar"; al guardar sale el aviso "Tienda guardada". Si el carrito es de otra tienda lo avisa en la ventana, lista lo que no hay en la nueva y, al confirmar, pasa el carrito a esa tienda. Con "Selector de tienda de la cabecera con el diseño de Total Sucursales" activado, el [wcmlim_locations_switch] de la cabecera muestra este botón sin tocar la plantilla. Textos editables en el bloque "Selector de tienda de la cabecera".
