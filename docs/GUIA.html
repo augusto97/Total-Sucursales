@@ -120,7 +120,7 @@
       <span class="eyebrow">Guía de implementación</span>
       <h1>Total Sucursales para WooCommerce</h1>
       <p class="lede">Sucursales filtradas por el estado del cliente, catálogo por sede y retiro en tienda según el municipio del cliente o su distancia a la tienda; en las demás, envío nacional. Todo sobre Multi Locations y States and Municipalities of Venezuela, con Advanced Shipping como opción.</p>
-      <div class="meta"><span>plugin 0.9.7</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
+      <div class="meta"><span>plugin 0.9.8</span><span>WooCommerce 7.0 – 10.1</span><span>tema clásico o de bloques</span><span>checkout clásico o por bloques</span></div>
     </header>
 
     <section class="step" id="que-hace">
@@ -237,6 +237,7 @@
         <tr><td>Producto: ciudad y dirección bajo cada tienda</td><td>activado</td><td>En la lista de stock por tienda de la ficha de producto añade, debajo del nombre, la ciudad y la dirección de la tienda (campos Locality/City y Street Number + Route de su ficha en Multi Locations). Funciona con todas las vistas de esa lista. No lo combines con los campos de dirección de <span class="path">MULTILOCA → Display settings → Location Fields Display Settings</span>: la dirección saldría dos veces.</td></tr>
         <tr><td>Multi Locations en español</td><td>activado</td><td>Traduce al español, y hablando de &laquo;tienda&raquo; en lugar de &laquo;location&raquo;, lo que Multi Locations enseña al cliente: lista de stock, diálogos, carrito, pedido y correos. Ver <a href="#textos">Textos y español</a>.</td></tr>
         <tr><td>Producto: mostrar sólo la sucursal seleccionada</td><td>desactivado</td><td>En la página de producto oculta las demás sedes cuando ya hay una elegida.</td></tr>
+        <tr><td>Selector de tienda de la cabecera con el diseño de Total Sucursales</td><td>desactivado</td><td>El <code>[wcmlim_locations_switch]</code> de la cabecera pasa a ser un botón &laquo;Tu tienda: …&raquo; con una ventana para elegir la tienda. Ver <a href="#selector-tienda">Selector de tienda con ventana</a>.</td></tr>
         <tr><td>Selector de tiendas sólo en la ficha del producto</td><td>activado</td><td>La &laquo;Disponibilidad por tienda&raquo; de Multi Locations sale en cualquier sitio que pinte el formulario de compra: listados con cantidad y botón de compra, vistas rápidas, productos relacionados. Con esto sólo sale en la ficha del producto; al añadir al carrito desde un listado se usa la tienda elegida en la cabecera, y la cantidad de esa tarjeta.</td></tr>
         <tr><td>Criterio para ofrecer retiro</td><td>Municipio o radio</td><td><em>Por municipio</em>: el municipio que el cliente elige en el checkout está entre los que acepta la tienda. No necesita GPS. <em>Por radio</em>: el cliente está a menos del radio; hace falta conocer su posición. Con <em>municipio o radio</em> basta cualquiera de los dos. Ver <a href="#municipios">Retiro por municipio</a>.</td></tr>
         <tr><td>Tiendas con retiro por pedido</td><td>Una sola tienda</td><td>Sólo importa si un pedido tiene productos de varias tiendas (modo split) y más de una cumple. <em>Una sola</em>: la más cercana si se conoce la posición; si no, la elegida en el selector de tiendas; si no, la primera. <em>Todas</em>: cada tienda que cumpla ofrece retiro.</td></tr>
@@ -384,6 +385,17 @@
 [wcmlim_locations_switch]              ← switcher de sedes de Multi Locations</code></pre>
       <p>En Greenshift y otros temas de bloques va dentro de un bloque "Shortcode" en la plantilla del header. El selector sólo lista estados que tienen al menos una sede, más "Todos los estados".</p>
       <figure><img src="guia/14-front-header.png" alt="Header con el switcher de sedes de Multi Locations y el selector de estado" loading="lazy"><figcaption>Arriba, el switcher de Multi Locations mostrando sólo "Tienda Delicias" (el cliente está en Zulia). Abajo, el selector de estado del plugin con el botón GPS.</figcaption></figure>
+      <h3 id="selector-tienda">Selector de tienda con ventana ([ts_tienda])</h3>
+      <p>En lugar del desplegable de Multi Locations, la cabecera puede llevar un botón <strong>&laquo;Tu tienda: SANTA RITA&raquo;</strong> que abre una ventana para elegir la tienda. Hay dos formas de ponerlo:</p>
+      <ul>
+        <li>Activar <span class="path">WooCommerce → Ajustes → Total Sucursales → Selector de tienda de la cabecera con el diseño de Total Sucursales</span>: el <code>[wcmlim_locations_switch]</code> que ya tienes en la cabecera pasa a mostrar el botón, sin tocar la plantilla.</li>
+        <li>O poner el shortcode <code>[ts_tienda]</code> donde quieras (por ejemplo en un bloque "Shortcode" de la cabecera).</li>
+      </ul>
+      <p>La ventana muestra el estado (si hay tiendas en varios) y las tiendas con su ciudad y dirección, más &laquo;Usar mi ubicación&raquo;. En el modo por ciudad lista las tiendas que ve el cliente (las de su ciudad o la de por defecto). Al guardar se recarga la página y sale el aviso &laquo;Tienda guardada&raquo;. Si el carrito tiene productos de otra tienda (con &laquo;Restrict to One Location&raquo; de Multi Locations), lo avisa en la propia ventana, indica lo que no hay en la tienda nueva y, al confirmar, pasa el carrito a esa tienda y quita lo que no hay.</p>
+      <p>Todos sus textos se editan en el bloque <strong>Selector de tienda de la cabecera</strong> de los ajustes. El color principal es el turquesa de Total; para cambiarlo, añade en <span class="path">Apariencia → Personalizar → CSS adicional</span>: <code>.ts-sp, .ts-sp-modal { --ts-sp-accent: #0e5a5f; }</code>.</p>
+      <figure><img src="guia/24-selector-tienda.png" alt="Ventana para elegir la tienda: estado, tiendas con ciudad y dirección, Usar mi ubicación y Guardar" loading="lazy"><figcaption>La ventana: estado, tiendas de ese estado con ciudad y dirección, &laquo;Usar mi ubicación&raquo; y &laquo;Guardar&raquo;. A la izquierda, el botón de la cabecera.</figcaption></figure>
+      <figure><img src="guia/25-selector-tienda-guardada.png" alt="Botón Tu tienda: Tienda Chacao con el aviso Tienda guardada" loading="lazy"><figcaption>Después de guardar: el botón con la tienda nueva y el aviso &laquo;Tienda guardada. Puedes cambiarla cuando quieras.&raquo;</figcaption></figure>
+      <figure><img src="guia/26-selector-tienda-carrito.png" alt="Aviso en la ventana de que el carrito tiene productos de otra tienda" loading="lazy"><figcaption>Si el carrito es de otra tienda, la ventana lo avisa y lista lo que no hay en la nueva antes de cambiar.</figcaption></figure>
     </section>
 
     <section class="step" id="cliente">

@@ -257,6 +257,19 @@ en una página y en una parte de plantilla (como una cabecera). Comprueba que la
 node shortcode-cabecera.js
 ```
 
+## Selector de tienda con ventana
+
+`selector-tienda.js` pone `[ts_tienda]` en una página y comprueba el botón ("Tu tienda" y la tienda
+actual), la ventana (estados con tiendas, las del estado actual con ciudad y dirección, la actual
+marcada, Escape cierra), cambiar a una tienda de otro estado (queda elegida con su estado y sale
+"Tienda guardada"), el aviso de carrito de otra tienda (un producto que hay en la nueva pasa a ella;
+uno que no, se lista y se quita) y que con el ajuste `[wcmlim_locations_switch]` muestra el botón.
+Deja capturas en `logs/selector-*.png`.
+
+```bash
+node selector-tienda.js
+```
+
 ## Precio por tienda con los decimales de WooCommerce
 
 `precio-decimales.js` activa el precio por tienda de Multi Locations, da a Producto C un precio de
