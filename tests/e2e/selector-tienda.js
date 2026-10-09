@@ -111,6 +111,30 @@ const stub = () => { const n = function () {}; window.google = { maps: { LatLng:
       await ctx2.close();
     }
 
+    // ---- 4b. Móvil: una fila con buscador y selector no se sale de la pantalla ----
+    {
+      const row = wp(`post create --post_type=page --post_status=publish --post_title="Movil" --post_content='<div class="ts-test-row" style="display:flex;align-items:center;gap:8px"><input type="search" placeholder="¿Que estás buscando?" style="flex:1 1 auto;min-width:0;height:44px">[ts_tienda]</div>' --porcelain`);
+      const ctxm = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+      await ctxm.addInitScript(stub);
+      await ctxm.addCookies([{ name: 'ts_estado', value: '__ALL__', url: BASE }, { name: 'wcmlim_selected_location_termid', value: String(LOC['Tienda San Francisco']), url: BASE }]);
+      const m = await ctxm.newPage();
+      await m.goto(`${BASE}/?page_id=${row}`, { waitUntil: 'networkidle' });
+      const geo = await m.evaluate(() => {
+        const sp = document.querySelector('.ts-test-row .ts-sp').getBoundingClientRect();
+        const name = document.querySelector('.ts-test-row .ts-sp__name');
+        return { right: Math.round(sp.right), vw: window.innerWidth, scroll: document.documentElement.scrollWidth, cut: name.scrollWidth > name.clientWidth, text: name.textContent };
+      });
+      log('móvil: el selector cabe en la pantalla (el nombre se corta con "…" si hace falta)', geo.right <= geo.vw && geo.scroll <= geo.vw, JSON.stringify(geo));
+      await (await m.$('.ts-test-row')).screenshot({ path: __dirname + '/logs/selector-movil.png' });
+      await m.click('.ts-test-row .ts-sp__trigger');
+      await m.waitForSelector('#ts-sp-modal:not([hidden])'); await m.waitForTimeout(400);
+      const box = await m.$eval('.ts-sp-modal__box', e => { const r = e.getBoundingClientRect(); return { left: Math.round(r.left), right: Math.round(r.right), bottom: Math.round(r.bottom), vw: window.innerWidth, vh: window.innerHeight }; });
+      log('móvil: la ventana ocupa el ancho de la pantalla, desde abajo', box.left === 0 && box.right === box.vw && box.bottom === box.vh, JSON.stringify(box));
+      await m.screenshot({ path: __dirname + '/logs/selector-movil-ventana.png' });
+      await ctxm.close();
+      wp(`post delete ${row} --force`);
+    }
+
     // ---- 5. [wcmlim_locations_switch] con el ajuste ----
     setting('store_picker', 'yes');
     const html = await (await fetch(`${BASE}/?page_id=${page2}`)).text();
