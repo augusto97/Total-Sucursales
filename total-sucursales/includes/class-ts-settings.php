@@ -42,6 +42,7 @@ class TS_Settings {
 			'show_distance_info'   => 'yes',
 			'single_location_view' => 'no',
 			'selector_only_single' => 'yes',
+			'store_picker'         => 'no',
 			'show_location_address' => 'yes',
 			'catalog_filter'       => 'yes',
 			'default_location'     => 0,
@@ -267,6 +268,13 @@ class TS_Settings {
 				'id'      => "{$p}[single_location_view]",
 				'type'    => 'checkbox',
 				'desc'    => __( 'Oculta en la página de producto las demás sucursales cuando ya hay una seleccionada.', 'total-sucursales' ),
+				'default' => 'no',
+			),
+			array(
+				'title'   => __( 'Selector de tienda de la cabecera con el diseño de Total Sucursales', 'total-sucursales' ),
+				'id'      => "{$p}[store_picker]",
+				'type'    => 'checkbox',
+				'desc'    => __( 'Cambia el desplegable de [wcmlim_locations_switch] por un botón "Tu tienda: …" que abre una ventana para elegir la tienda (con su ciudad y dirección, "Usar mi ubicación" y aviso si el carrito es de otra tienda). También puedes ponerlo en cualquier sitio con el shortcode [ts_tienda]. Sus textos se editan en el bloque "Selector de tienda de la cabecera".', 'total-sucursales' ),
 				'default' => 'no',
 			),
 			array(

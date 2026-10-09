@@ -39,6 +39,7 @@ class TS_Texts {
 		$g_header   = __( 'Selector de estado de la cabecera', 'total-sucursales' );
 		$g_checkout = __( 'Checkout', 'total-sucursales' );
 		$g_mli      = __( 'Multi Locations (ficha de producto, carrito y avisos)', 'total-sucursales' );
+		$g_sp       = __( 'Selector de tienda de la cabecera ([ts_tienda])', 'total-sucursales' );
 
 		$t = array();
 		$add = function ( $key, $group, $label, $default, $type = 'text' ) use ( &$t ) {
@@ -54,6 +55,21 @@ class TS_Texts {
 		$add( 'locating', $g_modal, __( 'Mientras se obtiene la ubicación', 'total-sucursales' ), __( 'Obteniendo tu ubicación…', 'total-sucursales' ) );
 		$add( 'geo_error', $g_modal, __( 'Si falla la ubicación', 'total-sucursales' ), __( 'No pudimos obtener tu ubicación. Elige tu estado manualmente.', 'total-sucursales' ) );
 		$add( 'geo_denied', $g_modal, __( 'Si el cliente no da permiso', 'total-sucursales' ), __( 'Sin acceso a tu ubicación. Elige tu estado manualmente.', 'total-sucursales' ) );
+
+		$add( 'sp_label', $g_sp, __( 'Botón: encima del nombre de la tienda', 'total-sucursales' ), __( 'Tu tienda', 'total-sucursales' ) );
+		$add( 'sp_none', $g_sp, __( 'Botón: sin tienda elegida', 'total-sucursales' ), __( 'Elige tu tienda', 'total-sucursales' ) );
+		$add( 'sp_title', $g_sp, __( 'Ventana: título (va seguido de la tienda actual)', 'total-sucursales' ), __( 'Tu tienda:', 'total-sucursales' ) );
+		$add( 'sp_intro', $g_sp, __( 'Ventana: texto', 'total-sucursales' ), __( 'Elige la tienda donde quieres comprar y te mostraremos los productos disponibles en ella.', 'total-sucursales' ), 'textarea' );
+		$add( 'sp_state', $g_sp, __( 'Ventana: campo de estado', 'total-sucursales' ), __( 'Estado', 'total-sucursales' ) );
+		$add( 'sp_store', $g_sp, __( 'Ventana: lista de tiendas', 'total-sucursales' ), __( 'Tienda', 'total-sucursales' ) );
+		$add( 'sp_save', $g_sp, __( 'Ventana: botón de guardar', 'total-sucursales' ), __( 'Guardar', 'total-sucursales' ) );
+		$add( 'sp_pick', $g_sp, __( 'Ventana: si no se eligió ninguna', 'total-sucursales' ), __( 'Elige una tienda.', 'total-sucursales' ) );
+		$add( 'sp_conflict', $g_sp, __( 'Ventana: carrito de otra tienda ({actual}, {nueva})', 'total-sucursales' ), __( 'Tu carrito tiene productos de {actual}. Al cambiar a {nueva} pasarán a esa tienda.', 'total-sucursales' ), 'textarea' );
+		$add( 'sp_unavailable', $g_sp, __( 'Ventana: productos que no hay en la tienda nueva ({nueva})', 'total-sucursales' ), __( 'Estos no están disponibles en {nueva} y se quitarán del carrito:', 'total-sucursales' ), 'textarea' );
+		$add( 'sp_confirm', $g_sp, __( 'Ventana: botón de confirmar el cambio', 'total-sucursales' ), __( 'Cambiar de tienda', 'total-sucursales' ) );
+		$add( 'sp_error', $g_sp, __( 'Ventana: si falla al guardar', 'total-sucursales' ), __( 'No pudimos guardar la tienda. Inténtalo de nuevo.', 'total-sucursales' ) );
+		$add( 'sp_saved_title', $g_sp, __( 'Aviso al guardar: título', 'total-sucursales' ), __( 'Tienda guardada', 'total-sucursales' ) );
+		$add( 'sp_saved_text', $g_sp, __( 'Aviso al guardar: texto', 'total-sucursales' ), __( 'Puedes cambiarla cuando quieras.', 'total-sucursales' ) );
 
 		$add( 'selector_label', $g_header, __( 'Etiqueta', 'total-sucursales' ), __( 'Estado', 'total-sucursales' ) );
 		$add( 'all_states', $g_header, __( 'Opción "todos"', 'total-sucursales' ), __( 'Todos los estados', 'total-sucursales' ) );
