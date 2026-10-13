@@ -272,6 +272,20 @@ Deja capturas en `logs/selector-*.png`.
 node selector-tienda.js
 ```
 
+## Todas las tiendas y "GPS y, si falla, la tienda por defecto"
+
+`modos-nuevos.js` (tienda por defecto Valencia, IP activada para comprobar que no se usa) recorre las
+combinaciones: "Todas las tiendas" con GPS y con la opción nueva (la más cercana: Delicias en
+Maracaibo, Chacao en Caracas; ve las 4; sin estado ni ventana), negando la ubicación o sin contestar
+(tienda por defecto, sin IP, sin volver a pedirla), con "Preguntar" y "No detectar" (tienda por
+defecto); "Por estado" con la opción nueva (Zulia y Delicias; si la niega, Valencia con Carabobo, sin
+ventana ni IP; en Mérida, Valencia); "Por ciudad" con la opción nueva (sin IP); y que "Por estado" con
+el GPS de siempre sigue mostrando la ventana.
+
+```bash
+node modos-nuevos.js
+```
+
 ## Precio por tienda con los decimales de WooCommerce
 
 `precio-decimales.js` activa el precio por tienda de Multi Locations, da a Producto C un precio de

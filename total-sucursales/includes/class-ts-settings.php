@@ -26,13 +26,13 @@ class TS_Settings {
 	public static function defaults() {
 		return array(
 			'radius_km'            => 10,
-			'visibility_mode'      => 'state',    // state | city
+			'visibility_mode'      => 'state',    // state | city | all
 			'city_radius_km'       => 20,
 			'ip_fallback'          => 'no',
 			'ipinfo_token'         => '',
 			'pickup_criterion'     => 'both',
 			'pickup_scope'         => 'one',
-			'detect_state'         => 'gps',      // gps | ask | off
+			'detect_state'         => 'gps',      // gps | gps_default | ask | off
 			'state_detect_max_km'  => 100,
 			'ask_if_gps_fails'     => 'yes',
 			'geocoder'             => 'nominatim', // none | nominatim | google
@@ -106,7 +106,8 @@ class TS_Settings {
 	 * ubicación, con la tienda por defecto como única opción si no la comparte ("city").
 	 */
 	public static function visibility_mode() {
-		return 'city' === self::get( 'visibility_mode', 'state' ) ? 'city' : 'state';
+		$mode = self::get( 'visibility_mode', 'state' );
+		return in_array( $mode, array( 'city', 'all' ), true ) ? $mode : 'state';
 	}
 
 	/**
@@ -185,11 +186,12 @@ class TS_Settings {
 				'title'   => __( 'Tiendas que ve el cliente', 'total-sucursales' ),
 				'id'      => "{$p}[visibility_mode]",
 				'type'    => 'select',
-				'desc'    => __( 'Por ciudad: se pide la ubicación al cliente. Si la comparte y hay tiendas en su ciudad (a menos del radio de abajo), ve sólo esas, con la más cercana elegida; si no hay, o no la comparte, ve sólo la tienda por defecto. Vale para el selector de la cabecera, el popup de Multi Locations y la ficha de producto. En este modo no se pregunta el estado y los ajustes de detección del estado no se usan.', 'total-sucursales' ),
+				'desc'    => __( 'Por ciudad: se pide la ubicación al cliente. Si la comparte y hay tiendas en su ciudad (a menos del radio de abajo), ve sólo esas, con la más cercana elegida; si no hay, o no la comparte, ve sólo la tienda por defecto. Vale para el selector de la cabecera, el popup de Multi Locations y la ficha de producto. En este modo no se pregunta el estado y los ajustes de detección del estado no se usan (salvo "GPS y, si falla, la tienda por defecto", que no consulta la IP). Todas las tiendas: el cliente ve y puede elegir cualquier tienda (salvo las ocultas en Multi Locations) y nunca se le pregunta el estado; con "Detección del estado" en GPS se le elige la más cercana y, con "Preguntar" o "No detectar", la tienda por defecto.', 'total-sucursales' ),
 				'desc_tip' => false,
 				'options' => array(
 					'state' => __( 'Por estado (las del estado del cliente)', 'total-sucursales' ),
 					'city'  => __( 'Por ciudad según su ubicación; si no, sólo la tienda por defecto', 'total-sucursales' ),
+					'all'   => __( 'Todas las tiendas (sin filtrar)', 'total-sucursales' ),
 				),
 				'default' => 'state',
 			),
@@ -220,10 +222,12 @@ class TS_Settings {
 				'id'      => "{$p}[detect_state]",
 				'type'    => 'select',
 				'options' => array(
-					'gps' => __( 'Ubicación del navegador (GPS) y, si falla, preguntar', 'total-sucursales' ),
-					'ask' => __( 'Preguntar siempre con un selector de estado', 'total-sucursales' ),
+					'gps'         => __( 'Ubicación del navegador (GPS) y, si falla, preguntar', 'total-sucursales' ),
+					'gps_default' => __( 'GPS y, si falla, seleccionar la tienda por defecto', 'total-sucursales' ),
+					'ask'         => __( 'Preguntar siempre con un selector de estado', 'total-sucursales' ),
 					'off' => __( 'No detectar (sólo usuarios con dirección guardada o shortcode)', 'total-sucursales' ),
 				),
+				'desc'    => __( 'GPS y, si falla, la tienda por defecto: se pide la ubicación al entrar; si el cliente la da, se le elige la tienda más cercana; si no la da, falla o no contesta en unos segundos, se le asigna la tienda por defecto, sin ventana de estado y sin consultar la IP, y no se le vuelve a pedir en las páginas siguientes. Necesita una "Sucursal por defecto".', 'total-sucursales' ),
 				'default' => 'gps',
 			),
 			array(
@@ -560,6 +564,16 @@ class TS_Settings {
 		echo '<tr><td>' . esc_html__( 'MLI: dividir paquetes por sucursal (wcmlim_enable_split_packages)', 'total-sucursales' ) . '</td><td>' . ( $split ? esc_html__( 'Activo: el pickup se evalúa por paquete/sucursal.', 'total-sucursales' ) : esc_html__( 'Inactivo: el carrito debe contener una sola sucursal para ofrecer pickup.', 'total-sucursales' ) ) . '</td></tr>';
 		if ( 'radius' !== self::pickup_criterion() ) {
 			echo '<tr><td>' . esc_html__( 'Retiro por municipio', 'total-sucursales' ) . '</td><td>' . self::municipio_status() . '</td></tr>';
+		}
+		$needs_default = ( 'all' === self::visibility_mode() && 'gps' !== self::get( 'detect_state', 'gps' ) )
+			|| ( 'city' !== self::visibility_mode() && 'gps_default' === self::get( 'detect_state', 'gps' ) );
+		if ( $needs_default ) {
+			$def = self::default_location_id();
+			echo '<tr><td>' . esc_html__( 'Tienda por defecto', 'total-sucursales' ) . '</td><td>'
+				. ( $def && TS_Locations::get( $def )
+					? '<span style="color:green">&#10004;</span> ' . esc_html( sprintf( __( 'Quien no da su ubicación (o no se le pide) queda con %s.', 'total-sucursales' ), TS_Locations::name( $def ) ) )
+					: '<span style="color:#c00">&#10008;</span> ' . esc_html__( 'Con esta combinación de "Tiendas que ve el cliente" y "Detección del estado" hace falta elegir la "Sucursal por defecto": sin ella, quien no da su ubicación se queda sin tienda elegida.', 'total-sucursales' ) )
+				. '</td></tr>';
 		}
 		if ( 'city' === self::visibility_mode() ) {
 			$def = self::default_location_id();

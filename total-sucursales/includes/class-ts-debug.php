@@ -83,6 +83,9 @@ class TS_Debug {
 	 * Modo de tiendas visibles y, en el modo "por ciudad", por qué ve las que ve.
 	 */
 	private static function visibility_label( $coords ) {
+		if ( 'all' === TS_Settings::visibility_mode() ) {
+			return __( 'todas las tiendas (sin filtrar)', 'total-sucursales' );
+		}
 		if ( 'city' !== TS_Settings::visibility_mode() ) {
 			return __( 'por estado', 'total-sucursales' );
 		}

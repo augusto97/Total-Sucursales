@@ -20,6 +20,8 @@ class TS_Frontend {
 		add_action( 'wp_ajax_nopriv_ts_set_state', array( __CLASS__, 'ajax_set_state' ) );
 		add_action( 'wp_ajax_ts_set_position', array( __CLASS__, 'ajax_set_position' ) );
 		add_action( 'wp_ajax_nopriv_ts_set_position', array( __CLASS__, 'ajax_set_position' ) );
+		add_action( 'wp_ajax_ts_use_default', array( __CLASS__, 'ajax_use_default' ) );
+		add_action( 'wp_ajax_nopriv_ts_use_default', array( __CLASS__, 'ajax_use_default' ) );
 	}
 
 	public static function enqueue() {
@@ -71,7 +73,7 @@ class TS_Frontend {
 	 */
 	public static function shortcode_selector( $atts = array() ) {
 		$atts   = shortcode_atts( array( 'label' => TS_Texts::get( 'selector_label' ), 'class' => '' ), $atts, 'ts_selector_estado' );
-		if ( 'city' === TS_Settings::visibility_mode() ) {
+		if ( in_array( TS_Settings::visibility_mode(), array( 'city', 'all' ), true ) ) {
 			return '<div class="ts-state-selector ts-state-selector--city ' . esc_attr( $atts['class'] ) . '"><button type="button" class="ts-use-gps button">' . esc_html( TS_Texts::get( 'modal_gps' ) ) . '</button></div>';
 		}
 		$states = TS_Locations::states_with_locations();
@@ -99,7 +101,9 @@ class TS_Frontend {
 	 * Modal de primera visita (sin estado). Se muestra por JS según el modo configurado.
 	 */
 	public static function render_modal() {
-		if ( is_admin() || 'off' === TS_Settings::get( 'detect_state' ) || 'city' === TS_Settings::visibility_mode() ) {
+		// Sin ventana: "no detectar", los modos sin estados ("por ciudad", "todas las tiendas") y
+		// "GPS y, si falla, la tienda por defecto", que nunca pregunta.
+		if ( is_admin() || in_array( TS_Settings::get( 'detect_state' ), array( 'off', 'gps_default' ), true ) || 'state' !== TS_Settings::visibility_mode() ) {
 			return;
 		}
 		if ( TS_Customer::has_choice() ) {
@@ -132,6 +136,33 @@ class TS_Frontend {
 	}
 
 	/* ------------------------------------------------------------------ AJAX */
+
+	/**
+	 * "GPS y, si falla, la tienda por defecto": el cliente no dio su ubicación (la negó, falló o no
+	 * contestó). Se le asigna la sucursal por defecto, sin ventana de estado: en el modo por estado,
+	 * con el estado de esa sucursal (así ya tiene estado y no se le vuelve a pedir la ubicación).
+	 */
+	public static function ajax_use_default() {
+		self::check_nonce();
+		$default = TS_Settings::default_location_id();
+		$row     = $default ? TS_Locations::get( $default ) : null;
+		if ( ! $row ) {
+			wp_send_json_success( array( 'reload' => false, 'reason' => 'no-default' ) );
+		}
+		$before = TS_Customer::selected_mli_location_id();
+		$mode   = TS_Settings::visibility_mode();
+		if ( 'state' === $mode && ! TS_Customer::has_choice() ) {
+			TS_Customer::set_state( '' !== (string) $row['state'] ? $row['state'] : '__ALL__', 'default' );
+		}
+		TS_Location_Filter::flush_request_cache();
+		if ( 'city' !== $mode || in_array( $default, array_map( 'intval', TS_Location_Filter::visible_ids() ), true ) ) {
+			TS_Customer::select_mli_location( $default );
+		}
+		wp_send_json_success( array(
+			'reload'   => (int) $before !== (int) TS_Customer::selected_mli_location_id() || 'state' === $mode,
+			'location' => TS_Locations::name( $default ),
+		) );
+	}
 
 	private static function check_nonce() {
 		if ( ! check_ajax_referer( self::NONCE, 'nonce', false ) ) {
@@ -179,7 +210,8 @@ class TS_Frontend {
 		$context = isset( $_POST['context'] ) ? sanitize_key( wp_unslash( $_POST['context'] ) ) : 'browse';
 
 		// Modo "por ciudad": con la posición cambian las tiendas visibles; se elige la más cercana.
-		if ( 'city' === TS_Settings::visibility_mode() ) {
+		// "Todas las tiendas": se elige la más cercana de todas.
+		if ( in_array( TS_Settings::visibility_mode(), array( 'city', 'all' ), true ) ) {
 			TS_Location_Filter::flush_request_cache();
 			$visible = TS_Location_Filter::visible_ids();
 			$nearest = TS_Locations::nearest( $lat, $lng, $visible );
@@ -190,7 +222,7 @@ class TS_Frontend {
 				}
 			}
 			wp_send_json_success( array(
-				'mode'    => 'city',
+				'mode'    => TS_Settings::visibility_mode(),
 				'visible' => array_map( array( 'TS_Locations', 'name' ), $visible ),
 				'nearest' => $nearest ? array( 'id' => $nearest['id'], 'name' => TS_Locations::name( $nearest['id'] ), 'distance' => round( $nearest['distance'], 2 ) ) : null,
 				'reload'  => 'checkout' !== $context,

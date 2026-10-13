@@ -56,7 +56,7 @@
 		 */
 		ipLocate: function (done) {
 			done = done || function () {};
-			if (!ts_params.ip_fallback || ts_params.has_ip || TS._ipAsked) {
+			if (!ts_params.ip_fallback || ts_params.has_ip || TS._ipAsked || ts_params.detect_state === 'gps_default') {
 				done(false);
 				return;
 			}
@@ -76,7 +76,7 @@
 		 */
 		locateWithFallback: function (onGps, onNoGps) {
 			var settled = false;
-			var timer = ts_params.ip_fallback && !ts_params.has_ip ? setTimeout(function () {
+			var timer = ts_params.ip_fallback && !ts_params.has_ip && ts_params.detect_state !== 'gps_default' ? setTimeout(function () {
 				// El aviso del navegador sigue sin respuesta: la IP mientras tanto.
 				TS.ipLocate();
 			}, 8000) : null;
@@ -90,6 +90,87 @@
 				settled = true;
 				clearTimeout(timer);
 				onNoGps(code);
+			});
+		},
+
+		/**
+		 * Recuerda que el cliente no dio su ubicación, para no volver a pedírsela en cada página.
+		 */
+		rememberNoGps: function (code) {
+			var days = code === 'denied' ? 30 : 1;
+			document.cookie = 'ts_geo=' + (code === 'denied' ? 'denied' : 'error') + '; path=/; max-age=' + (days * 86400) + '; SameSite=Lax';
+		},
+
+		gpsRefused: function () {
+			return /(?:^|;\s*)ts_geo=(denied|error)/.test(document.cookie);
+		},
+
+		/**
+		 * "GPS y, si falla, la tienda por defecto": la tienda por defecto, sin ventana ni IP.
+		 */
+		useDefault: function () {
+			if (TS._defaultAsked) { return; }
+			TS._defaultAsked = true;
+			TS.post('ts_use_default').done(function (res) {
+				if (res && res.success && res.data.reload) { window.location.reload(); }
+			});
+		},
+
+		/**
+		 * Pide la ubicación y, si el cliente la niega, falla o no contesta en unos segundos, llama a
+		 * onNoGps(code) una sola vez ("timeout" si no contestó). Sin IP.
+		 */
+		locateOrTimeout: function (onGps, onNoGps) {
+			var settled = false;
+			var timer = setTimeout(function () {
+				if (settled) { return; }
+				settled = true;
+				onNoGps('timeout');
+			}, 8000);
+			TS.locate(function (lat, lng) {
+				if (settled) { return; }
+				settled = true;
+				clearTimeout(timer);
+				onGps(lat, lng);
+			}, function (code) {
+				if (settled) { return; }
+				settled = true;
+				clearTimeout(timer);
+				onNoGps(code);
+			});
+		},
+
+		/**
+		 * Modo "todas las tiendas": nunca se pregunta el estado. Con detección por GPS se elige la
+		 * tienda más cercana; si el cliente no da la ubicación, "GPS" prueba con la IP (si está
+		 * activada) y "GPS y, si falla, la tienda por defecto" asigna la tienda por defecto. Con
+		 * "Preguntar" o "No detectar" se queda la tienda por defecto (la pone el servidor).
+		 */
+		autoDetectAll: function () {
+			var mode = ts_params.detect_state;
+			if ((mode !== 'gps' && mode !== 'gps_default') || ts_params.has_gps) {
+				return;
+			}
+			var onPosition = function (lat, lng) {
+				TS.setPosition(lat, lng, 'browse').done(function (res) {
+					if (res && res.success && res.data.reload) { window.location.reload(); }
+				});
+			};
+			if (mode === 'gps_default') {
+				if (TS.gpsRefused()) { return; } // Ya tiene la tienda por defecto.
+				TS.locateOrTimeout(onPosition, function (code) {
+					TS.rememberNoGps(code === 'timeout' ? 'error' : code);
+					TS.useDefault();
+				});
+				return;
+			}
+			if (TS.gpsRefused()) {
+				TS.ipLocate();
+				return;
+			}
+			TS.locateWithFallback(onPosition, function (code) {
+				TS.rememberNoGps(code);
+				TS.ipLocate();
 			});
 		},
 
@@ -112,8 +193,7 @@
 					if (res && res.success && res.data.reload) { window.location.reload(); }
 				});
 			}, function (code) {
-				var days = code === 'denied' ? 30 : 1;
-				document.cookie = 'ts_geo=' + (code === 'denied' ? 'denied' : 'error') + '; path=/; max-age=' + (days * 86400) + '; SameSite=Lax';
+				TS.rememberNoGps(code);
 				TS.ipLocate();
 			});
 		},
@@ -123,11 +203,36 @@
 				TS.autoDetectCity();
 				return;
 			}
+			if (ts_params.visibility_mode === 'all') {
+				TS.autoDetectAll();
+				return;
+			}
 			if (ts_params.has_choice || ts_params.detect_state === 'off') {
 				return;
 			}
 			if (ts_params.detect_state === 'ask') {
 				TS.showModal();
+				return;
+			}
+			if (ts_params.detect_state === 'gps_default') {
+				// GPS: estado y tienda más cercana. Si no la da, falla, no contesta o está lejos de
+				// todas las tiendas: la tienda por defecto, sin ventana ni IP.
+				if (TS.gpsRefused()) {
+					TS.useDefault();
+					return;
+				}
+				TS.locateOrTimeout(function (lat, lng) {
+					TS.setPosition(lat, lng, 'browse').done(function (res) {
+						if (res && res.success && (res.data.reload || res.data.changed)) {
+							window.location.reload();
+						} else {
+							TS.useDefault();
+						}
+					}).fail(function () { TS.useDefault(); });
+				}, function (code) {
+					TS.rememberNoGps(code === 'timeout' ? 'error' : code);
+					TS.useDefault();
+				});
 				return;
 			}
 			// gps (y, si no la da, la IP antes de preguntarle)
