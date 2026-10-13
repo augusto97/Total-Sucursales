@@ -161,7 +161,7 @@ class TS_Store_Picker {
 		}
 		asort( $states );
 		$cur_state = $current && TS_Locations::get( $current ) ? (string) TS_Locations::get( $current )['state'] : '';
-		$show_states = 'city' !== TS_Settings::visibility_mode() && count( $states ) > 1;
+		$show_states = 'state' === TS_Settings::visibility_mode() && count( $states ) > 1;
 		?>
 		<div id="ts-sp-modal" class="ts-sp-modal" role="dialog" aria-modal="true" aria-labelledby="ts-sp-title" hidden>
 			<div class="ts-sp-modal__box">
@@ -271,7 +271,7 @@ class TS_Store_Picker {
 
 		// En el modo por estado, la tienda nueva puede ser de un estado que el cliente no está viendo:
 		// primero ese estado (cambia las tiendas visibles), luego la tienda.
-		if ( 'city' !== TS_Settings::visibility_mode() && ! in_array( $target, array_map( 'intval', TS_Location_Filter::visible_ids() ), true ) ) {
+		if ( 'state' === TS_Settings::visibility_mode() && ! in_array( $target, array_map( 'intval', TS_Location_Filter::visible_ids() ), true ) ) {
 			$state = (string) TS_Locations::get( $target )['state'];
 			if ( '' !== $state ) {
 				TS_Customer::set_state( $state, 'manual' );

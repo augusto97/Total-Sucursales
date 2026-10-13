@@ -135,6 +135,9 @@ class TS_IP_Location {
 		if ( ! self::enabled() ) {
 			wp_send_json_error( array( 'message' => 'disabled' ) );
 		}
+		if ( 'gps_default' === TS_Settings::get( 'detect_state' ) ) {
+			wp_send_json_success( array( 'reload' => false, 'reason' => 'gps_default' ) ); // Esa opción no usa la IP.
+		}
 		$gps = TS_Customer::get_coords();
 		if ( $gps && 'gps' === $gps['source'] ) {
 			wp_send_json_success( array( 'reload' => false, 'reason' => 'gps' ) ); // La ubicación real manda.
@@ -154,7 +157,7 @@ class TS_IP_Location {
 
 		$reload = false;
 		$state  = '';
-		if ( 'city' === TS_Settings::visibility_mode() ) {
+		if ( in_array( TS_Settings::visibility_mode(), array( 'city', 'all' ), true ) ) {
 			$visible = TS_Location_Filter::visible_ids();
 			$nearest = TS_Locations::nearest( $found['lat'], $found['lng'], $visible );
 			$target  = $nearest ? $nearest['id'] : ( $visible ? $visible[0] : 0 );

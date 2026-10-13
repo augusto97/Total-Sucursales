@@ -158,6 +158,8 @@ class TS_Location_Filter {
 		$by_state = array();
 		if ( 'city' === TS_Settings::visibility_mode() && ! empty( $all ) ) {
 			$by_state = array_diff( $all, self::city_visible_ids( array_diff( $all, $manual ) ) );
+		} elseif ( 'all' === TS_Settings::visibility_mode() ) {
+			$by_state = array(); // "Todas las tiendas": sólo las ocultas en Multi Locations.
 		} elseif ( '' !== $state && ! empty( $all ) ) {
 			// Las sucursales que el administrador ocultó en Multi Locations no cuentan como
 			// "sucursales del estado": si la única del estado está oculta, no se filtra nada.
