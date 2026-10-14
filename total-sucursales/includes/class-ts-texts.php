@@ -89,6 +89,7 @@ class TS_Texts {
 		$add( 'cart_choose_municipio', $g_checkout, __( 'Aviso sin municipio (carrito)', 'total-sucursales' ), __( 'Al finalizar la compra, elige tu municipio para saber si puedes retirar en tienda.', 'total-sucursales' ), 'textarea' );
 		$add( 'pickup_for', $g_checkout, __( 'Municipios con retiro en cada tienda ({tienda}, {municipios})', 'total-sucursales' ), __( 'Retiro en {tienda} para clientes de {municipios}.', 'total-sucursales' ) );
 		$add( 'pickup_where_title', $g_checkout, __( 'Página de gracias y correos: título del lugar de retiro', 'total-sucursales' ), __( 'Dónde retirar tu pedido', 'total-sucursales' ) );
+		$add( 'national_zero', $g_checkout, __( 'Envío nacional sin costo: lo que se muestra en lugar de "Gratis" (el costo se acuerda aparte)', 'total-sucursales' ), __( 'A convenir', 'total-sucursales' ) );
 		$add( 'payment_label', $g_checkout, __( 'Página de gracias, pedido y correos: título del método de pago (vacío = el de WooCommerce, "Pago" / "Método de pago")', 'total-sucursales' ), '' );
 
 		$add( 'not_available_here', $g_mli, __( 'Producto sin stock en las tiendas del cliente (hay en otras) ({tiendas})', 'total-sucursales' ), __( 'No disponible en {tiendas}', 'total-sucursales' ) );

@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.10.0
+Stable tag: 0.10.1
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -38,6 +38,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_tienda]` – botón "Tu tienda: …" con ventana para elegir la tienda.
 
 == Changelog ==
+
+= 0.10.1 =
+* Cambiado: el envío nacional sin costo ya no se anuncia como "Gratis" (el costo se acuerda aparte, por ejemplo por WhatsApp). En el checkout por bloques (opción y resumen), el checkout clásico, la página de gracias, el pedido y los correos muestra "A convenir", texto editable en el bloque Checkout ("Envío nacional sin costo"). El retiro en tienda sigue diciendo "Gratis".
 
 = 0.10.0 =
 * Añadido: "Tiendas que ve el cliente: Todas las tiendas (sin filtrar)". El cliente ve y puede elegir cualquier tienda (salvo las ocultas en Multi Locations) y nunca se le pregunta el estado. Con "Detección del estado" en GPS se le elige la tienda más cercana; con "Preguntar" o "No detectar", la tienda por defecto.

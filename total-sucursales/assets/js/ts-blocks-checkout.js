@@ -117,11 +117,58 @@
 			document.body.classList.toggle('ts-hide-shipping', ext.hide_shipping);
 		}
 	}
+	// Envío nacional sin costo: el precio se acuerda aparte, así que donde WooCommerce escribe "Gratis"
+	// (en la opción de envío y en el resumen) se pone el texto de los ajustes ("A convenir"). Sólo se
+	// cambia el texto, sin tocar la estructura que pinta React, y se repite cuando vuelve a pintar.
+	var FREE = (wp.i18n && wp.i18n.__) ? wp.i18n.__('Free', 'woocommerce') : 'Free';
+	function replaceFreeText(root, text) {
+		if (!root) { return; }
+		var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+		var node;
+		while ((node = walker.nextNode())) {
+			var v = node.nodeValue.trim();
+			if (v && (v === FREE || v.toLowerCase() === FREE.toLowerCase()) && v !== text) {
+				node.nodeValue = node.nodeValue.replace(v, text);
+			}
+		}
+	}
+	function syncNationalZero() {
+		var store = wp.data.select('wc/store/cart');
+		var cart = store && store.getCartData ? store.getCartData() : null;
+		var ext = cart && cart.extensions ? cart.extensions[NS] : null;
+		var nz = ext && ext.national_zero;
+		if (!nz || !nz.rates || !nz.rates.length || !nz.text) { return; }
+		var ids = nz.rates.map(function (r) { return r.id; });
+		document.querySelectorAll('.wc-block-components-radio-control__input').forEach(function (input) {
+			if (ids.indexOf(input.value) === -1) { return; }
+			var option = input.closest('.wc-block-components-radio-control__option');
+			replaceFreeText(option && option.querySelector('.wc-block-components-radio-control__secondary-label'), nz.text);
+		});
+		var selected = [];
+		(cart.shippingRates || []).forEach(function (pkg) {
+			(pkg.shipping_rates || []).forEach(function (r) { if (r.selected) { selected.push(r.rate_id); } });
+		});
+		if (selected.length && selected.every(function (id) { return ids.indexOf(id) !== -1; })) {
+			document.querySelectorAll('.wc-block-components-totals-shipping .wc-block-components-totals-item__value').forEach(function (el) {
+				replaceFreeText(el, nz.text);
+			});
+		}
+	}
+	var nzQueued = false;
+	function queueNationalZero() {
+		if (nzQueued) { return; }
+		nzQueued = true;
+		window.requestAnimationFrame(function () { nzQueued = false; syncNationalZero(); });
+	}
+	if (window.MutationObserver) {
+		new MutationObserver(queueNationalZero).observe(document.body, { childList: true, subtree: true, characterData: true });
+	}
+
 	var syncing = false;
 	wp.data.subscribe(function () {
 		if (syncing) { return; }
 		syncing = true;
-		try { syncCity(); syncShippingVisibility(); } finally { syncing = false; }
+		try { syncCity(); syncShippingVisibility(); queueNationalZero(); } finally { syncing = false; }
 	});
 
 	wp.plugins.registerPlugin('total-sucursales-shipping', {
