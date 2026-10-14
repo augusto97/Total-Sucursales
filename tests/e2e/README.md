@@ -286,6 +286,17 @@ el GPS de siempre sigue mostrando la ventana.
 node modos-nuevos.js
 ```
 
+## Envío nacional sin costo: "A convenir"
+
+`envio-a-convenir.js` pone el método propio con el envío nacional a 0 (`envio-modo.php propio
+national_cost=0`) y comprueba "Envío nacional: A convenir" en el checkout clásico y en la página de
+gracias, y "A convenir" en la opción y el resumen del checkout por bloques, con el retiro en tienda
+diciendo todavía "Gratis". Deja el envío y el tema como estaban.
+
+```bash
+node envio-a-convenir.js
+```
+
 ## Precio por tienda con los decimales de WooCommerce
 
 `precio-decimales.js` activa el precio por tienda de Multi Locations, da a Producto C un precio de

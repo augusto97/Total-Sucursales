@@ -37,6 +37,66 @@ class TS_Shipping_UI {
 		// Después de comprar: sin línea de envío en la página de gracias (clásica y por bloques), "Mi cuenta"
 		// y los correos, si el checkout no la mostró.
 		add_filter( 'woocommerce_get_order_item_totals', array( __CLASS__, 'order_totals' ), 20, 2 );
+
+		// Envío nacional a 0: el costo se acuerda aparte (WhatsApp...), así que no se anuncia "Gratis".
+		add_filter( 'woocommerce_cart_shipping_method_full_label', array( __CLASS__, 'national_zero_label' ), 20, 2 );
+		add_filter( 'woocommerce_order_shipping_to_display', array( __CLASS__, 'national_zero_order' ), 20, 2 );
+	}
+
+	/**
+	 * ¿Es una tarifa de envío nacional (método propio o regla de Advanced Shipping) sin costo?
+	 */
+	public static function is_national_zero( $rate ) {
+		if ( 'national' !== self::mode( $rate ) ) {
+			return false;
+		}
+		return 0.0 === (float) $rate->get_cost() && 0.0 === (float) array_sum( array_map( 'floatval', (array) $rate->get_taxes() ) );
+	}
+
+	/**
+	 * Tarifas de envío nacional sin costo del carrito actual (para el checkout por bloques, que pinta
+	 * "Gratis" en el navegador).
+	 *
+	 * @return array<int,array{id:string,label:string}>
+	 */
+	public static function national_zero_rates() {
+		$out = array();
+		if ( ! function_exists( 'WC' ) || ! WC()->shipping() ) {
+			return $out;
+		}
+		foreach ( (array) WC()->shipping()->get_packages() as $pkg ) {
+			foreach ( (array) ( $pkg['rates'] ?? array() ) as $rate ) {
+				if ( self::is_national_zero( $rate ) ) {
+					$out[] = array( 'id' => (string) $rate->get_id(), 'label' => (string) $rate->get_label() );
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Carrito y checkout clásicos: "Envío nacional: A convenir" (WooCommerce no pone precio a 0).
+	 */
+	public static function national_zero_label( $label, $method ) {
+		if ( self::is_national_zero( $method ) && false === strpos( (string) $label, 'ts-national-zero' ) ) {
+			$label .= ': <span class="ts-national-zero">' . esc_html( TS_Texts::get( 'national_zero' ) ) . '</span>';
+		}
+		return $label;
+	}
+
+	/**
+	 * Página de gracias, "Mi cuenta" y correos: "Envío nacional: A convenir".
+	 */
+	public static function national_zero_order( $shipping, $order ) {
+		if ( ! $order instanceof WC_Order || 0.0 !== (float) $order->get_shipping_total() ) {
+			return $shipping;
+		}
+		foreach ( $order->get_shipping_methods() as $item ) {
+			if ( 'national' === (string) $item->get_meta( '_ts_mode' ) ) {
+				return esc_html( $item->get_name() ) . ': ' . esc_html( TS_Texts::get( 'national_zero' ) );
+			}
+		}
+		return $shipping;
 	}
 
 	/**

@@ -2,7 +2,7 @@
 /**
  * Cambia el motor de envío de la zona "Venezuela" para las pruebas.
  *
- *   wp eval-file envio-modo.php propio [national_for_pickup=yes|no]
+ *   wp eval-file envio-modo.php propio [national_for_pickup=yes|no] [national_cost=5]
  *       Añade (o reconfigura) el método "Total Sucursales" en la zona: retiro 0, envío nacional 5.
  *   wp eval-file envio-modo.php was
  *       Quita el método "Total Sucursales" de la zona (las reglas de Advanced Shipping siguen ahí).
@@ -48,7 +48,7 @@ if ( 'propio' === $mode ) {
 		'pickup_title'        => 'Retiro en tienda',
 		'pickup_cost'         => '0',
 		'national_title'      => 'Envío nacional',
-		'national_cost'       => '5',
+		'national_cost'       => isset( $opts['national_cost'] ) ? $opts['national_cost'] : '5',
 		'national_for_pickup' => isset( $opts['national_for_pickup'] ) ? $opts['national_for_pickup'] : 'no',
 		'tax_status'          => 'none',
 	) );

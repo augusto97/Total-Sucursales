@@ -103,6 +103,7 @@ class TS_Blocks {
 			'geo_button'    => array( 'type' => 'boolean', 'readonly' => true ),
 			'show_note'     => array( 'type' => 'boolean', 'readonly' => true ),
 			'hide_shipping' => array( 'type' => 'boolean', 'readonly' => true ),
+			'national_zero' => array( 'type' => 'object', 'readonly' => true ),
 			'note'          => array( 'type' => 'object', 'readonly' => true ),
 			'cart_note'     => array( 'type' => 'object', 'readonly' => true ),
 			'show_info'     => array( 'type' => 'boolean', 'readonly' => true ),
@@ -138,6 +139,10 @@ class TS_Blocks {
 			'geo_button'    => TS_Packages::geo_button_enabled(),
 			'show_note'     => '' !== $note['text'],
 			'hide_shipping' => TS_Shipping_UI::hidden(),
+			'national_zero' => array(
+				'rates' => TS_Shipping_UI::national_zero_rates(),
+				'text'  => TS_Texts::get( 'national_zero' ),
+			),
 			'note'          => $note,
 			// La Store API no distingue carrito de checkout: el script elige según la página.
 			'cart_note'     => TS_Packages::pickup_note( $summary, 'cart' ),
