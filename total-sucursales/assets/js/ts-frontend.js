@@ -403,7 +403,47 @@
 		});
 	};
 
+	/**
+	 * Multi Locations cambia la tienda por AJAX desde la ficha (panel lateral "Disponibilidad por
+	 * tienda", desplegable, lista) y no toca la cabecera: seguía diciendo la tienda anterior hasta
+	 * recargar. Tras su cambio se pide la tienda elegida y se actualizan el selector de la cabecera
+	 * ([ts_tienda] y el de Multi Locations), con el aviso de "Tienda guardada". No se recarga: con
+	 * el desplegable Multi Locations no volvería a marcar la tienda elegida.
+	 */
+	TS.headerFollowsMli = function () {
+		$(document).ajaxSuccess(function (ev, xhr, opts) {
+			if (!/(^|&)action=wcmlim_set_location_on_change(&|$)/.test(String(opts && opts.data || ''))) {
+				return;
+			}
+			TS.post('ts_current_store').done(function (res) {
+				if (res && res.success && res.data.id) {
+					TS.showStore(res.data);
+				}
+			});
+		});
+	};
+
+	TS.showStore = function (d) {
+		var $text = $('.ts-sp__text');
+		if ($text.length) {
+			$text.empty().append($('<span class="ts-sp__label">').text(d.label), $('<strong class="ts-sp__name">').text(d.name));
+			$('.ts-sp-modal__current').text(d.name);
+			var $radio = $('input[name="ts_sp_store"][value="' + d.id + '"]').prop('checked', true);
+			var st = $radio.closest('.ts-sp-store').attr('data-state');
+			if (st) { $('.ts-sp-state').val(st); }
+			var $t = $('.ts-sp__toast').first().prop('hidden', false);
+			clearTimeout(TS.toastTimer);
+			TS.toastTimer = setTimeout(function () { $t.prop('hidden', true); }, 6000);
+		}
+		var $opt = $('#wcmlim-change-lc-select option[data-lc-term="' + d.id + '"]');
+		if ($opt.length) {
+			$opt.prop('selected', true);
+			$('#wcmlim-change-lc-select').trigger('chosen:updated');
+		}
+	};
+
 	$(function () {
+		TS.headerFollowsMli();
 		TS.loopQuantity();
 		TS.bindModal();
 		TS.bindSelector();

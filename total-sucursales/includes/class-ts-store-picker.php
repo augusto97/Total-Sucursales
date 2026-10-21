@@ -36,6 +36,22 @@ class TS_Store_Picker {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ), 20 );
 		add_action( 'wp_ajax_ts_pick_store', array( __CLASS__, 'ajax_pick' ) );
 		add_action( 'wp_ajax_nopriv_ts_pick_store', array( __CLASS__, 'ajax_pick' ) );
+		add_action( 'wp_ajax_ts_current_store', array( __CLASS__, 'ajax_current' ) );
+		add_action( 'wp_ajax_nopriv_ts_current_store', array( __CLASS__, 'ajax_current' ) );
+	}
+
+	/**
+	 * La tienda elegida ahora. Multi Locations la cambia por AJAX desde la ficha (panel lateral,
+	 * desplegable, lista) sin tocar la cabecera: ts-frontend.js la pide después para actualizarla.
+	 * Sólo lectura, sin nonce (una página en caché lo tendría caducado).
+	 */
+	public static function ajax_current() {
+		$id = self::current();
+		wp_send_json_success( array(
+			'id'    => $id,
+			'name'  => $id ? TS_Locations::name( $id ) : '',
+			'label' => TS_Texts::get( 'sp_label' ),
+		) );
 	}
 
 	public static function replaces_mli() {
