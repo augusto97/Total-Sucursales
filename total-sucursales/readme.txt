@@ -43,6 +43,7 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * Corregido: un producto sin stock en la tienda del cliente (pero sí en otras) mostraba el stock total y un "Añadir al carrito" normal que parecía añadir pero no hacía nada. Ahora la ficha dice "Sin stock en {tienda}", junto al botón sale un aviso con las tiendas que sí lo tienen y un botón "Elegir otra tienda" (abre el selector de Multi Locations), y "Añadir al carrito" no hace nada hasta elegir una tienda con stock (resalta el aviso). Textos editables en el bloque Multi Locations.
 * Corregido: eligiendo en la ficha otra tienda con stock, Multi Locations validaba contra la tienda de la cabecera y rechazaba el alta. Ahora valida la tienda elegida.
 * Corregido: si un "Añadir al carrito" de Multi Locations llega en una tienda sin stock (listados, vistas rápidas…) o falla sin decir por qué, lleva a la ficha con un aviso en lugar de no hacer nada.
+* Corregido: el selector de tiendas de Multi Locations ([wcmlim_locations_switch]) mostraba "1" como etiqueta si su texto nunca se había guardado en los ajustes; ahora dice "Tienda:".
 
 = 0.10.1 =
 * Cambiado: el envío nacional sin costo ya no se anuncia como "Gratis" (el costo se acuerda aparte, por ejemplo por WhatsApp). En el checkout por bloques (opción y resumen), el checkout clásico, la página de gracias, el pedido y los correos muestra "A convenir", texto editable en el bloque Checkout ("Envío nacional sin costo"). El retiro en tienda sigue diciendo "Gratis".

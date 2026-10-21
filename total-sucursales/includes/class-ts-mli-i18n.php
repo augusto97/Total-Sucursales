@@ -89,6 +89,10 @@ class TS_MLI_I18n {
 		if ( ! isset( $map[ $option ] ) ) {
 			return false;
 		}
+		// MLI pide alguna con get_option( ..., true ): sin la opción guardada pintaría "1".
+		if ( true === $value ) {
+			return true;
+		}
 		$v = strtolower( trim( (string) $value ) );
 		if ( '' === $v ) {
 			return true;
