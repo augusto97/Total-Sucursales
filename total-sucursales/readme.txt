@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.10.1
+Stable tag: 0.10.2
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -38,6 +38,11 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_tienda]` – botón "Tu tienda: …" con ventana para elegir la tienda.
 
 == Changelog ==
+
+= 0.10.2 =
+* Corregido: un producto sin stock en la tienda del cliente (pero sí en otras) mostraba el stock total y un "Añadir al carrito" normal que parecía añadir pero no hacía nada. Ahora la ficha dice "Sin stock en {tienda}", junto al botón sale un aviso con las tiendas que sí lo tienen y un botón "Elegir otra tienda" (abre el selector de Multi Locations), y "Añadir al carrito" no hace nada hasta elegir una tienda con stock (resalta el aviso). Textos editables en el bloque Multi Locations.
+* Corregido: eligiendo en la ficha otra tienda con stock, Multi Locations validaba contra la tienda de la cabecera y rechazaba el alta. Ahora valida la tienda elegida.
+* Corregido: si un "Añadir al carrito" de Multi Locations llega en una tienda sin stock (listados, vistas rápidas…) o falla sin decir por qué, lleva a la ficha con un aviso en lugar de no hacer nada.
 
 = 0.10.1 =
 * Cambiado: el envío nacional sin costo ya no se anuncia como "Gratis" (el costo se acuerda aparte, por ejemplo por WhatsApp). En el checkout por bloques (opción y resumen), el checkout clásico, la página de gracias, el pedido y los correos muestra "A convenir", texto editable en el bloque Checkout ("Envío nacional sin costo"). El retiro en tienda sigue diciendo "Gratis".

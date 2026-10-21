@@ -33,6 +33,14 @@ if ( ! defined( 'ABSPATH' ) ) { define( 'ABSPATH', __DIR__ . '/' ); }
 require_once ABSPATH . 'wp-settings.php';
 CFG
 mkdir -p "$WP/wp-content/database"
+# Sin Google Maps: no hay clave y, si la red lo deja cargar, el JS de MLI recarga páginas a destiempo.
+mkdir -p "$WP/wp-content/mu-plugins"
+cat > "$WP/wp-content/mu-plugins/ts-test-sin-google.php" <<'MU'
+<?php
+add_filter( 'script_loader_src', function ( $src ) {
+	return ( is_string( $src ) && false !== strpos( $src, 'maps.googleapis.com' ) ) ? false : $src;
+}, 99 );
+MU
 wp(){ php "$W/wp-cli.phar" --allow-root --path="$WP" "$@"; }
 wp core is-installed 2>/dev/null || wp core install --url=http://127.0.0.1:8080 --title="Total Sucursales Test" --admin_user=admin --admin_password=admin --admin_email=admin@example.com --skip-email
 wp theme activate twentytwentyone

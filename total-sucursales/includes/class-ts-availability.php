@@ -75,32 +75,41 @@ class TS_Availability {
 			}
 			return self::$cache[ $id ] = true;
 		}
-		if ( ! $product->managing_stock() ) {
+		if ( ! self::uses_store_stock( $product ) ) {
 			return false;
 		}
-		$pid     = $product->get_id();
-		$visible = TS_Location_Filter::visible_ids();
-		$all     = TS_Locations::all_ids();
-		$uses    = false; // ¿Usa el stock por tienda de Multi Locations?
-		foreach ( $all as $loc ) {
-			if ( '' !== (string) get_post_meta( $pid, 'wcmlim_stock_at_' . $loc, true ) ) {
-				$uses = true;
-				break;
-			}
-		}
-		if ( ! $uses ) {
-			return false;
-		}
-		$backorders = $product->backorders_allowed();
-		foreach ( $visible as $loc ) {
-			if ( (float) get_post_meta( $pid, 'wcmlim_stock_at_' . $loc, true ) > 0 ) {
-				return false;
-			}
-			if ( $backorders && 'no' !== strtolower( (string) get_post_meta( $pid, 'wcmlim_allow_backorder_at_' . $loc, true ) ) ) {
+		foreach ( TS_Location_Filter::visible_ids() as $loc ) {
+			if ( self::available_at( $product, $loc ) ) {
 				return false;
 			}
 		}
 		return self::$cache[ $id ] = true;
+	}
+
+	/**
+	 * ¿Usa el stock por tienda de Multi Locations? (algún "wcmlim_stock_at_*" guardado)
+	 */
+	public static function uses_store_stock( WC_Product $product ) {
+		if ( ! $product->managing_stock() ) {
+			return false;
+		}
+		foreach ( TS_Locations::all_ids() as $loc ) {
+			if ( '' !== (string) get_post_meta( $product->get_id(), 'wcmlim_stock_at_' . $loc, true ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * ¿Se puede comprar en esa tienda? Stock > 0, o reservas admitidas y la tienda no las niega.
+	 */
+	public static function available_at( WC_Product $product, $loc ) {
+		$pid = $product->get_id();
+		if ( (float) get_post_meta( $pid, 'wcmlim_stock_at_' . $loc, true ) > 0 ) {
+			return true;
+		}
+		return $product->backorders_allowed() && 'no' !== strtolower( (string) get_post_meta( $pid, 'wcmlim_allow_backorder_at_' . $loc, true ) );
 	}
 
 	/**

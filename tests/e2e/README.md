@@ -317,8 +317,23 @@ ni forzando la URL; Producto A sigue comprable y un cliente de Carabobo sí pued
 node disponibilidad.js
 ```
 
+## Producto sin stock en la tienda del cliente (pero sí en otras)
+
+`stock-tienda.js`: con la cabecera en Tienda Valencia, Producto A (stock en Delicias y Chacao) debe decir
+"Sin stock en Tienda Valencia", con el aviso de las tiendas que sí lo tienen; "Añadir al carrito" no
+envía nada hasta elegir una tienda con stock (panel lateral "drawer" y desplegable "select") y luego se
+añade con esa tienda. También comprueba que el servidor contesta con aviso a un alta sin stock y a un
+alta que Multi Locations rechaza sin decir por qué (mu-plugin temporal).
+
+```bash
+node stock-tienda.js
+```
+
 Notas del entorno:
 
+- `setup.sh` deja un mu-plugin que no carga Google Maps: sin clave no sirve y, si la red lo deja pasar,
+  el JS de Multi Locations recarga páginas a destiempo. Las pruebas que usan su selector simulan
+  `window.google`.
 - `woocommerce_hold_stock_minutes` se vacía porque la reserva de stock de WooCommerce usa `FOR UPDATE`/`FROM DUAL`, no soportado por el driver SQLite. En MySQL no hace falta.
 - Con temas de bloques el filtro de catálogo de Multi-Locations (`woocommerce_product_query`) no se ejecuta; por eso `total-sucursales` trae su propio filtro (`TS_Catalog`) que cubre loop clásico, shortcodes, Product Collection y Store API. En la prueba de bloques se desactiva `wcmlim_hide_outofstock_products`.
 - Multi-Locations emite errores de consola en temas/checkout de bloques (`google is not defined`, `registerCheckoutFilters of undefined`). Son de su propio código y no afectan a este plugin.

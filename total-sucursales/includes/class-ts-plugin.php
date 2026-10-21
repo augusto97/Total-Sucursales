@@ -58,6 +58,7 @@ final class TS_Plugin {
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-shipping-ui.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-availability.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-loop-location.php';
+		require_once TS_PLUGIN_DIR . 'includes/class-ts-store-stock.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-store-picker.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-ip-location.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-geocoder.php';
@@ -85,6 +86,7 @@ final class TS_Plugin {
 		TS_Shipping_UI::init();
 		TS_Availability::init();
 		TS_Loop_Location::init();
+		TS_Store_Stock::init();
 		TS_Store_Picker::init();
 		TS_IP_Location::init();
 		TS_Catalog::init();

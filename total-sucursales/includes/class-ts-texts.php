@@ -105,6 +105,10 @@ class TS_Texts {
 		$add( 'mli_not_available_title', $g_mli, __( 'Producto no disponible: título', 'total-sucursales' ), __( 'No disponible', 'total-sucursales' ) );
 		$add( 'mli_not_available_text', $g_mli, __( 'Producto no disponible: texto', 'total-sucursales' ), __( 'Este producto no está disponible en esta tienda.', 'total-sucursales' ) );
 		$add( 'mli_not_enough_stock', $g_mli, __( 'Aviso de stock insuficiente en la tienda al añadir al carrito', 'total-sucursales' ), __( 'No hay stock suficiente en esta tienda para la cantidad que pides.', 'total-sucursales' ) );
+		$add( 'store_no_stock', $g_mli, __( 'Ficha del producto: sin stock en la tienda del cliente, pero sí en otras ({tienda})', 'total-sucursales' ), __( 'Sin stock en {tienda}', 'total-sucursales' ) );
+		$add( 'store_no_stock_notice', $g_mli, __( 'Ficha del producto: aviso junto al botón de compra ({tienda}, {tiendas})', 'total-sucursales' ), __( 'Este producto no tiene stock en {tienda}. Está disponible en {tiendas}: elige una de esas tiendas para comprarlo.', 'total-sucursales' ), 'textarea' );
+		$add( 'store_no_stock_pick', $g_mli, __( 'Ficha del producto: botón para elegir otra tienda', 'total-sucursales' ), __( 'Elegir otra tienda', 'total-sucursales' ) );
+		$add( 'mli_add_failed', $g_mli, __( 'Aviso si Multi Locations no añade el producto al carrito y no dice por qué', 'total-sucursales' ), __( 'No se pudo añadir el producto al carrito. Revisa la tienda elegida e inténtalo de nuevo.', 'total-sucursales' ) );
 		$add( 'mli_unavailable_move', $g_mli, __( 'Productos que no hay en la nueva tienda ({nueva}, {lista})', 'total-sucursales' ), __( "Estos productos no están disponibles en {nueva}:\n\n{lista}\n\n¿Quieres quitarlos y pasar el resto a {nueva}?", 'total-sucursales' ), 'textarea' );
 
 		/**
