@@ -323,7 +323,9 @@ node disponibilidad.js
 "Sin stock en Tienda Valencia", con el aviso de las tiendas que sí lo tienen; "Añadir al carrito" no
 envía nada hasta elegir una tienda con stock (panel lateral "drawer" y desplegable "select") y luego se
 añade con esa tienda. También comprueba que el servidor contesta con aviso a un alta sin stock y a un
-alta que Multi Locations rechaza sin decir por qué (mu-plugin temporal).
+alta que Multi Locations rechaza sin decir por qué (mu-plugin temporal), y que al elegir tienda en la
+ficha la cabecera ([ts_tienda] y el selector de Multi Locations, puestos por el mismo mu-plugin) cambia
+sin recargar.
 
 ```bash
 node stock-tienda.js

@@ -31,10 +31,20 @@ const MU_SRC = `<?php
 add_filter( 'woocommerce_add_to_cart_validation', function ( $passed ) {
 	return isset( $_POST['ts_test_fail'] ) ? false : $passed;
 }, 99 );
+// Y una cabecera con los dos selectores de tienda, como en el sitio.
+add_action( 'wp_body_open', function () {
+	echo '<div class="ts-test-header">' . do_shortcode( '[ts_tienda]' ) . do_shortcode( '[wcmlim_locations_switch]' ) . '</div>';
+} );
 `;
 
 const results = [];
 const log = (name, ok, detail) => { results.push(ok); console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? ' — ' + detail : '')); };
+// Lo que dice la cabecera: [ts_tienda], su aviso "Tienda guardada" y el selector de Multi Locations.
+const header = p => p.evaluate(() => ({
+  name: (document.querySelector('.ts-test-header .ts-sp__name') || {}).textContent || '',
+  toast: !!document.querySelector('.ts-sp__toast:not([hidden])'),
+  mli: ((document.querySelector('#wcmlim-change-lc-select option:checked') || {}).textContent || '').trim(),
+}));
 const loc = n => wp(`eval '$t=get_term_by("name","${n}","locations"); echo $t->term_id, " ", TS_Locations::mli_index_of($t->term_id);'`).split(' ');
 
 (async () => {
@@ -89,6 +99,9 @@ const loc = n => wp(`eval '$t=get_term_by("name","${n}","locations"); echo $t->t
       await done; await p.waitForTimeout(500);
       const hidden = await p.$eval('.ts-store-stock', e => e.hidden);
       log('drawer: al elegir Tienda Chacao el aviso se oculta', hidden);
+      await p.waitForFunction(() => /Chacao/.test((document.querySelector('.ts-test-header .ts-sp__name') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+      const h = await header(p);
+      log('drawer: la cabecera cambia a Tienda Chacao sin recargar, con "Tienda guardada"', h.name === 'Tienda Chacao' && h.toast && h.mli === 'Tienda Chacao', JSON.stringify(h));
       await p.click('button.single_add_to_cart_button');
       for (let i = 0; i < 40 && !(await count(ctx)); i++) await p.waitForTimeout(250);
       const rows = await cartRows(p);
@@ -136,6 +149,9 @@ const loc = n => wp(`eval '$t=get_term_by("name","${n}","locations"); echo $t->t
       await done; await p.waitForTimeout(500);
       const hidden = await p.$eval('.ts-store-stock', e => e.hidden);
       log('select: al elegir Tienda Delicias el aviso se oculta', hidden);
+      await p.waitForFunction(() => /Delicias/.test((document.querySelector('.ts-test-header .ts-sp__name') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+      const h = await header(p);
+      log('select: la cabecera cambia a Tienda Delicias sin recargar', h.name === 'Tienda Delicias' && h.mli === 'Tienda Delicias', JSON.stringify(h));
       await p.click('button.single_add_to_cart_button');
       for (let i = 0; i < 40 && !(await count(ctx)); i++) await p.waitForTimeout(250);
       const rows = await cartRows(p);
