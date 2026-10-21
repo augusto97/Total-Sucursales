@@ -291,8 +291,10 @@ class TS_Compat {
 	 *   cambiar de tienda, por ejemplo).
 	 * - Si la cantidad supera el stock de la tienda contesta "4", que su JavaScript no trata, y no se
 	 *   ve nada.
+	 * - Si no lo añade y tampoco deja aviso, contesta vacío: se añade un aviso genérico ("No se pudo
+	 *   añadir…", texto editable).
 	 *
-	 * En los dos casos se contesta como lo hace WooCommerce cuando no puede añadir un producto
+	 * En todos los casos se contesta como lo hace WooCommerce cuando no puede añadir un producto
 	 * ({error, product_url}), que su JavaScript ya entiende: lleva a la ficha del producto y ahí sale
 	 * el aviso, una sola vez. El resto de respuestas pasan tal cual.
 	 */
@@ -321,6 +323,11 @@ class TS_Compat {
 		$code = trim( $out );
 		if ( '4' === $code ) {
 			self::add_notice_once( TS_Texts::get( 'mli_not_enough_stock' ) );
+		}
+		// Respuesta vacía: Multi Locations no lo añadió (alguna validación falló) y, si no dejó aviso, el
+		// botón parecía añadir sin hacer nada. Si lo hubiera añadido, contestaría con los fragmentos.
+		if ( '' === $code && function_exists( 'wc_notice_count' ) && ! wc_notice_count( 'error' ) ) {
+			self::add_notice_once( TS_Texts::get( 'mli_add_failed' ) );
 		}
 		if ( '4' === $code || ( '' === $code && function_exists( 'wc_notice_count' ) && wc_notice_count( 'error' ) > 0 ) ) {
 			// Un visitante con el carrito vacío aún no tiene sesión: sin ella el aviso no llegaría a la ficha.

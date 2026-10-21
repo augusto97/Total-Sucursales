@@ -44,3 +44,11 @@ body.ts-hide-shipping .wp-block-woocommerce-checkout-pickup-options-block,
 body.ts-hide-shipping .wp-block-woocommerce-checkout-order-summary-shipping-block,
 body.ts-hide-shipping .wp-block-woocommerce-cart-order-summary-shipping-block,
 body.ts-hide-shipping .wc-block-components-totals-shipping { display: none !important; }
+/* Ficha: sin stock en la tienda del cliente, pero sí en otras (TS_Store_Stock). */
+.ts-store-stock { display: block; width: 100%; flex-basis: 100%; box-sizing: border-box; margin: 0 0 1em; padding: .75em 1em; border: 1px solid #f0c36d; border-left: 4px solid #d98e04; border-radius: 4px; background: #fff8e8; color: #4a3b12; font-size: .95em; line-height: 1.45; }
+.ts-store-stock[hidden] { display: none !important; }
+.ts-store-stock__text { margin: 0 0 .6em; }
+.ts-store-stock__pick.button { margin: 0; padding: .45em 1em; font-size: .9em; line-height: 1.3; }
+.ts-store-stock--alert { animation: ts-store-stock-shake .5s ease-in-out; border-color: #d63638; border-left-color: #d63638; background: #fdeeee; }
+@keyframes ts-store-stock-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { .ts-store-stock--alert { animation: none; } }

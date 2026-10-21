@@ -212,12 +212,8 @@ const ENGLISH = /\b(Location|Locations|In Stock|Sold Out|Stock Information|Selec
       await p.goto(BASE + '/product/producto-a-delicias-y-chacao/', { waitUntil: 'networkidle' });
       await pickLocation(p, { label: 'Tienda Delicias - Disponible' });
       const clicks = mode === 'cantidad' ? 1 : 3;
-      if (mode === 'cantidad') {
-        await p.$eval('input.qty', e => { e.removeAttribute('max'); e.value = '999'; });
-      } else {
-        // La tienda activa (cookie) no tiene el producto: la validación de Multi Locations falla.
-        await ctx.addCookies([{ name: 'wcmlim_selected_location_termid', value: String(LOC['Tienda Valencia']), url: BASE }]);
-      }
+      // Más unidades de las que tiene Delicias (10): la validación de Multi Locations falla.
+      await p.$eval('input.qty', (e, v) => { e.removeAttribute('max'); e.value = v; }, mode === 'cantidad' ? '999' : '11');
       for (let i = 0; i < clicks; i++) {
         await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => {}), p.click('button.single_add_to_cart_button')]);
       }
@@ -225,6 +221,24 @@ const ENGLISH = /\b(Location|Locations|In Stock|Sold Out|Stock Information|Selec
       log(`sin stock suficiente (${mode}${clicks > 1 ? ', 3 clics' : ''}): un aviso en español en la ficha`, err.length === 1 && err[0] === ES, JSON.stringify(err));
       await ctx.close();
     }
+  }
+
+  // ---- 9. Tienda activa (cookie) sin el producto y otra con stock elegida en la ficha ----
+  // Multi Locations validaba contra la tienda de la cookie y rechazaba el alta; ahora valida la elegida.
+  {
+    const LOC = JSON.parse(wp(`eval '$o=array(); foreach(get_terms(array("taxonomy"=>"locations","hide_empty"=>false)) as $t){$o[$t->name]=$t->term_id;} echo json_encode($o);'`).split('\n').pop());
+    const ctx = await newCtx([{ name: 'ts_estado', value: '__ALL__' }]);
+    const p = await ctx.newPage();
+    await p.goto(BASE + '/product/producto-a-delicias-y-chacao/', { waitUntil: 'networkidle' });
+    await pickLocation(p, { label: 'Tienda Delicias - Disponible' });
+    await ctx.addCookies([{ name: 'wcmlim_selected_location_termid', value: String(LOC['Tienda Valencia']), url: BASE }]);
+    const count = async () => Number(((await ctx.cookies()).find(x => x.name === 'woocommerce_items_in_cart') || {}).value || 0);
+    await p.click('button.single_add_to_cart_button');
+    for (let i = 0; i < 40 && !(await count()); i++) await p.waitForTimeout(250);
+    await p.goto(BASE + '/cart/', { waitUntil: 'networkidle' });
+    const rows = await p.$$eval('.woocommerce-cart-form__cart-item .product-name', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    log('tienda activa sin stock y Delicias elegida en la ficha: se añade con Delicias', rows.length === 1 && /Tienda: Tienda Delicias/.test(rows[0]), JSON.stringify(rows));
+    await ctx.close();
   }
 
   await browser.close();

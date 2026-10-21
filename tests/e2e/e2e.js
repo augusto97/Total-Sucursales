@@ -99,7 +99,7 @@ async function distanceInfo(page) {
     await page.waitForLoadState('networkidle');
     const ck = await cookies(ctx);
     log('E1 cookie ts_estado=ZU por GPS', ck.ts_estado === 'ZU', JSON.stringify({ ts_estado: ck.ts_estado, src: ck.ts_estado_src, sel: ck.wcmlim_selected_location, selid: ck.wcmlim_selected_location_termid, lat: ck.wcmlim_user_lat }));
-    log('E1 sucursal seleccionada = Delicias', ['29'].includes(ck.wcmlim_selected_location_termid), ck.wcmlim_selected_location_termid);
+    log('E1 sucursal seleccionada = Delicias', ck.wcmlim_selected_location_termid === ID('Tienda Delicias'), ck.wcmlim_selected_location_termid);
     const modalVisible = await page.$eval('#ts-state-modal', e => !e.hidden).catch(() => false);
     log('E1 modal no visible', !modalVisible);
     const sel = await page.$eval('#ts-state-select', e => e.value).catch(() => 'n/a');
@@ -234,7 +234,7 @@ async function distanceInfo(page) {
     await page.goto(BASE + '/', { waitUntil: 'networkidle' }); await page.waitForTimeout(1000);
     const sw = await page.$$eval('#wcmlim-change-lc-select option', o => o.map(x => ({ v: x.value, t: x.textContent.trim() })));
     await page.selectOption('#wcmlim-change-lc-select', sw.find(x => /Chacao/.test(x.t)).v);
-    await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle' }), page.evaluate(() => document.getElementById('lc-switch-form').submit())]);
+    await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle' }), page.evaluate(() => { setTimeout(() => document.getElementById('lc-switch-form').submit(), 0); })]);
     const ckSw = await cookies(ctx);
     log('E5 switcher MLI: sede activa Chacao', ckSw.wcmlim_selected_location_termid === ID('Tienda Chacao'), JSON.stringify({ sel: ckSw.wcmlim_selected_location, selid: ckSw.wcmlim_selected_location_termid }));
     const optsC = await addToCart(page, 'producto-c-chacao', 'Chacao');

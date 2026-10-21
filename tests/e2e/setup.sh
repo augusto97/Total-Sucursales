@@ -33,12 +33,22 @@ if ( ! defined( 'ABSPATH' ) ) { define( 'ABSPATH', __DIR__ . '/' ); }
 require_once ABSPATH . 'wp-settings.php';
 CFG
 mkdir -p "$WP/wp-content/database"
+# Sin Google Maps: no hay clave y, si la red lo deja cargar, el JS de MLI recarga páginas a destiempo.
+mkdir -p "$WP/wp-content/mu-plugins"
+cat > "$WP/wp-content/mu-plugins/ts-test-sin-google.php" <<'MU'
+<?php
+add_filter( 'script_loader_src', function ( $src ) {
+	return ( is_string( $src ) && false !== strpos( $src, 'maps.googleapis.com' ) ) ? false : $src;
+}, 99 );
+MU
 wp(){ php "$W/wp-cli.phar" --allow-root --path="$WP" "$@"; }
 wp core is-installed 2>/dev/null || wp core install --url=http://127.0.0.1:8080 --title="Total Sucursales Test" --admin_user=admin --admin_password=admin --admin_email=admin@example.com --skip-email
 wp theme activate twentytwentyone
 wp plugin activate woocommerce
 wp plugin activate states-and-municipalities-of-venezuela-for-woocommerce woocommerce-advanced-shipping WooCommerce-Multi-Locations-Inventory-Management total-sucursales
 wp eval-file "$REPO/tests/e2e/seed.php"
+# MLI crea "Online Store" (sin estado, coordenadas ni stock); las pruebas cuentan con las 4 tiendas del seed.
+wp eval '$t = get_term_by( "name", "Online Store", "locations" ); if ( $t ) { wp_delete_term( $t->term_id, "locations" ); delete_option( "wcmlim_default_location_id" ); delete_transient( "ts_locations_index" ); }'
 wp option update woocommerce_hold_stock_minutes ""   # la reserva de stock usa SQL que SQLite no soporta
 ID=$(wp post create --post_type=page --post_title="Inicio" --post_status=publish --porcelain --post_content='<h2>Bienvenido</h2>[ts_selector_estado][wcmlim_locations_switch]<p><a href="/shop/">Ir a la tienda</a></p>')
 wp option update show_on_front page; wp option update page_on_front "$ID"
