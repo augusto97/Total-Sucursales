@@ -69,20 +69,34 @@
 		window.location.reload();
 	}
 
-	function save() {
-		var id = visibleChecked().val();
-		if (!id) {
-			status(D.i18n.pick);
-			return;
+	/** Deja marcada en la ventana la tienda id (y su estado), como si el cliente la hubiera elegido. */
+	function check(id) {
+		var $r = $m.find('input[name="ts_sp_store"][value="' + id + '"]').prop('checked', true);
+		var st = $r.closest('.ts-sp-store').attr('data-state');
+		if (st) {
+			$m.find('.ts-sp-state').val(st);
+			filterState();
 		}
-		var $b = $m.find('.ts-sp-modal__save').prop('disabled', true);
-		$.post(D.ajax_url, { action: 'ts_pick_store', nonce: D.nonce, term_id: id, move: pendingMove ? 1 : 0 })
+	}
+
+	/**
+	 * Guarda la tienda id. Si el carrito es de otra tienda, la ventana pregunta antes de moverlo
+	 * (abriéndola si no lo estaba); si no, recarga con "Tienda guardada".
+	 */
+	function pick(id, move, $b) {
+		$b = $b || $();
+		$b.prop('disabled', true);
+		return $.post(D.ajax_url, { action: 'ts_pick_store', nonce: D.nonce, term_id: id, move: move ? 1 : 0 })
 			.done(function (res) {
 				if (!res || !res.success) {
 					status(D.i18n.error);
 					return;
 				}
 				if (res.data.conflict) {
+					if ($m.prop('hidden')) {
+						open();
+					}
+					check(id);
 					pendingMove = true;
 					var $c = $m.find('.ts-sp-modal__conflict').prop('hidden', false);
 					var text = fill(D.i18n.conflict, { actual: res.data.current || '', nueva: res.data.target });
@@ -94,7 +108,7 @@
 						});
 					}
 					$c.find('p').text(text);
-					$b.text(D.i18n.confirm);
+					$m.find('.ts-sp-modal__save').text(D.i18n.confirm);
 					$m.find('.ts-sp-modal__cancel').prop('hidden', false);
 					return;
 				}
@@ -104,6 +118,21 @@
 			})
 			.fail(function () { status(D.i18n.error); })
 			.always(function () { $b.prop('disabled', false); });
+	}
+
+	function save() {
+		var id = visibleChecked().val();
+		if (!id) {
+			status(D.i18n.pick);
+			return;
+		}
+		pick(id, pendingMove, $m.find('.ts-sp-modal__save'));
+	}
+
+	// Para elegir tienda desde otros sitios (el selector de Multi Locations en la ficha, ver
+	// ts-store-stock.js) con el mismo aviso de carrito y la misma recarga.
+	if (window.TotalSucursales) {
+		window.TotalSucursales.pickStore = function (id) { return pick(id, false); };
 	}
 
 	$(document).on('click', '.ts-sp__trigger', function (e) {

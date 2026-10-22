@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.10.3
+Stable tag: 0.10.4
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -38,6 +38,9 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_tienda]` – botón "Tu tienda: …" con ventana para elegir la tienda.
 
 == Changelog ==
+
+= 0.10.4 =
+* Corregido: elegir tienda en el panel lateral "Disponibilidad por tienda" (o la ventana) de Multi Locations cambiaba la tienda sin recargar, y la ficha seguía con el stock y el aviso de la tienda anterior, sin dejar comprar. Ahora funciona como el selector de la cabecera ([ts_tienda]): si el carrito tiene productos de otra tienda pregunta si se pasan a la nueva, guarda la tienda y recarga la ficha con "Tienda guardada".
 
 = 0.10.3 =
 * Corregido: al elegir otra tienda en la ficha del producto (panel lateral "Disponibilidad por tienda", desplegable o lista de Multi Locations), la cabecera seguía mostrando la tienda anterior hasta recargar. Ahora el selector de la cabecera ([ts_tienda] y el de Multi Locations) cambia en el momento y sale el aviso "Tienda guardada".

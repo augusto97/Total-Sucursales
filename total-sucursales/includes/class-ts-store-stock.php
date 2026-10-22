@@ -134,6 +134,7 @@ class TS_Store_Stock {
 			return;
 		}
 		wp_enqueue_script( 'ts-store-stock', TS_PLUGIN_URL . 'assets/js/ts-store-stock.js', array( 'jquery' ), TS_VERSION, true );
+		wp_localize_script( 'ts-store-stock', 'ts_store_stock', array( 'current' => (string) TS_Customer::selected_mli_location_id() ) );
 	}
 
 	/**

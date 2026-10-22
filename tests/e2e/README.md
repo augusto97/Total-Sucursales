@@ -324,8 +324,9 @@ node disponibilidad.js
 envía nada hasta elegir una tienda con stock (panel lateral "drawer" y desplegable "select") y luego se
 añade con esa tienda. También comprueba que el servidor contesta con aviso a un alta sin stock y a un
 alta que Multi Locations rechaza sin decir por qué (mu-plugin temporal), y que al elegir tienda en la
-ficha la cabecera ([ts_tienda] y el selector de Multi Locations, puestos por el mismo mu-plugin) cambia
-sin recargar.
+ficha la cabecera ([ts_tienda] y el selector de Multi Locations, puestos por el mismo mu-plugin) cambia:
+en el panel lateral se guarda como en [ts_tienda] (con el carrito en otra tienda pregunta y lo mueve) y
+la ficha se recarga con la tienda nueva; con el desplegable, sin recargar.
 
 ```bash
 node stock-tienda.js

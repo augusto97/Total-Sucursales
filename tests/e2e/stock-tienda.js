@@ -94,19 +94,44 @@ const loc = n => wp(`eval '$t=get_term_by("name","${n}","locations"); echo $t->t
       await p.waitForTimeout(800);
       const open = await p.$eval('#wcmlim-sidePopup', e => e.getBoundingClientRect().width > 50).catch(() => false);
       log('drawer: "Elegir otra tienda" abre el panel de Multi Locations', open);
-      const done = p.waitForResponse(r => /wcmlim_set_location_on_change/.test(r.request().postData() || ''), { timeout: 8000 }).catch(() => null);
-      await p.click(`#wcmlim-sidePopup .location-stock-item[data-location-id="${chacao[0]}"]`);
-      await done; await p.waitForTimeout(500);
-      const hidden = await p.$eval('.ts-store-stock', e => e.hidden);
-      log('drawer: al elegir Tienda Chacao el aviso se oculta', hidden);
-      await p.waitForFunction(() => /Chacao/.test((document.querySelector('.ts-test-header .ts-sp__name') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+      await Promise.all([
+        p.waitForNavigation({ waitUntil: 'networkidle', timeout: 10000 }).catch(() => null),
+        p.click(`#wcmlim-sidePopup .location-stock-item[data-location-id="${chacao[0]}"]`),
+      ]);
+      const after = await p.evaluate(() => ({ box: !!document.querySelector('.ts-store-stock'), stock: ((document.querySelector('.summary .stock') || {}).textContent || '').trim() }));
+      log('drawer: al elegir Tienda Chacao la ficha se recarga con su stock, sin aviso', !after.box && !/Sin stock/.test(after.stock), JSON.stringify(after));
       const h = await header(p);
-      log('drawer: la cabecera cambia a Tienda Chacao sin recargar, con "Tienda guardada"', h.name === 'Tienda Chacao' && h.toast && h.mli === 'Tienda Chacao', JSON.stringify(h));
+      log('drawer: la cabecera dice Tienda Chacao, con "Tienda guardada"', h.name === 'Tienda Chacao' && h.toast && h.mli === 'Tienda Chacao', JSON.stringify(h));
       await p.click('button.single_add_to_cart_button');
       for (let i = 0; i < 40 && !(await count(ctx)); i++) await p.waitForTimeout(250);
       const rows = await cartRows(p);
       log('drawer: se añade con la tienda elegida (Chacao)', rows.length === 1 && /Tienda: Tienda Chacao/.test(rows[0]), JSON.stringify(rows));
       await ctx.close();
+    }
+
+    // ---- Drawer con el carrito en otra tienda ("Restrict to One Location"): pregunta y mueve ----
+    {
+      wp('option update wcmlim_clear_cart on');
+      const delicias = loc('Tienda Delicias');
+      const ctx = await context(delicias);
+      const p = await ctx.newPage();
+      await p.goto(PROD, { waitUntil: 'networkidle' });
+      await p.click('button.single_add_to_cart_button');
+      for (let i = 0; i < 40 && !(await count(ctx)); i++) await p.waitForTimeout(250);
+      await p.goto(BASE + '/product/producto-c-chacao/', { waitUntil: 'networkidle' });
+      const box = await p.$('.ts-store-stock');
+      await p.click('#wcmlim-drawer_view_btn'); await p.waitForTimeout(600);
+      await p.click(`#wcmlim-sidePopup .location-stock-item[data-location-id="${chacao[0]}"]`);
+      await p.waitForSelector('#ts-sp-modal:not([hidden]) .ts-sp-modal__conflict:not([hidden])', { timeout: 8000 }).catch(() => {});
+      const conflict = await p.$eval('#ts-sp-modal .ts-sp-modal__conflict', e => !e.hidden && e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+      log('drawer + carrito de Delicias: al elegir Chacao pregunta si mueve el carrito', !!box && /Tienda Delicias/.test(conflict) && /Tienda Chacao/.test(conflict), conflict);
+      await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle', timeout: 10000 }).catch(() => null), p.click('#ts-sp-modal .ts-sp-modal__save')]);
+      const h = await header(p);
+      const box2 = await p.$('.ts-store-stock');
+      const rows = await cartRows(p);
+      log('drawer + carrito: confirma → recarga en Chacao y el carrito pasa a Chacao', h.name === 'Tienda Chacao' && !box2 && rows.length === 1 && /Tienda: Tienda Chacao/.test(rows[0]), JSON.stringify({ h: h.name, box: !!box2, rows }));
+      await ctx.close();
+      wp('option update wcmlim_clear_cart ""');
     }
 
     // ---- Aunque llegue al servidor: aviso en lugar de respuesta vacía ----

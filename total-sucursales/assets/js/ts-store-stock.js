@@ -2,7 +2,8 @@
  * Ficha de un producto sin stock en la tienda del cliente (pero sí en otras): ver TS_Store_Stock.
  *
  * "Añadir al carrito" no hace nada hasta que se elige en el selector de Multi Locations una tienda
- * con stock: resalta el aviso. El botón del aviso abre ese selector.
+ * con stock: resalta el aviso. El botón del aviso abre ese selector. Elegir tienda en su panel
+ * lateral o su ventana guarda la tienda como el selector de la cabecera y recarga la ficha.
  */
 (function ($) {
 	'use strict';
@@ -84,6 +85,33 @@
 		void box.offsetWidth; // reinicia la animación
 		box.classList.add('ts-store-stock--alert');
 		box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+	}, true);
+
+	/**
+	 * Tienda elegida en el panel lateral o la ventana de Multi Locations ("Disponibilidad por
+	 * tienda"): Multi Locations la cambiaba por AJAX sin recargar, así que la ficha seguía con el
+	 * stock y el aviso de la tienda anterior (y sin poder comprar). Se guarda como en el selector de
+	 * la cabecera: si el carrito es de otra tienda pregunta si se mueve, y recarga con "Tienda
+	 * guardada". Sólo si está el selector de la cabecera ([ts_tienda]), que trae ese flujo.
+	 */
+	window.addEventListener('click', function (e) {
+		var T = window.TotalSucursales;
+		var item = e.target.closest && e.target.closest('#wcmlim-sidePopup .location-stock-item[data-location-id], #wcmlim-modalPopup .location-stock-item[data-location-id]');
+		// Sólo clics del cliente: al cargar, Multi Locations "pulsa" la tienda elegida.
+		if (!item || !e.isTrusted || !T || !T.pickStore) {
+			return;
+		}
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		$('#wcmlim-sidePopup').css('width', '0px');
+		$('#wcmlim-modalPopup').css('display', 'none');
+		var id = parseInt(item.getAttribute('data-location-id'), 10) || 0;
+		if (!id || id === parseInt(window.ts_store_stock && ts_store_stock.current, 10)) {
+			return;
+		}
+		T.pickStore(id).done(function (res) {
+			if (!res || !res.success) { window.location.reload(); }
+		}).fail(function () { window.location.reload(); });
 	}, true);
 
 	$(document).on('click', '.ts-store-stock__pick', function () {
