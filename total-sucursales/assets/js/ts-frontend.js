@@ -404,17 +404,45 @@
 	};
 
 	/**
-	 * Multi Locations cambia la tienda por AJAX desde la ficha (panel lateral "Disponibilidad por
-	 * tienda", desplegable, lista) y no toca la cabecera: seguía diciendo la tienda anterior hasta
-	 * recargar. Tras su cambio se pide la tienda elegida y se actualizan el selector de la cabecera
-	 * ([ts_tienda] y el de Multi Locations), con el aviso de "Tienda guardada". No se recarga: con
-	 * el desplegable Multi Locations no volvería a marcar la tienda elegida.
+	 * Multi Locations cambia la tienda por AJAX desde la ficha (su desplegable o su lista) y no toca
+	 * la cabecera: seguía diciendo la tienda anterior hasta recargar. Cuando el cliente elige ahí una
+	 * tienda se actualiza el selector de la cabecera ([ts_tienda] y el de Multi Locations), con el
+	 * aviso de "Tienda guardada". No se recarga: con el desplegable Multi Locations no volvería a
+	 * marcar la tienda elegida. (El panel lateral y la ventana recargan: ver ts-store-stock.js.)
+	 *
+	 * Sólo tras una elección del cliente: al cargar la ficha Multi Locations "elige" él mismo la
+	 * tienda guardada, y eso no debe mostrar el aviso ni costar peticiones.
 	 */
 	TS.headerFollowsMli = function () {
-		$(document).ajaxSuccess(function (ev, xhr, opts) {
-			if (!/(^|&)action=wcmlim_set_location_on_change(&|$)/.test(String(opts && opts.data || ''))) {
+		var picked = null;
+		function remember(e) {
+			if (!e.isTrusted || !e.target.closest) {
 				return;
 			}
+			var el = e.target.closest('[name="select_location"], .location-stock-item[data-location-id]');
+			if (!el) {
+				return;
+			}
+			var opt = el.tagName === 'SELECT' ? el.options[el.selectedIndex] : null;
+			var item = el.closest('[data-location-id]');
+			var id = parseInt(opt ? opt.getAttribute('data-lc-termid') : (item ? item.getAttribute('data-location-id') : ''), 10) || 0;
+			picked = id ? { id: id, at: Date.now() } : null;
+		}
+		document.addEventListener('change', remember, true);
+		document.addEventListener('click', remember, true);
+		$(document).ajaxSuccess(function (ev, xhr, opts) {
+			if (!picked || Date.now() - picked.at > 10000 || !/(^|&)action=wcmlim_set_location_on_change(&|$)/.test(String(opts && opts.data || ''))) {
+				return;
+			}
+			var id = picked.id;
+			picked = null;
+			var name = $.trim($('input[name="ts_sp_store"][value="' + id + '"]').closest('.ts-sp-store').find('.ts-sp-store__name').text()) ||
+				$.trim($('#wcmlim-change-lc-select option[data-lc-term="' + id + '"]').text());
+			if (name) {
+				TS.showStore({ id: id, name: name, label: $.trim($('.ts-sp__label').first().text()) || ts_params.store_label });
+				return;
+			}
+			// Sin selector en la página que diga el nombre: se le pregunta al servidor.
 			TS.post('ts_current_store').done(function (res) {
 				if (res && res.success && res.data.id) {
 					TS.showStore(res.data);
