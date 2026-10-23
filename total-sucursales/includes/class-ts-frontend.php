@@ -35,6 +35,7 @@ class TS_Frontend {
 		wp_localize_script( 'ts-frontend', 'ts_params', array(
 			'ajax_url'        => admin_url( 'admin-ajax.php' ),
 			'nonce'           => wp_create_nonce( self::NONCE ),
+			'store_label'     => TS_Texts::get( 'sp_label' ),
 			'detect_state'    => TS_Settings::get( 'detect_state', 'gps' ),
 			'ask_if_gps_fails'=> TS_Settings::is_yes( 'ask_if_gps_fails' ),
 			'state'           => TS_Customer::get_state(),

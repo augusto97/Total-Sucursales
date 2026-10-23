@@ -170,10 +170,13 @@ const loc = n => wp(`eval '$t=get_term_by("name","${n}","locations"); echo $t->t
       log('select: aviso visible y "Añadir" sin tienda no envía nada', vis && adds === 0, JSON.stringify({ vis, adds }));
       const opt = await p.$$eval('select.select_location option', o => (o.find(x => /Delicias/.test(x.textContent)) || {}).value);
       const done = p.waitForResponse(r => /wcmlim_set_location_on_change/.test(r.request().postData() || ''), { timeout: 8000 }).catch(() => null);
-      await p.selectOption('select.select_location', opt);
+      // Con el teclado, como un cliente (selectOption dispara un "change" sintético).
+      await p.focus('select.select_location');
+      await p.keyboard.type('Tienda D');
       await done; await p.waitForTimeout(500);
+      const chosenOpt = await p.$eval('select.select_location', e => e.value);
       const hidden = await p.$eval('.ts-store-stock', e => e.hidden);
-      log('select: al elegir Tienda Delicias el aviso se oculta', hidden);
+      log('select: al elegir Tienda Delicias el aviso se oculta', hidden && chosenOpt === opt, chosenOpt);
       await p.waitForFunction(() => /Delicias/.test((document.querySelector('.ts-test-header .ts-sp__name') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
       const h = await header(p);
       log('select: la cabecera cambia a Tienda Delicias sin recargar', h.name === 'Tienda Delicias' && h.mli === 'Tienda Delicias', JSON.stringify(h));
@@ -188,10 +191,15 @@ const loc = n => wp(`eval '$t=get_term_by("name","${n}","locations"); echo $t->t
     {
       const ctx = await context(chacao);
       const p = await ctx.newPage();
+      const ts = [];
+      p.on('request', r => { const a = ((r.postData() || '').match(/action=(ts_[a-z_]+)/) || [])[1]; if (a) ts.push(a); });
       await p.goto(PROD, { waitUntil: 'networkidle' });
+      await p.waitForTimeout(1500);
       const box = await p.$('.ts-store-stock');
       const stock = await p.$eval('.summary .stock', e => e.textContent.trim()).catch(() => '');
       log('con stock en la tienda (Chacao): sin aviso y el stock normal', !box && !/Sin stock/.test(stock), stock);
+      const toast = await p.$eval('.ts-sp__toast', e => !e.hidden).catch(() => false);
+      log('abrir la ficha sin cambiar de tienda: sin "Tienda guardada" ni peticiones de Total Sucursales', !toast && ts.length === 0, JSON.stringify({ toast, ts }));
       await ctx.close();
     }
   } finally {
