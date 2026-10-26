@@ -307,6 +307,20 @@ decimales configurados) y no 39.6712. Deja las opciones y el precio como estaban
 node precio-decimales.js
 ```
 
+## Caché de página (LiteSpeed Cache)
+
+`cache-pagina.js` simula la caché del sitio: cada página se pide una vez sin cookies y a los
+navegadores de la prueba se les sirve siempre esa copia (las peticiones AJAX van al servidor). Con
+"Todas las tiendas" y "GPS y, si falla, la tienda por defecto" comprueba que la detección se hace una
+vez, que no cambia una tienda elegida a mano, que el selector no se cierra mientras se elige, que la
+cabecera muestra la tienda real, que con nonces caducados se guarda la tienda y se añade al carrito,
+que un toque antes de que cargue el JavaScript abre el selector y, con LiteSpeed Cache instalado por
+`setup.sh` (sin activar), que su ajuste "Vary Cookies" queda con las cookies de la tienda.
+
+```bash
+node cache-pagina.js
+```
+
 ## Producto sin stock en las tiendas del cliente
 
 `disponibilidad.js`: un cliente de Zulia abre Producto D (sólo hay en Valencia) y debe verlo como no

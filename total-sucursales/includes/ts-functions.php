@@ -42,14 +42,15 @@ function ts_valid_coords( $lat, $lng ) {
 
 /**
  * Establece una cookie (servidor) y la refleja en $_COOKIE para el request actual.
- * Mismo comportamiento que setLocation() de MLI (HttpOnly, path /).
+ * Mismo comportamiento que setLocation() de MLI (HttpOnly, path /). Con $js_readable = true el
+ * JavaScript también puede leerla (para lo que no puede venir en una página que guarda la caché).
  */
-function ts_set_cookie( $name, $value, $expire_seconds = null ) {
+function ts_set_cookie( $name, $value, $expire_seconds = null, $js_readable = false ) {
 	if ( null === $expire_seconds ) {
 		$expire_seconds = (int) apply_filters( 'ts_cookie_lifetime', DAY_IN_SECONDS * 30 );
 	}
 	if ( ! headers_sent() ) {
-		setcookie( $name, (string) $value, time() + $expire_seconds, '/', '', is_ssl(), true );
+		setcookie( $name, (string) $value, time() + $expire_seconds, '/', '', is_ssl(), ! $js_readable );
 	}
 	$_COOKIE[ $name ] = (string) $value;
 }

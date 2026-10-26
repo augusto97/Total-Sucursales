@@ -12,6 +12,59 @@
 			return $.post(ts_params.ajax_url, $.extend({ action: action, nonce: ts_params.nonce }, data || {}));
 		},
 
+		cookie: function (name) {
+			var m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+			return m ? decodeURIComponent(m[1]) : '';
+		},
+
+		/**
+		 * Tienda del cliente. La página puede venir de la caché (LiteSpeed y similares) pintada para
+		 * otro visitante, así que manda la cookie ts_tienda; ts_params sólo si no la hay.
+		 */
+		storeId: function () {
+			return parseInt(TS.cookie('ts_tienda'), 10) || parseInt(ts_params.selected_location_id, 10) || 0;
+		},
+
+		/** ¿Ya se hizo la detección automática (o el cliente ya eligió)? */
+		detected: function () {
+			return TS.cookie('ts_det') === '1';
+		},
+
+		markDetected: function () {
+			document.cookie = 'ts_det=1; path=/; max-age=31536000; SameSite=Lax' + (window.location.protocol === 'https:' ? '; Secure' : '');
+		},
+
+		/**
+		 * El cliente está eligiendo tienda o estado (abrió un selector, tocó una tienda...): la
+		 * detección automática no le cambia nada ni recarga la página mientras tanto.
+		 */
+		busy: false,
+
+		watchBusy: function () {
+			var sel = '.ts-sp__trigger, #ts-sp-modal, #ts-state-modal, .ts-state-select, .ts-use-gps, .ts-store-stock, ' +
+				'#wcmlim-drawer_view_btn, #wcmlim-popup_view_btn, #wcmlim-sidePopup, #wcmlim-modalPopup, ' +
+				'[name="select_location"], .location-stock-item, #wcmlim-change-lc-select, .wcmlim-lc-switch';
+			var mark = function (e) {
+				if (e.isTrusted && e.target && e.target.closest && e.target.closest(sel)) {
+					TS.busy = true;
+				}
+			};
+			['click', 'change', 'focusin', 'touchstart'].forEach(function (t) {
+				document.addEventListener(t, mark, { capture: true, passive: true });
+			});
+			// Tocó el selector antes de que cargara el JavaScript (LiteSpeed "retrasar JS").
+			if (window.tsSpPending || window.tsPickPending) {
+				TS.busy = true;
+			}
+		},
+
+		/** Recarga tras una detección automática, salvo que el cliente esté eligiendo. */
+		autoReload: function () {
+			if (!TS.busy) {
+				window.location.reload();
+			}
+		},
+
 		setState: function (state) {
 			return TS.post('ts_set_state', { state: state }).done(function (res) {
 				if (res && res.success && res.data.reload) {
@@ -35,8 +88,19 @@
 			);
 		},
 
-		setPosition: function (lat, lng, context) {
-			return TS.post('ts_set_position', { lat: lat, lng: lng, context: context || 'browse' });
+		setPosition: function (lat, lng, context, auto) {
+			return TS.post('ts_set_position', { lat: lat, lng: lng, context: context || 'browse', auto: auto ? 1 : 0 });
+		},
+
+		/**
+		 * Posición de la detección automática: el servidor no cambia una tienda que eligió el
+		 * cliente, y si el cliente está eligiendo ahora no se envía.
+		 */
+		autoPosition: function (lat, lng) {
+			if (TS.busy) {
+				return $.Deferred().resolve({ success: false, busy: true }).promise();
+			}
+			return TS.setPosition(lat, lng, 'browse', true);
 		},
 
 		showModal: function (statusText) {
@@ -60,9 +124,13 @@
 				done(false);
 				return;
 			}
+			if (TS.busy) {
+				done(false);
+				return;
+			}
 			TS._ipAsked = true;
 			TS.post('ts_ip_locate').done(function (res) {
-				if (res && res.success && res.data.reload) {
+				if (res && res.success && res.data.reload && !TS.busy) {
 					window.location.reload();
 					return;
 				}
@@ -109,10 +177,10 @@
 		 * "GPS y, si falla, la tienda por defecto": la tienda por defecto, sin ventana ni IP.
 		 */
 		useDefault: function () {
-			if (TS._defaultAsked) { return; }
+			if (TS._defaultAsked || TS.busy) { return; }
 			TS._defaultAsked = true;
-			TS.post('ts_use_default').done(function (res) {
-				if (res && res.success && res.data.reload) { window.location.reload(); }
+			TS.post('ts_use_default', { auto: 1 }).done(function (res) {
+				if (res && res.success && res.data.reload) { TS.autoReload(); }
 			});
 		},
 
@@ -152,8 +220,8 @@
 				return;
 			}
 			var onPosition = function (lat, lng) {
-				TS.setPosition(lat, lng, 'browse').done(function (res) {
-					if (res && res.success && res.data.reload) { window.location.reload(); }
+				TS.autoPosition(lat, lng).done(function (res) {
+					if (res && res.success && res.data.reload) { TS.autoReload(); }
 				});
 			};
 			if (mode === 'gps_default') {
@@ -189,8 +257,8 @@
 				return;
 			}
 			TS.locateWithFallback(function (lat, lng) {
-				TS.setPosition(lat, lng, 'browse').done(function (res) {
-					if (res && res.success && res.data.reload) { window.location.reload(); }
+				TS.autoPosition(lat, lng).done(function (res) {
+					if (res && res.success && res.data.reload) { TS.autoReload(); }
 				});
 			}, function (code) {
 				TS.rememberNoGps(code);
@@ -198,7 +266,35 @@
 			});
 		},
 
+		/**
+		 * Modo por estado, cliente que aún no eligió estado (ni lo hay en la cookie, que ahora se
+		 * puede leer aunque la página venga de la caché): como siempre, se le vuelve a mostrar la
+		 * ventana de estado en cada página, sin volver a pedir la ubicación.
+		 */
+		askStateAgain: function () {
+			if (ts_params.visibility_mode !== 'state' || ts_params.has_choice || TS.cookie('ts_estado') !== '') {
+				return;
+			}
+			if (ts_params.detect_state === 'ask' || (ts_params.detect_state === 'gps' && ts_params.ask_if_gps_fails)) {
+				TS.showModal();
+			}
+		},
+
+		/**
+		 * Una sola vez por visitante. La página puede venir de la caché con los datos de otro
+		 * visitante (o de uno nuevo), así que no basta ts_params: la cookie ts_det dice si ya se hizo.
+		 * Antes se repetía en cada página y volvía a poner la tienda del GPS o la de por defecto
+		 * encima de la que el cliente había elegido, recargando la página mientras elegía.
+		 */
 		autoDetect: function () {
+			if (TS.busy) {
+				return;
+			}
+			if (TS.detected()) {
+				TS.askStateAgain();
+				return;
+			}
+			TS.markDetected();
 			if (ts_params.visibility_mode === 'city') {
 				TS.autoDetectCity();
 				return;
@@ -222,10 +318,10 @@
 					return;
 				}
 				TS.locateOrTimeout(function (lat, lng) {
-					TS.setPosition(lat, lng, 'browse').done(function (res) {
+					TS.autoPosition(lat, lng).done(function (res) {
 						if (res && res.success && (res.data.reload || res.data.changed)) {
-							window.location.reload();
-						} else {
+							TS.autoReload();
+						} else if (!res || res.data === undefined || res.data.reason !== 'manual') {
 							TS.useDefault();
 						}
 					}).fail(function () { TS.useDefault(); });
@@ -237,18 +333,18 @@
 			}
 			// gps (y, si no la da, la IP antes de preguntarle)
 			TS.locateWithFallback(function (lat, lng) {
-				TS.setPosition(lat, lng, 'browse').done(function (res) {
+				TS.autoPosition(lat, lng).done(function (res) {
 					if (res && res.success && (res.data.reload || res.data.changed)) {
-						window.location.reload();
-					} else if (!res || !res.success || !res.data.state) {
-						if (ts_params.ask_if_gps_fails) { TS.showModal(); }
+						TS.autoReload();
+					} else if (!res || !res.success || (!res.data.state && res.data.reason !== 'manual')) {
+						if (ts_params.ask_if_gps_fails && !TS.busy) { TS.showModal(); }
 					}
 				}).fail(function () {
-					if (ts_params.ask_if_gps_fails) { TS.showModal(ts_params.i18n.geo_error); }
+					if (ts_params.ask_if_gps_fails && !TS.busy) { TS.showModal(ts_params.i18n.geo_error); }
 				});
 			}, function (code) {
 				TS.ipLocate(function () {
-					if (ts_params.ask_if_gps_fails) {
+					if (ts_params.ask_if_gps_fails && !TS.busy) {
 						TS.showModal(code === 'denied' ? ts_params.i18n.geo_denied : ts_params.i18n.geo_error);
 					}
 				});
@@ -298,10 +394,10 @@
 		 * Página de producto: dejar sólo la sucursal seleccionada en los <select> de MLI.
 		 */
 		singleLocationView: function () {
-			if (!ts_params.single_location_view || !ts_params.selected_location_id) {
+			if (!ts_params.single_location_view || !TS.storeId()) {
 				return;
 			}
-			var id = String(ts_params.selected_location_id);
+			var id = String(TS.storeId());
 			var prune = function () {
 				$('select.select_location option[data-lc-termid]').each(function () {
 					var tid = String($(this).attr('data-lc-termid') || '').trim();
@@ -430,14 +526,19 @@
 		}
 		document.addEventListener('change', remember, true);
 		document.addEventListener('click', remember, true);
+		// Que el servidor sepa que esta la eligió el cliente (y no Multi Locations al cargar la ficha).
+		$.ajaxPrefilter(function (opts) {
+			if (picked && Date.now() - picked.at < 10000 && typeof opts.data === 'string' && /(^|&)action=wcmlim_set_location_on_change(&|$)/.test(opts.data)) {
+				opts.data += '&ts_user=1';
+			}
+		});
 		$(document).ajaxSuccess(function (ev, xhr, opts) {
 			if (!picked || Date.now() - picked.at > 10000 || !/(^|&)action=wcmlim_set_location_on_change(&|$)/.test(String(opts && opts.data || ''))) {
 				return;
 			}
 			var id = picked.id;
 			picked = null;
-			var name = $.trim($('input[name="ts_sp_store"][value="' + id + '"]').closest('.ts-sp-store').find('.ts-sp-store__name').text()) ||
-				$.trim($('#wcmlim-change-lc-select option[data-lc-term="' + id + '"]').text());
+			var name = TS.storeName(id);
 			if (name) {
 				TS.showStore({ id: id, name: name, label: $.trim($('.ts-sp__label').first().text()) || ts_params.store_label });
 				return;
@@ -451,17 +552,73 @@
 		});
 	};
 
-	TS.showStore = function (d) {
+	/** Nombre de una tienda según la lista del selector de la cabecera (o el de Multi Locations). */
+	TS.storeName = function (id) {
+		return $.trim($('input[name="ts_sp_store"][value="' + id + '"]').closest('.ts-sp-store').find('.ts-sp-store__name').text()) ||
+			$.trim($('#wcmlim-change-lc-select option[data-lc-term="' + id + '"]').text());
+	};
+
+	/**
+	 * La página puede venir de la caché pintada con la tienda de otro visitante: la cabecera se
+	 * corrige con la tienda real del cliente (cookie ts_tienda), sin aviso.
+	 */
+	TS.fixHeader = function () {
+		var id = parseInt(TS.cookie('ts_tienda'), 10) || 0;
+		var $sp = $('.ts-sp[data-store]');
+		if (!id || !$sp.length || String($sp.attr('data-store')) === String(id)) {
+			return;
+		}
+		var name = TS.storeName(id);
+		if (name) {
+			TS.showStore({ id: id, name: name, label: ts_params.store_label }, true);
+		}
+	};
+
+	/**
+	 * Multi Locations lleva su nonce en la página: si la caché la sirve con más de 12-24 h ha
+	 * caducado y su "Añadir al carrito" o su cambio de tienda contestan "-1" (no hacen nada). Se
+	 * pide uno nuevo y se repite la petición una vez.
+	 */
+	TS.mliNonceRetry = function () {
+		$(document).ajaxError(function (ev, xhr, opts) {
+			var data = String(opts && opts.data || '');
+			if (!opts || opts._tsRetry || xhr.status !== 403 || $.trim(xhr.responseText || '') !== '-1' ||
+				!/(^|&)action=wcmlim_/.test(data) || typeof URLSearchParams === 'undefined') {
+				return;
+			}
+			// Una sola petición aunque fallen varias a la vez (la ficha hace varias al cargar).
+			TS._mliNonce = TS._mliNonce || TS.post('ts_mli_nonce');
+			TS._mliNonce.done(function (res) {
+				if (!res || !res.success || !res.data.security) {
+					return;
+				}
+				var n = res.data.security;
+				['wc_add_to_cart_params', 'multi_inventory', 'localization'].forEach(function (k) {
+					if (window[k] && typeof window[k] === 'object' && 'security' in window[k]) {
+						window[k].security = n;
+					}
+				});
+				var params = new URLSearchParams(data);
+				params.set('security', n);
+				$.ajax($.extend({}, opts, { data: params.toString(), _tsRetry: true }));
+			});
+		});
+	};
+
+	TS.showStore = function (d, quiet) {
 		var $text = $('.ts-sp__text');
+		$('.ts-sp[data-store]').attr('data-store', d.id);
 		if ($text.length) {
 			$text.empty().append($('<span class="ts-sp__label">').text(d.label), $('<strong class="ts-sp__name">').text(d.name));
 			$('.ts-sp-modal__current').text(d.name);
 			var $radio = $('input[name="ts_sp_store"][value="' + d.id + '"]').prop('checked', true);
 			var st = $radio.closest('.ts-sp-store').attr('data-state');
 			if (st) { $('.ts-sp-state').val(st); }
-			var $t = $('.ts-sp__toast').first().prop('hidden', false);
-			clearTimeout(TS.toastTimer);
-			TS.toastTimer = setTimeout(function () { $t.prop('hidden', true); }, 6000);
+			if (!quiet) {
+				var $t = $('.ts-sp__toast').first().prop('hidden', false);
+				clearTimeout(TS.toastTimer);
+				TS.toastTimer = setTimeout(function () { $t.prop('hidden', true); }, 6000);
+			}
 		}
 		var $opt = $('#wcmlim-change-lc-select option[data-lc-term="' + d.id + '"]');
 		if ($opt.length) {
@@ -471,6 +628,9 @@
 	};
 
 	$(function () {
+		TS.watchBusy();
+		TS.fixHeader();
+		TS.mliNonceRetry();
 		TS.headerFollowsMli();
 		TS.loopQuantity();
 		TS.bindModal();

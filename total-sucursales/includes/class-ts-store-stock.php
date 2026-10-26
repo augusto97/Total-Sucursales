@@ -102,7 +102,7 @@ class TS_Store_Stock {
 		}
 		echo '<div class="ts-store-stock" role="alert" data-ok="' . esc_attr( wp_json_encode( $st['ok'] ) ) . '">'
 			. '<p class="ts-store-stock__text">' . esc_html( self::notice_text( $st['store'], $st['ok'] ) ) . '</p>'
-			. '<button type="button" class="ts-store-stock__pick button">' . esc_html( TS_Texts::get( 'store_no_stock_pick' ) ) . '</button>'
+			. '<button type="button" class="ts-store-stock__pick button" onclick="window.tsPickPending=1">' . esc_html( TS_Texts::get( 'store_no_stock_pick' ) ) . '</button>'
 			. '</div>';
 	}
 

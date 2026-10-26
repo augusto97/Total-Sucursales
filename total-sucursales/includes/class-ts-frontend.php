@@ -21,6 +21,8 @@ class TS_Frontend {
 		add_action( 'wp_ajax_ts_set_position', array( __CLASS__, 'ajax_set_position' ) );
 		add_action( 'wp_ajax_nopriv_ts_set_position', array( __CLASS__, 'ajax_set_position' ) );
 		add_action( 'wp_ajax_ts_use_default', array( __CLASS__, 'ajax_use_default' ) );
+		add_action( 'wp_ajax_ts_mli_nonce', array( __CLASS__, 'ajax_mli_nonce' ) );
+		add_action( 'wp_ajax_nopriv_ts_mli_nonce', array( __CLASS__, 'ajax_mli_nonce' ) );
 		add_action( 'wp_ajax_nopriv_ts_use_default', array( __CLASS__, 'ajax_use_default' ) );
 	}
 
@@ -145,6 +147,11 @@ class TS_Frontend {
 	 */
 	public static function ajax_use_default() {
 		self::check_nonce();
+		TS_Customer::mark_detected();
+		if ( TS_Customer::store_is_manual() ) {
+			// La tienda la eligió el cliente: la detección automática no la cambia.
+			wp_send_json_success( array( 'reload' => false, 'reason' => 'manual' ) );
+		}
 		$default = TS_Settings::default_location_id();
 		$row     = $default ? TS_Locations::get( $default ) : null;
 		if ( ! $row ) {
@@ -157,7 +164,7 @@ class TS_Frontend {
 		}
 		TS_Location_Filter::flush_request_cache();
 		if ( 'city' !== $mode || in_array( $default, array_map( 'intval', TS_Location_Filter::visible_ids() ), true ) ) {
-			TS_Customer::select_mli_location( $default );
+			TS_Customer::select_mli_location( $default, 'auto' );
 		}
 		wp_send_json_success( array(
 			'reload'   => (int) $before !== (int) TS_Customer::selected_mli_location_id() || 'state' === $mode,
@@ -165,10 +172,51 @@ class TS_Frontend {
 		) );
 	}
 
+	/**
+	 * Nonce nuevo de Multi Locations. Su "Añadir al carrito" y su cambio de tienda lo llevan en la
+	 * página; si la caché la sirve con más de 12-24 h, el nonce ha caducado y contestan "-1" (no
+	 * añade, no cambia). ts-frontend.js pide uno nuevo aquí y repite la petición.
+	 */
+	public static function ajax_mli_nonce() {
+		self::verify_request();
+		wp_send_json_success( array( 'security' => wp_create_nonce( 'wcmlim_locations_nonce' ) ) );
+	}
+
 	private static function check_nonce() {
-		if ( ! check_ajax_referer( self::NONCE, 'nonce', false ) ) {
-			wp_send_json_error( array( 'message' => 'nonce' ), 403 );
+		self::verify_request();
+	}
+
+	/**
+	 * Las peticiones de la tienda (guardar tienda o estado, posición) vienen de páginas que la caché
+	 * (LiteSpeed y similares) puede servir durante días: su nonce caduca a las 12-24 h y entonces
+	 * fallaban ("a veces no guarda la tienda"). Vale el nonce o que la petición venga del propio
+	 * sitio (cabecera Origin o Referer), que es la protección que importa aquí: sólo cambian
+	 * preferencias del propio visitante.
+	 */
+	public static function verify_request() {
+		if ( check_ajax_referer( self::NONCE, 'nonce', false ) || self::same_origin() ) {
+			return;
 		}
+		wp_send_json_error( array( 'message' => 'nonce' ), 403 );
+	}
+
+	private static function same_origin() {
+		$hosts = array_filter( array(
+			wp_parse_url( home_url(), PHP_URL_HOST ),
+			wp_parse_url( site_url(), PHP_URL_HOST ),
+		) );
+		// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sólo se compara el host.
+		$from = ! empty( $_SERVER['HTTP_ORIGIN'] ) ? wp_unslash( $_SERVER['HTTP_ORIGIN'] ) : ( ! empty( $_SERVER['HTTP_REFERER'] ) ? wp_unslash( $_SERVER['HTTP_REFERER'] ) : '' );
+		// phpcs:enable
+		$host = $from ? wp_parse_url( $from, PHP_URL_HOST ) : '';
+		return $host && in_array( strtolower( $host ), array_map( 'strtolower', $hosts ), true );
+	}
+
+	/**
+	 * ¿Petición de la detección automática (no de un botón que pulsó el cliente)?
+	 */
+	private static function is_auto() {
+		return ! empty( $_POST['auto'] ); // phpcs:ignore WordPress.Security.NonceVerification
 	}
 
 	/**
@@ -187,7 +235,7 @@ class TS_Frontend {
 		$changed = TS_Customer::set_state( $state, 'manual' );
 		if ( '' === $state ) {
 			// "Todos": guardamos una marca para no volver a preguntar.
-			ts_set_cookie( TS_Customer::COOKIE_STATE, '__ALL__' );
+			ts_set_cookie( TS_Customer::COOKIE_STATE, '__ALL__', null, true );
 		}
 		wp_send_json_success( array(
 			'state'   => $state,
@@ -206,9 +254,17 @@ class TS_Frontend {
 		if ( ! ts_valid_coords( $lat, $lng ) ) {
 			wp_send_json_error( array( 'message' => __( 'Coordenadas inválidas', 'total-sucursales' ) ) );
 		}
-		TS_Customer::set_gps_coords( $lat, $lng );
-
 		$context = isset( $_POST['context'] ) ? sanitize_key( wp_unslash( $_POST['context'] ) ) : 'browse';
+		$auto    = self::is_auto();
+		if ( 'checkout' !== $context ) {
+			TS_Customer::mark_detected();
+		}
+		if ( $auto && 'checkout' !== $context && TS_Customer::store_is_manual() ) {
+			// Detección automática con una tienda que eligió el cliente: no se toca nada.
+			wp_send_json_success( array( 'reload' => false, 'changed' => false, 'reason' => 'manual' ) );
+		}
+		TS_Customer::set_gps_coords( $lat, $lng );
+		$source = $auto ? 'auto' : 'manual';
 
 		// Modo "por ciudad": con la posición cambian las tiendas visibles; se elige la más cercana.
 		// "Todas las tiendas": se elige la más cercana de todas.
@@ -219,7 +275,7 @@ class TS_Frontend {
 			if ( 'checkout' !== $context ) {
 				$target = $nearest ? $nearest['id'] : ( $visible ? $visible[0] : 0 );
 				if ( $target ) {
-					TS_Customer::select_mli_location( $target );
+					TS_Customer::select_mli_location( $target, $source );
 				}
 			}
 			wp_send_json_success( array(
@@ -235,12 +291,12 @@ class TS_Frontend {
 		$state    = TS_Customer::get_state();
 
 		if ( $resolved && 'checkout' !== $context && '' !== $resolved['state'] ) {
-			$changed = TS_Customer::set_state( $resolved['state'], 'gps' );
+			$changed = TS_Customer::set_state( $resolved['state'], $auto ? 'gps' : 'manual' );
 			$state   = $resolved['state'];
 			if ( ! $changed ) {
 				// Mismo estado: al menos alinear la sucursal seleccionada con la más cercana si no había ninguna.
 				if ( ! TS_Customer::selected_mli_location_id() ) {
-					TS_Customer::resync_mli_selection();
+					TS_Customer::resync_mli_selection( $source );
 				}
 			}
 		}

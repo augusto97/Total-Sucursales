@@ -129,8 +129,10 @@ class TS_IP_Location {
 	 * El navegador no dio la ubicación: se prueba con la IP.
 	 */
 	public static function ajax_locate() {
-		if ( ! check_ajax_referer( TS_Frontend::NONCE, 'nonce', false ) ) {
-			wp_send_json_error( array( 'message' => 'nonce' ), 403 );
+		TS_Frontend::verify_request();
+		TS_Customer::mark_detected();
+		if ( TS_Customer::store_is_manual() ) {
+			wp_send_json_success( array( 'reload' => false, 'reason' => 'manual' ) ); // La eligió el cliente.
 		}
 		if ( ! self::enabled() ) {
 			wp_send_json_error( array( 'message' => 'disabled' ) );
@@ -162,7 +164,7 @@ class TS_IP_Location {
 			$nearest = TS_Locations::nearest( $found['lat'], $found['lng'], $visible );
 			$target  = $nearest ? $nearest['id'] : ( $visible ? $visible[0] : 0 );
 			if ( $target ) {
-				TS_Customer::select_mli_location( $target );
+				TS_Customer::select_mli_location( $target, 'auto' );
 			}
 			$reload = true;
 		} elseif ( ! TS_Customer::has_choice() || 'ip' === TS_Customer::get_state_source() ) {

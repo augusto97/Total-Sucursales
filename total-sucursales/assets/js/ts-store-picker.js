@@ -137,8 +137,14 @@
 
 	$(document).on('click', '.ts-sp__trigger', function (e) {
 		e.preventDefault();
+		window.tsSpPending = 0;
 		open();
 	});
+	// Tocó el selector antes de que cargara este JavaScript (LiteSpeed "retrasar JS"): se abre ahora.
+	if (window.tsSpPending) {
+		window.tsSpPending = 0;
+		open();
+	}
 	$m.on('click', '.ts-sp-modal__close', close);
 	$m.on('click', function (e) { if (e.target === $m[0]) { close(); } });
 	$(document).on('keydown', function (e) { if (e.key === 'Escape' && !$m.prop('hidden')) { close(); } });

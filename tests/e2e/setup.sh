@@ -7,6 +7,7 @@ W="${1:-/tmp/ts-wp}"; mkdir -p "$W/dl"; cd "$W"
 [ -d wordpress ] || git clone --depth 1 --branch 6.8.2 https://github.com/WordPress/WordPress wordpress
 [ -d dl/sqlite ] || git clone --depth 1 https://github.com/WordPress/sqlite-database-integration dl/sqlite
 [ -f dl/woocommerce.zip ] || curl -sSL -o dl/woocommerce.zip https://github.com/woocommerce/woocommerce/releases/download/10.1.2/woocommerce.zip
+[ -f dl/litespeed-cache.zip ] || curl -sSL -o dl/litespeed-cache.zip https://downloads.wordpress.org/plugin/litespeed-cache.7.9.2.zip
 [ -f wp-cli.phar ] || curl -sSL -o wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 WP="$W/wordpress"; P="$WP/wp-content/plugins"
 # SQLite drop-in (layout monorepo del trunk)
@@ -16,6 +17,7 @@ cp "$P/sqlite-database-integration/db.copy" "$WP/wp-content/db.php"
 sed -i "s#'{SQLITE_IMPLEMENTATION_FOLDER_PATH}'#__DIR__.'/plugins/sqlite-database-integration'#g; s#{SQLITE_PLUGIN}#sqlite-database-integration/load.php#g" "$WP/wp-content/db.php"
 # Plugins
 ( cd "$P" && unzip -q -o "$W/dl/woocommerce.zip" )
+( cd "$P" && unzip -q -o "$W/dl/litespeed-cache.zip" )   # instalado, sin activar: lo usa cache-pagina.js
 for z in "$REPO"/*.zip; do mkdir -p "$W/tmpz"; unzip -q -o "$z" -d "$W/tmpz"; done
 cp -r "$W/tmpz"/* "$P/"; rm -rf "$W/tmpz"
 ln -sfn "$REPO/total-sucursales" "$P/total-sucursales"
