@@ -74,6 +74,7 @@ final class TS_Plugin {
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-order.php';
 		require_once TS_PLUGIN_DIR . 'includes/class-ts-product-view.php';
 		require_once TS_PLUGIN_DIR . 'includes/integrations/class-ts-was-conditions.php';
+		require_once TS_PLUGIN_DIR . 'includes/integrations/class-ts-litespeed.php';
 	}
 
 	private function init_modules() {
@@ -99,6 +100,7 @@ final class TS_Plugin {
 		TS_Order::init();
 		TS_Product_View::init();
 		TS_WAS_Conditions::init();
+		TS_LiteSpeed::init();
 
 		// Método de envío propio: retiro o envío nacional sin necesitar Advanced Shipping.
 		add_action( 'woocommerce_shipping_init', function () {

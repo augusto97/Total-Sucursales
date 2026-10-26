@@ -136,8 +136,11 @@ class TS_Store_Picker {
 		$current = self::current();
 		$name    = $current ? TS_Locations::name( $current ) : '';
 		$pin     = self::icon_pin();
-		$html    = self::MARK . '<div class="ts-sp ' . esc_attr( $atts['class'] ) . '">'
-			. '<button type="button" class="ts-sp__trigger" aria-haspopup="dialog" aria-controls="ts-sp-modal">'
+		// data-store: la tienda con la que se pintó (si la página viene de la caché puede no ser la del
+		// cliente; ts-frontend.js la corrige). onclick: con el JavaScript retrasado (LiteSpeed "retrasar
+		// JS") el primer toque llega antes de que cargue; se recuerda y la ventana se abre al cargar.
+		$html    = self::MARK . '<div class="ts-sp ' . esc_attr( $atts['class'] ) . '" data-store="' . (int) $current . '">'
+			. '<button type="button" class="ts-sp__trigger" aria-haspopup="dialog" aria-controls="ts-sp-modal" onclick="window.tsSpPending=1">'
 			. $pin
 			. '<span class="ts-sp__text">'
 			. ( $current
@@ -262,9 +265,7 @@ class TS_Store_Picker {
 	 * Respuestas: {saved:true} o {conflict:true, current, target, unavailable:[{name,quantity}]}.
 	 */
 	public static function ajax_pick() {
-		if ( ! check_ajax_referer( TS_Frontend::NONCE, 'nonce', false ) ) {
-			wp_send_json_error( array( 'message' => 'nonce' ), 403 );
-		}
+		TS_Frontend::verify_request();
 		$target  = isset( $_POST['term_id'] ) ? absint( wp_unslash( $_POST['term_id'] ) ) : 0;
 		$move    = ! empty( $_POST['move'] );
 		$allowed = wp_list_pluck( self::stores(), 'id' );
@@ -294,7 +295,7 @@ class TS_Store_Picker {
 			}
 		}
 		TS_Location_Filter::flush_request_cache();
-		TS_Customer::select_mli_location( $target );
+		TS_Customer::select_mli_location( $target, 'manual' );
 		wp_send_json_success( array( 'saved' => true, 'name' => TS_Locations::name( $target ) ) );
 	}
 

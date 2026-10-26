@@ -35,7 +35,7 @@
 		var ok = [];
 		try { ok = JSON.parse(box.getAttribute('data-ok') || '[]'); } catch (e) {}
 		var c = chosen(form);
-		var id = c ? c.id : parseInt(cookie('wcmlim_selected_location_termid'), 10) || 0;
+		var id = c ? c.id : parseInt(cookie('ts_tienda') || cookie('wcmlim_selected_location_termid'), 10) || 0;
 		return ok.indexOf(id) !== -1 || !!(c && c.qty > 0);
 	}
 
@@ -106,7 +106,9 @@
 		$('#wcmlim-sidePopup').css('width', '0px');
 		$('#wcmlim-modalPopup').css('display', 'none');
 		var id = parseInt(item.getAttribute('data-location-id'), 10) || 0;
-		if (!id || id === parseInt(window.ts_store_stock && ts_store_stock.current, 10)) {
+		// La tienda real del cliente (la página puede venir de la caché con la de otro visitante).
+		var current = parseInt(cookie('ts_tienda'), 10) || parseInt(window.ts_store_stock && ts_store_stock.current, 10) || 0;
+		if (!id || id === current) {
 			return;
 		}
 		T.pickStore(id).done(function (res) {
@@ -115,6 +117,7 @@
 	}, true);
 
 	$(document).on('click', '.ts-store-stock__pick', function () {
+		window.tsPickPending = 0;
 		openPicker();
 	});
 	$(document).on('change', 'form.cart [name="select_location"]', refresh);
@@ -129,5 +132,10 @@
 			$('.ts-store-stock__pick').hide();
 		}
 		refresh();
+		// Pulsó "Elegir otra tienda" antes de que cargara este JavaScript (LiteSpeed "retrasar JS").
+		if (window.tsPickPending) {
+			window.tsPickPending = 0;
+			setTimeout(openPicker, 300);
+		}
 	});
 })(jQuery);

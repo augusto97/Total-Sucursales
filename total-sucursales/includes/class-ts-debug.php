@@ -476,6 +476,16 @@ class TS_Debug {
 				<?php endif; ?>
 			<?php endif; ?>
 
+			<?php $cache = class_exists( 'TS_LiteSpeed' ) ? TS_LiteSpeed::status() : array(); ?>
+			<?php if ( ! empty( $cache ) ) : ?>
+				<div class="muted" style="margin-top:10px"><?php esc_html_e( 'Caché de página:', 'total-sucursales' ); ?></div>
+				<ul class="muted">
+					<?php foreach ( $cache as $k => $v ) : ?>
+						<li><?php echo esc_html( $k . ' — ' . $v ); ?></li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+
 			<?php $compat = class_exists( 'TS_Compat' ) ? TS_Compat::status() : array(); ?>
 			<?php if ( ! empty( $compat ) ) : ?>
 				<div class="muted" style="margin-top:10px"><?php esc_html_e( 'Parches de compatibilidad con Multi Locations:', 'total-sucursales' ); ?></div>

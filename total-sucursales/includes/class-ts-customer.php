@@ -3,6 +3,8 @@
  * Estado y posición del cliente (cookies + sesión de WooCommerce).
  *
  * Cookies propias:  ts_estado (código), ts_estado_src (gps|manual|account)
+ *                   ts_tienda (tienda elegida, legible desde JS), ts_tienda_src (manual|auto),
+ *                   ts_det (ya se hizo la detección automática; legible desde JS)
  * Cookies de MLI reutilizadas: wcmlim_user_lat, wcmlim_user_lng, wcmlim_selected_location, wcmlim_selected_location_termid
  * Sesión WC: ts_coords => array(lat, lng, source)
  */
@@ -15,6 +17,12 @@ class TS_Customer {
 
 	const COOKIE_STATE  = 'ts_estado';
 	const COOKIE_SOURCE = 'ts_estado_src';
+	/** Copia legible desde JS de la tienda elegida: las páginas en caché no saben cuál es. */
+	const COOKIE_STORE  = 'ts_tienda';
+	/** manual (la eligió el cliente) | auto (por defecto, GPS, IP). */
+	const COOKIE_STORE_SOURCE = 'ts_tienda_src';
+	/** La detección automática ya se hizo (o el cliente ya eligió): no se repite en cada página. */
+	const COOKIE_DETECTED = 'ts_det';
 	const SESSION_COORDS = 'ts_coords';
 
 	public static function init() {
@@ -23,6 +31,50 @@ class TS_Customer {
 		// Después del estado: la sucursal por defecto sólo vale si el filtro por estado la deja ver.
 		add_action( 'wp', array( __CLASS__, 'maybe_default_location' ), 6 );
 		add_action( 'wp_login', array( __CLASS__, 'on_login' ), 10, 2 );
+		// Multi Locations cambia la tienda desde la ficha (su desplegable o su lista) por AJAX.
+		foreach ( array( 'wp_ajax_wcmlim_set_location_on_change', 'wp_ajax_nopriv_wcmlim_set_location_on_change' ) as $hook ) {
+			add_action( $hook, array( __CLASS__, 'on_mli_location_change' ), 0 );
+		}
+		add_action( 'init', array( __CLASS__, 'mark_detected_if_chosen' ), 20 );
+	}
+
+	/**
+	 * Antes de que Multi Locations guarde la tienda elegida en la ficha: la copia legible y, si la
+	 * eligió el cliente (ts-frontend.js lo marca con ts_user), su origen "manual". Al cargar la ficha
+	 * Multi Locations vuelve a "elegir" él mismo la tienda guardada: eso no cuenta como elección.
+	 */
+	public static function on_mli_location_change() {
+		// phpcs:disable WordPress.Security.NonceVerification -- Multi Locations no usa nonce aquí.
+		$key  = isset( $_POST['loc_key'] ) ? sanitize_text_field( wp_unslash( $_POST['loc_key'] ) ) : '';
+		$user = ! empty( $_POST['ts_user'] );
+		// phpcs:enable
+		if ( '' === $key || ! taxonomy_exists( 'locations' ) ) {
+			return;
+		}
+		// Igual que Multi Locations: la posición en su lista de tiendas.
+		$terms = get_terms( array( 'taxonomy' => 'locations', 'hide_empty' => false, 'parent' => 0 ) );
+		if ( is_wp_error( $terms ) ) {
+			return;
+		}
+		foreach ( array_values( $terms ) as $i => $t ) {
+			if ( (string) $i === (string) $key ) {
+				self::mirror_store( $t->term_id, $user ? 'manual' : null );
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Visitantes de antes de la cookie ts_det que ya tienen estado o tienda: se marca en su primera
+	 * petición AJAX (la ficha hace varias), para que el JavaScript no repita la detección.
+	 */
+	public static function mark_detected_if_chosen() {
+		if ( ! wp_doing_ajax() || null !== ts_get_cookie( self::COOKIE_DETECTED ) ) {
+			return;
+		}
+		if ( self::has_choice() || self::selected_mli_location_id() ) {
+			self::mark_detected();
+		}
 	}
 
 	/* ---------------------------------------------------------------------
@@ -66,9 +118,12 @@ class TS_Customer {
 		ts_set_cookie( self::COOKIE_SOURCE, $source );
 
 		$changed = ( $current !== $state );
+		if ( 'manual' === $source ) {
+			self::mark_detected();
+		}
 		if ( $changed ) {
 			TS_Location_Filter::flush_request_cache();
-			self::resync_mli_selection();
+			self::resync_mli_selection( 'manual' === $source ? 'manual' : 'auto' );
 			do_action( 'ts_customer_state_changed', $state, $current, $source );
 		}
 		return $changed;
@@ -206,7 +261,7 @@ class TS_Customer {
 	 * - si no, seleccionamos la más cercana (si hay coordenadas) o la primera visible;
 	 * - si no queda ninguna, borramos la selección.
 	 */
-	public static function resync_mli_selection() {
+	public static function resync_mli_selection( $source = null ) {
 		if ( ! taxonomy_exists( 'locations' ) ) {
 			return;
 		}
@@ -238,7 +293,7 @@ class TS_Customer {
 			}
 		}
 
-		self::select_mli_location( $target );
+		self::select_mli_location( $target, $target === $current ? null : $source );
 	}
 
 	/**
@@ -279,6 +334,8 @@ class TS_Customer {
 				// sus flujos la borra: la tienda sigue elegida pero sale "Seleccionar". Se rehace.
 				if ( (string) $index !== (string) ts_get_cookie( 'wcmlim_selected_location' ) ) {
 					self::select_mli_location( $current );
+				} elseif ( (string) $current !== (string) ts_get_cookie( self::COOKIE_STORE ) ) {
+					self::mirror_store( $current );
 				}
 				return;
 			}
@@ -286,13 +343,16 @@ class TS_Customer {
 		if ( ! TS_Settings::default_location_id() ) {
 			return;
 		}
-		self::resync_mli_selection();
+		self::resync_mli_selection( 'auto' );
 	}
 
 	/**
 	 * Selecciona una sucursal en MLI (índice + term_id), imitando wcmlim-change-cookie-change-location.php.
+	 *
+	 * @param int         $term_id Tienda.
+	 * @param string|null $source  manual|auto; null = no cambia el origen guardado.
 	 */
-	public static function select_mli_location( $term_id ) {
+	public static function select_mli_location( $term_id, $source = null ) {
 		$index = TS_Locations::mli_index_of( $term_id );
 		if ( null === $index ) {
 			self::clear_mli_selection();
@@ -306,12 +366,47 @@ class TS_Customer {
 		if ( 'on' !== get_option( 'wcmlim_enable_autodetect_location_by_maxmind' ) ) {
 			ts_set_cookie( 'wcmlim_nearby_location', $index, $ttl );
 		}
+		self::mirror_store( $term_id, $source );
 		return true;
+	}
+
+	/**
+	 * Copia legible de la tienda (y su origen). Con la página en caché, el JavaScript la usa para
+	 * saber la tienda real del cliente.
+	 */
+	public static function mirror_store( $term_id, $source = null ) {
+		ts_set_cookie( self::COOKIE_STORE, (int) $term_id, YEAR_IN_SECONDS, true );
+		if ( $source ) {
+			ts_set_cookie( self::COOKIE_STORE_SOURCE, 'manual' === $source ? 'manual' : 'auto', YEAR_IN_SECONDS, true );
+		}
+		if ( 'manual' === $source ) {
+			self::mark_detected();
+		}
+	}
+
+	/**
+	 * ¿La tienda actual la eligió el cliente? Entonces la detección automática (GPS, IP, tienda por
+	 * defecto) no la cambia. Quien ya tenía tienda de antes de existir esta marca cuenta como elegida.
+	 */
+	public static function store_is_manual() {
+		$src = (string) ts_get_cookie( self::COOKIE_STORE_SOURCE );
+		if ( '' !== $src ) {
+			return 'manual' === $src;
+		}
+		return (bool) self::selected_mli_location_id();
+	}
+
+	/**
+	 * La detección automática ya se hizo (o el cliente ya eligió): el JavaScript no la repite.
+	 */
+	public static function mark_detected() {
+		ts_set_cookie( self::COOKIE_DETECTED, '1', YEAR_IN_SECONDS, true );
 	}
 
 	public static function clear_mli_selection() {
 		ts_delete_cookie( 'wcmlim_selected_location' );
 		ts_delete_cookie( 'wcmlim_selected_location_termid' );
+		ts_delete_cookie( self::COOKIE_STORE );
 	}
 
 	public static function selected_mli_location_id() {

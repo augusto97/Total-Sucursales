@@ -4,7 +4,7 @@ Tags: woocommerce, sucursales, venezuela, pickup, multi locations, advanced ship
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.10.5
+Stable tag: 0.11.0
 License: GPLv2 or later
 
 Filtra las sucursales de Multi Locations por el estado del cliente y decide retiro en tienda por el municipio del cliente o por radio, con su propio método de envío (no necesita Advanced Shipping) o mediante condiciones para Advanced Shipping.
@@ -38,6 +38,13 @@ distancias por sucursal y un select de municipio por estado (la ciudad libre de 
 * `[ts_tienda]` – botón "Tu tienda: …" con ventana para elegir la tienda.
 
 == Changelog ==
+
+= 0.11.0 =
+* Corregido (con LiteSpeed Cache u otra caché de página): la caché servía a todos la página generada para un visitante nuevo. La detección automática (GPS y, si falla, la tienda por defecto) se repetía en cada página y volvía a poner la tienda del GPS o la de por defecto encima de la que eligió el cliente, recargando la página (y cerrando el selector) mientras elegía. Ahora la detección se hace una sola vez por visitante, nunca cambia una tienda que el cliente eligió a mano y no recarga ni cambia nada mientras el cliente está eligiendo.
+* Corregido: con la caché, la cabecera decía siempre la tienda por defecto. Ahora se corrige con la tienda real del cliente, y LiteSpeed Cache guarda una copia de cada página por tienda (el plugin añade sus cookies al ajuste "Vary Cookies" de LiteSpeed y vacía su caché una vez).
+* Corregido: con la página en caché más de 12-24 h, guardar la tienda o "Añadir al carrito" de Multi Locations fallaban (nonce caducado). Ahora las peticiones del propio sitio se aceptan y el nonce de Multi Locations se renueva solo.
+* Corregido: con "retrasar JavaScript" de LiteSpeed, el primer toque en el selector de tienda se perdía. Ahora se abre al cargar.
+* Diagnóstico: estado de la integración con LiteSpeed Cache.
 
 = 0.10.5 =
 * Corregido: desde 0.10.3, cada ficha de producto hacía una petición extra al servidor (admin-ajax) y mostraba "Tienda guardada" aunque el cliente no hubiera cambiado de tienda (al cargar, Multi Locations "elige" él mismo la tienda guardada). Ahora la cabecera sólo se actualiza cuando el cliente elige una tienda, y sin peticiones extra.
