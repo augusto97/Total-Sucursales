@@ -235,7 +235,7 @@ class TS_Frontend {
 		$changed = TS_Customer::set_state( $state, 'manual' );
 		if ( '' === $state ) {
 			// "Todos": guardamos una marca para no volver a preguntar.
-			ts_set_cookie( TS_Customer::COOKIE_STATE, '__ALL__' );
+			ts_set_cookie( TS_Customer::COOKIE_STATE, '__ALL__', null, true );
 		}
 		wp_send_json_success( array(
 			'state'   => $state,

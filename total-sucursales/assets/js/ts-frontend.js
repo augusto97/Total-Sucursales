@@ -267,13 +267,31 @@
 		},
 
 		/**
+		 * Modo por estado, cliente que aún no eligió estado (ni lo hay en la cookie, que ahora se
+		 * puede leer aunque la página venga de la caché): como siempre, se le vuelve a mostrar la
+		 * ventana de estado en cada página, sin volver a pedir la ubicación.
+		 */
+		askStateAgain: function () {
+			if (ts_params.visibility_mode !== 'state' || ts_params.has_choice || TS.cookie('ts_estado') !== '') {
+				return;
+			}
+			if (ts_params.detect_state === 'ask' || (ts_params.detect_state === 'gps' && ts_params.ask_if_gps_fails)) {
+				TS.showModal();
+			}
+		},
+
+		/**
 		 * Una sola vez por visitante. La página puede venir de la caché con los datos de otro
 		 * visitante (o de uno nuevo), así que no basta ts_params: la cookie ts_det dice si ya se hizo.
 		 * Antes se repetía en cada página y volvía a poner la tienda del GPS o la de por defecto
 		 * encima de la que el cliente había elegido, recargando la página mientras elegía.
 		 */
 		autoDetect: function () {
-			if (TS.detected() || TS.busy) {
+			if (TS.busy) {
+				return;
+			}
+			if (TS.detected()) {
+				TS.askStateAgain();
 				return;
 			}
 			TS.markDetected();

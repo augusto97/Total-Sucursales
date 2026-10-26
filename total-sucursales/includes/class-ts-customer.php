@@ -75,6 +75,10 @@ class TS_Customer {
 		if ( self::has_choice() || self::selected_mli_location_id() ) {
 			self::mark_detected();
 		}
+		if ( self::has_choice() ) {
+			// La de antes se guardaba sólo para el servidor: se vuelve a guardar legible.
+			ts_set_cookie( self::COOKIE_STATE, (string) ts_get_cookie( self::COOKIE_STATE ), null, true );
+		}
 	}
 
 	/* ---------------------------------------------------------------------
@@ -114,8 +118,9 @@ class TS_Customer {
 		$state   = ts_normalize_state( $state );
 		$current = self::get_state();
 
-		ts_set_cookie( self::COOKIE_STATE, $state );
-		ts_set_cookie( self::COOKIE_SOURCE, $source );
+		// Legibles desde JS: con la página en caché, es la forma de saber si ya eligió estado.
+		ts_set_cookie( self::COOKIE_STATE, $state, null, true );
+		ts_set_cookie( self::COOKIE_SOURCE, $source, null, true );
 
 		$changed = ( $current !== $state );
 		if ( 'manual' === $source ) {
